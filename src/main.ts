@@ -46,6 +46,7 @@ const T = {
     fun: '재미와 참고용이에요. 중요한 결정은 스스로 판단해 주세요.',
     errDate: '생년월일을 입력해 주세요.',
     errTime: '태어난 시각을 입력하거나 "시간을 몰라요"를 체크해 주세요.',
+    errPlace: '출생지를 찾지 못했어요. 도시 이름을 다시 검색해 주세요.',
     errCalc: '계산에 실패했어요. 날짜와 출생지를 확인해 주세요.',
     reading: '풀이 언어',
     footer: '사주 계산은 오픈소스 orrery(AGPL-3.0)를 사용해요.',
@@ -86,6 +87,7 @@ const T = {
     fun: 'For fun and reference only. Please make big decisions yourself.',
     errDate: 'Please enter the birth date.',
     errTime: 'Enter the birth time or check "I don\'t know the time".',
+    errPlace: 'Birthplace not found. Please search the city name again.',
     errCalc: 'Calculation failed. Please check the date and birthplace.',
     reading: 'Reading language',
     footer: 'Chart calculation uses the open-source orrery engine (AGPL-3.0).',
@@ -186,7 +188,9 @@ function readPerson(id: 'a' | 'b', label: string): Person | string {
   const [y, m, d] = date.split('-').map(Number)
   const [hh, mm] = unk ? [12, 0] : timeV.split(':').map(Number)
   const typed = fs.querySelector<HTMLInputElement>('input[name=city]')!.value
-  const city = filterCities(typed).find((c) => formatCityName(c) === typed) ?? cityState[id]
+  const found = typed.trim() ? filterCities(typed.trim()) : []
+  if (typed.trim() && !found.length) return x.errPlace
+  const city = found.find((c) => formatCityName(c) === typed) ?? found[0] ?? cityState[id]
   try {
     const tz = tzlookup(city.lat, city.lon)
     const result = calculateSaju({ year: y, month: m, day: d, hour: hh, minute: mm, gender, unknownTime: unk, latitude: city.lat, longitude: city.lon, timezone: tz })
