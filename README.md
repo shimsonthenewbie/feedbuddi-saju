@@ -14,8 +14,8 @@ npm run dev      # 개발 서버
 npm run build    # dist/ 생성
 ```
 
-## 배포 (Cloudflare Pages)
+## 배포 (Cloudflare)
 
 - Build command: `npm run build`
-- Build output directory: `dist`
-- 환경 변수: `NODE_VERSION=22`
+- Deploy command: `npx wrangler deploy` (설정은 `wrangler.jsonc`, 결과물 폴더는 `dist`)
+- Node 버전은 `.node-version`에 적혀 있습니다.
