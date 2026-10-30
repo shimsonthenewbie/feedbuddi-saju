@@ -70,10 +70,10 @@ function groupOfElement(day: Element, e: Element): Group {
 }
 
 /** 지장간 문자열 → [여기, 중기, 정기] (정기가 마지막) */
-function hiddenStems(branch: string): string[] {
+export function hiddenStems(branch: string): string[] {
   return (JIJANGGAN[branch] ?? '').replace(/ /g, '').split('')
 }
-const mainStemOf = (branch: string) => {
+export const mainStemOf = (branch: string) => {
   const h = hiddenStems(branch)
   return h[h.length - 1]
 }

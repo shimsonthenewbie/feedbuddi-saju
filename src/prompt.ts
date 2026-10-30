@@ -2,6 +2,7 @@ import type { SajuResult } from '@orrery/core/types'
 import { ELEMENT_HANJA } from '@orrery/core/constants'
 import { analyze, analysisText } from './myeongri'
 import { daewoonText, yearText, yearsOverviewText } from './myeongri/timing'
+import { domainsText, type DomainKey } from './myeongri/domains'
 
 export type Lang = 'ko' | 'en'
 
@@ -68,6 +69,12 @@ export function chartText(p: Person): string {
   L.push(yearText(r, an, yr + 1))
   L.push('대운: ' + r.daewoon.map((d) => `${d.age}세 ${d.ganzi}(${d.stemSipsin}/${d.branchSipsin}, ${d.unseong})`).join(' → '))
   return L.join('\n')
+}
+
+/** 프리미엄(종합 풀이)용 컨텍스트: 기본 차트 + 분야별 근거 */
+export function reportContext(p: Person, domains: DomainKey[] = ['love', 'wealth', 'career', 'health', 'relation']): string {
+  const an = analyze(p.result)
+  return chartText(p) + '\n\n' + domainsText(p.result, an, domains, new Date().getFullYear(), 8)
 }
 
 const NOW = () => new Date().getFullYear()
