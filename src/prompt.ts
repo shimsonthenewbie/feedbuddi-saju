@@ -1,5 +1,6 @@
 import type { SajuResult } from '@orrery/core/types'
 import { ELEMENT_HANJA } from '@orrery/core/constants'
+import { analyze, analysisText } from './myeongri'
 
 export type Lang = 'ko' | 'en'
 
@@ -58,6 +59,7 @@ export function chartText(p: Person): string {
   if (s.geumyeo.length) sal.push('금여록')
   if (sal.length) L.push('신살: ' + sal.join(', '))
 
+  L.push(analysisText(analyze(r)))
   L.push('대운: ' + r.daewoon.map((d) => `${d.age}세 ${d.ganzi}(${d.stemSipsin}/${d.branchSipsin}, ${d.unseong})`).join(' → '))
   return L.join('\n')
 }
