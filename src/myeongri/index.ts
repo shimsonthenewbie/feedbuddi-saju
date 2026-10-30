@@ -30,17 +30,17 @@ const HEAT_URGENT = 3
 const HEAT_MILD = 2
 
 /* ───────── 기본 표 ───────── */
-const GEN: Record<Element, Element> = { tree: 'fire', fire: 'earth', earth: 'metal', metal: 'water', water: 'tree' }
-const CTRL: Record<Element, Element> = { tree: 'earth', earth: 'water', water: 'fire', fire: 'metal', metal: 'tree' }
-const KO: Record<Element, string> = { tree: '목(木)', fire: '화(火)', earth: '토(土)', metal: '금(金)', water: '수(水)' }
+export const GEN: Record<Element, Element> = { tree: 'fire', fire: 'earth', earth: 'metal', metal: 'water', water: 'tree' }
+export const CTRL: Record<Element, Element> = { tree: 'earth', earth: 'water', water: 'fire', fire: 'metal', metal: 'tree' }
+export const KO: Record<Element, string> = { tree: '목(木)', fire: '화(火)', earth: '토(土)', metal: '금(金)', water: '수(水)' }
 /** 조사(을/를) 포함형 */
 const OBJ: Record<Element, string> = { tree: '목(木)을', fire: '화(火)를', earth: '토(土)를', metal: '금(金)을', water: '수(水)를' }
-const ELEMENTS: Element[] = ['tree', 'fire', 'earth', 'metal', 'water']
+export const ELEMENTS: Element[] = ['tree', 'fire', 'earth', 'metal', 'water']
 
 export type Sipsin =
   | '비견' | '겁재' | '식신' | '상관' | '편재' | '정재' | '편관' | '정관' | '편인' | '정인'
 export type Group = '비겁' | '식상' | '재성' | '관성' | '인성'
-const GROUP_OF: Record<Sipsin, Group> = {
+export const GROUP_OF: Record<Sipsin, Group> = {
   비견: '비겁', 겁재: '비겁', 식신: '식상', 상관: '식상', 편재: '재성', 정재: '재성',
   편관: '관성', 정관: '관성', 편인: '인성', 정인: '인성',
 }
@@ -124,6 +124,17 @@ export interface Analysis {
   climate: Climate
   yongsin: Yongsin
   signals: string[]
+}
+
+export type Role = '용신' | '희신' | '한신' | '구신' | '기신'
+/** 분석 결과 기준으로 오행이 어떤 역할(용·희·한·구·기신)인지 */
+export function roleOf(a: Analysis, e: Element): Role {
+  const y = a.yongsin
+  if (e === y.primary) return '용신'
+  if (e === y.heesin) return '희신'
+  if (e === y.gisin) return '기신'
+  if (e === y.gusin) return '구신'
+  return '한신'
 }
 
 /* ───────── 계산 ───────── */
