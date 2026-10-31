@@ -3,6 +3,7 @@ import { ELEMENT_HANJA } from '@orrery/core/constants'
 import { analyze, analysisText } from './myeongri'
 import { daewoonText, yearText, yearsOverviewText } from './myeongri/timing'
 import { domainsText, type DomainKey } from './myeongri/domains'
+import { nowText } from './myeongri/now'
 
 export type Lang = 'ko' | 'en'
 
@@ -74,7 +75,7 @@ export function chartText(p: Person): string {
 /** 프리미엄(종합 풀이)용 컨텍스트: 기본 차트 + 분야별 근거 */
 export function reportContext(p: Person, domains: DomainKey[] = ['love', 'wealth', 'career', 'health', 'relation']): string {
   const an = analyze(p.result)
-  return chartText(p) + '\n\n' + domainsText(p.result, an, domains, new Date().getFullYear(), 8)
+  return chartText(p) + '\n\n' + domainsText(p.result, an, domains, new Date().getFullYear(), 8) + '\n\n' + nowText(p.result, an, new Date())
 }
 
 const NOW = () => new Date().getFullYear()

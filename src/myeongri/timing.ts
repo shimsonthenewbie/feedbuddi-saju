@@ -247,8 +247,8 @@ function buildLuck(
 }
 
 /* ───────── 공개 API ───────── */
-function currentDaewoon(r: SajuResult, year: number): { item: DaewoonItem; next?: DaewoonItem } | null {
-  const t = Date.UTC(year, 6, 1)
+function currentDaewoon(r: SajuResult, year: number, at?: number): { item: DaewoonItem; next?: DaewoonItem } | null {
+  const t = at ?? Date.UTC(year, 6, 1)
   let cur: DaewoonItem | null = null
   let idx = -1
   r.daewoon.forEach((d, i) => { if (new Date(d.startDate).getTime() <= t) { cur = d; idx = i } })
@@ -345,4 +345,34 @@ export function yearsOverviewText(r: SajuResult, a: Analysis, from: number, coun
     L.push(luckLine(lk))
   }
   return L.join('\n')
+}
+
+/** 특정 날짜 기준의 대운·세운·월운 (현재 시점 진단용) */
+export interface LuckAt {
+  date: string
+  daewoon: { ganzi: string; ageFrom: number; startYear: number; nth: number; yearsLeft: number | null } | null
+  year: Luck
+  month: Luck
+}
+export function luckAt(r: SajuResult, a: Analysis, date: Date): LuckAt {
+  const y = date.getFullYear()
+  const m = date.getMonth() + 1
+  const d = date.getDate()
+  const [yg, mg] = getFourPillars(y, m, d, 12, 0)
+  const natal = natalTargets(r)
+  const nb = natal.map((t) => t.branch!)
+  const dw = currentDaewoon(r, y, Date.UTC(y, m - 1, d))
+  const dwT = daewoonTargets(dw?.item ?? null)
+  const yearL = buildLuck(r, a, `${y}년`, yg, [...natal, ...dwT], nb)
+  const yT: Target = { name: '세운', palace: '세운', stem: yg[0], branch: yg[1], ganzi: yg }
+  const monthL = buildLuck(r, a, `${y}년 ${m}월`, mg, [...natal, ...dwT, yT], nb, MONTH_F)
+  let daewoon: LuckAt['daewoon'] = null
+  if (dw) {
+    const sy = new Date(dw.item.startDate).getUTCFullYear()
+    daewoon = {
+      ganzi: dw.item.ganzi, ageFrom: dw.item.age, startYear: sy, nth: y - sy + 1,
+      yearsLeft: dw.next ? new Date(dw.next.startDate).getUTCFullYear() - y : null,
+    }
+  }
+  return { date: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, daewoon, year: yearL, month: monthL }
 }
