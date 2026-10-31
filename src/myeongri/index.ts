@@ -266,10 +266,28 @@ export function analyze(r: SajuResult): Analysis {
     secondary = { element: climate.need, basis: '조후' }
     ynote += `. 조후상 ${KO[climate.need]}도 함께 고려`
   }
-  const heesin = ELEMENTS.find((e) => GEN[e] === primary)!
-  const gisin = ELEMENTS.find((e) => CTRL[e] === primary)!
-  const gusin = ELEMENTS.find((e) => GEN[e] === gisin)!
-  const hansin = ELEMENTS.find((e) => ![primary, heesin, gisin, gusin].includes(e))!
+  let heesin: Element
+  let gisin: Element
+  let gusin: Element
+  let hansin: Element
+  if (basis === '억부' && (strongSide || weakSide)) {
+    // 억부 용신은 십신 그룹 단위로 5신을 정한다.
+    // (용신을 생하는 오행이 이미 과다한 병(病)일 수 있어서, 단순히 "생해 주는 오행=희신"으로 두지 않는다)
+    heesin = groupToEl(ranked[1].g)
+    const ctrlOfPrimary = ELEMENTS.find((e) => CTRL[e] === primary)!
+    const unfav: Group[] = weakSide ? ['식상', '재성', '관성'] : ['비겁', '인성']
+    const order = unfav
+      .map((g) => ({ e: groupToEl(g), score: grp[g] + (groupToEl(g) === ctrlOfPrimary ? 0.2 : 0) }))
+      .sort((x, y) => y.score - x.score)
+    gisin = order[0].e
+    gusin = order[1].e
+    hansin = ELEMENTS.find((e) => ![primary, heesin, gisin, gusin].includes(e))!
+  } else {
+    heesin = ELEMENTS.find((e) => GEN[e] === primary)!
+    gisin = ELEMENTS.find((e) => CTRL[e] === primary)!
+    gusin = ELEMENTS.find((e) => GEN[e] === gisin)!
+    hansin = ELEMENTS.find((e) => ![primary, heesin, gisin, gusin].includes(e))!
+  }
   if (secondary && (secondary.element === gisin || secondary.element === gusin)) {
     ynote += `. 다만 보조 후보 ${KO[secondary.element]}가 ${secondary.element === gisin ? '기신' : '구신'} 자리와 겹쳐 충돌하므로, 해석 시 주 용신을 우선하고 보조는 약하게 반영`
   }
