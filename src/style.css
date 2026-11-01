@@ -332,25 +332,24 @@ input[type=date],input[type=time],input[type=text],textarea{border-radius:16px;p
 .freebox h2{font-size:25px;color:var(--ink)}
 .freebox{background:linear-gradient(180deg,#fbf6e8,var(--card))}
 
-/* ───── 귀여운 버튼: 여의 몸색(주황빛 금색) + 옥색 ───── */
-:root{--btn:#f6b23f;--btn-hi:#ffd272;--btn-lo:#e8932a;--btn-edge:#b5640f;--btn-ink:#3d2410;--jade-btn:#58b79b;--jade-hi:#8fd6bf;--jade-edge:#2f7c66}
-.go,.bgo{border:0;border-radius:999px;color:var(--btn-ink);font-family:var(--serif);font-weight:400;letter-spacing:.04em;text-shadow:0 1px 0 rgba(255,255,255,.55);
-  background:radial-gradient(120% 90% at 50% -20%,rgba(255,255,255,.55),transparent 55%),linear-gradient(180deg,var(--btn-hi),var(--btn) 45%,var(--btn-lo));
-  box-shadow:inset 0 -3px 0 rgba(181,100,15,.35),0 5px 0 var(--btn-edge),0 10px 14px -6px rgba(120,60,10,.45);padding:15px 24px;font-size:19px;transition:transform .12s,box-shadow .12s,filter .12s}
-.go::after,.bgo::after{width:26px;height:26px;border:0;background:rgba(255,255,255,.8);color:var(--btn-edge);font:700 17px/1 var(--sans);box-shadow:inset 0 -2px 0 rgba(181,100,15,.25)}
-.go:hover,.bgo:hover{filter:brightness(1.05);transform:translateY(-1px);background:radial-gradient(120% 90% at 50% -20%,rgba(255,255,255,.55),transparent 55%),linear-gradient(180deg,var(--btn-hi),var(--btn) 45%,var(--btn-lo))}
-.go:active,.bgo:active{transform:translateY(4px);box-shadow:inset 0 -2px 0 rgba(181,100,15,.35),0 1px 0 var(--btn-edge),0 3px 6px -3px rgba(120,60,10,.4)}
-.go.ghost{color:#1f4b3e;text-shadow:0 1px 0 rgba(255,255,255,.5);border:0;
-  background:radial-gradient(120% 90% at 50% -20%,rgba(255,255,255,.5),transparent 55%),linear-gradient(180deg,var(--jade-hi),var(--jade-btn) 55%,#4aa68a);
-  box-shadow:inset 0 -3px 0 rgba(47,124,102,.3),0 5px 0 var(--jade-edge),0 10px 14px -6px rgba(20,70,55,.4)}
-.go.ghost::after{background:rgba(255,255,255,.8);color:var(--jade-edge);border:0}
-.go.ghost:hover{background:radial-gradient(120% 90% at 50% -20%,rgba(255,255,255,.5),transparent 55%),linear-gradient(180deg,var(--jade-hi),var(--jade-btn) 55%,#4aa68a);filter:brightness(1.05)}
-.go.ghost:active{box-shadow:inset 0 -2px 0 rgba(47,124,102,.3),0 1px 0 var(--jade-edge),0 3px 6px -3px rgba(20,70,55,.4)}
-.go:disabled{background:linear-gradient(180deg,#e3dcc8,#d3cab1);color:#9a917b;text-shadow:none;box-shadow:0 4px 0 #b9ae93;transform:none}
+/* ───── 버튼: 자주빛 갈색 알약 + 한지색 보조 ───── */
+:root{--wine:#6a2623;--wine-hi:#8a3a35;--wine-lo:#521b19;--wine-edge:#33100f;--cream-btn:#f1e7cd;--cream-edge:#cdbf9a;--btn-ink:#2a2118}
+.go,.bgo{border:0;border-radius:999px;color:#f8ecd2;font-family:var(--serif);font-weight:400;letter-spacing:.06em;text-shadow:0 1px 0 rgba(40,10,8,.5);
+  background:radial-gradient(120% 90% at 50% -25%,rgba(255,235,205,.28),transparent 55%),linear-gradient(180deg,var(--wine-hi),var(--wine) 50%,var(--wine-lo));
+  box-shadow:inset 0 0 0 1.5px rgba(214,184,120,.55),0 4px 0 var(--wine-edge),0 9px 14px -8px rgba(51,16,15,.55);padding:15px 24px;font-size:19px;transition:transform .12s,box-shadow .12s,filter .12s}
+.go::after,.bgo::after{width:26px;height:26px;border:0;background:#f8ecd2;color:var(--wine);font:700 17px/1 var(--sans);box-shadow:none;text-shadow:none}
+.go:hover,.bgo:hover{filter:brightness(1.08);transform:translateY(-1px);background:radial-gradient(120% 90% at 50% -25%,rgba(255,235,205,.28),transparent 55%),linear-gradient(180deg,var(--wine-hi),var(--wine) 50%,var(--wine-lo))}
+.go:active,.bgo:active{transform:translateY(3px);box-shadow:inset 0 0 0 1.5px rgba(214,184,120,.55),0 1px 0 var(--wine-edge),0 3px 6px -3px rgba(51,16,15,.5)}
+.go.ghost{color:var(--btn-ink);text-shadow:none;border:0;background:linear-gradient(180deg,#f8f0da,var(--cream-btn));
+  box-shadow:inset 0 0 0 1.5px var(--cream-edge),0 4px 0 var(--cream-edge),0 9px 14px -8px rgba(30,28,25,.35)}
+.go.ghost::after{background:var(--btn-ink);color:#f8ecd2;border:0}
+.go.ghost:hover{background:linear-gradient(180deg,#fbf5e4,#f4ebd3);filter:none}
+.go.ghost:active{box-shadow:inset 0 0 0 1.5px var(--cream-edge),0 1px 0 var(--cream-edge)}
+.go:disabled{background:linear-gradient(180deg,#e3dcc8,#d3cab1);color:#9a917b;text-shadow:none;box-shadow:0 3px 0 #b9ae93;transform:none}
 .go:disabled::after{background:rgba(255,255,255,.6);color:#b3a98d}
-.go:focus-visible,.bgo:focus-visible{outline:3px solid var(--jade-btn);outline-offset:3px}
-.bgo{padding:10px 18px 10px 22px;font-size:17px;box-shadow:inset 0 -3px 0 rgba(181,100,15,.35),0 4px 0 var(--btn-edge),0 8px 12px -6px rgba(120,60,10,.45)}
+.go:focus-visible,.bgo:focus-visible{outline:3px solid var(--gold2);outline-offset:3px}
+.bgo{padding:10px 18px 10px 22px;font-size:17px;box-shadow:inset 0 0 0 1.5px rgba(214,184,120,.55),0 3px 0 var(--wine-edge),0 7px 12px -8px rgba(51,16,15,.55)}
 .bgo::after{width:22px;height:22px;font-size:15px}
-.chip.on,.seg input:checked+span{background:linear-gradient(180deg,var(--jade-hi),var(--jade-btn));color:#1f4b3e;border-color:var(--jade-btn);text-shadow:0 1px 0 rgba(255,255,255,.5);box-shadow:inset 0 -2px 0 rgba(47,124,102,.3)}
+.chip.on,.seg input:checked+span{background:var(--ink);color:#f8ecd2;border-color:var(--ink);text-shadow:none;box-shadow:none}
 .chip{border-width:1.5px}
 @media (prefers-reduced-motion:reduce){.go,.bgo{transition:none}}
