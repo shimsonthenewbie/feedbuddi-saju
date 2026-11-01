@@ -202,7 +202,7 @@ body{background:radial-gradient(120% 60% at 50% -10%,rgba(30,28,25,.07),transpar
 h1{font-family:var(--brush);font-weight:400;font-size:42px;letter-spacing:.02em;margin:0 0 2px;line-height:1.1}
 .top:has(.emblem.sm) h1{font-size:30px;margin:2px 0 10px}
 .emblem{color:var(--ink)}
-.emblem path[fill]{fill:var(--seal)}
+.emblem path[fill]{fill:var(--ink)}
 .sub{color:var(--mute)}
 .top{padding-bottom:4px}
 .mtn{position:absolute;left:50%;top:-22px;transform:translateX(-50%);width:100vw;max-width:760px;height:210px;pointer-events:none;z-index:-1}
@@ -270,40 +270,15 @@ input[type=date],input[type=time],input[type=text],textarea{background:var(--car
 .ok{color:var(--jade)}
 .bar .bl{color:var(--ink)}
 
-/* ───── 나무 판자 버튼 ───── */
-:root{--wood-hi:#b07d43;--wood-mid:#8d5c2c;--wood-lo:#6f4520;--wood-edge:#3d240d;--wood-text:#fbefd5;
-  --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='80'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.012 .5' numOctaves='3' seed='4'/><feColorMatrix values='0 0 0 0 .22  0 0 0 0 .12  0 0 0 0 .04  0 0 0 .55 -.12'/></filter><rect width='220' height='80' filter='url(%23g)'/></svg>")}
-.go,.bgo{position:relative;border:2px solid var(--wood-edge);border-radius:5px;color:var(--wood-text);text-shadow:0 2px 0 var(--wood-edge);font-family:var(--serif);font-weight:700;letter-spacing:.1em;
-  background:radial-gradient(circle at 11px 50%,#e8d4a0 0 1.5px,#4a2d10 2.5px,transparent 3.5px),radial-gradient(circle at calc(100% - 11px) 50%,#e8d4a0 0 1.5px,#4a2d10 2.5px,transparent 3.5px),var(--grain),linear-gradient(180deg,var(--wood-hi),var(--wood-mid) 55%,var(--wood-lo));
-  box-shadow:inset 0 2px 0 rgba(255,225,170,.4),inset 0 -3px 0 rgba(0,0,0,.28),0 4px 0 #2a1807,0 6px 8px -2px rgba(30,20,8,.4)}
-.go:active,.bgo:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,225,170,.3),inset 0 -2px 0 rgba(0,0,0,.28),0 1px 0 #2a1807}
-.go:hover,.bgo:hover{filter:brightness(1.06)}
-.go.ghost{color:var(--wood-edge);text-shadow:0 1px 0 rgba(255,235,190,.6);
-  background:radial-gradient(circle at 11px 50%,#7a5426 0 1.5px,transparent 2.5px),radial-gradient(circle at calc(100% - 11px) 50%,#7a5426 0 1.5px,transparent 2.5px),var(--grain),linear-gradient(180deg,#e2c795,#d2b17c 55%,#c19f68);
-  box-shadow:inset 0 2px 0 rgba(255,245,215,.55),inset 0 -3px 0 rgba(90,55,20,.25),0 4px 0 #6f4520,0 6px 8px -2px rgba(30,20,8,.3)}
-.go:disabled{filter:grayscale(.7) brightness(.9);opacity:.6;cursor:not-allowed;box-shadow:inset 0 -3px 0 rgba(0,0,0,.2),0 2px 0 #2a1807}
+/* ───── 먹 버튼 ───── */
+.go,.bgo{border:1px solid var(--ink);background:var(--ink);color:var(--card);border-radius:3px;box-shadow:none;text-shadow:none;transform:none;font:700 17px var(--serif);letter-spacing:.14em;padding:14px;transition:background .15s,color .15s}
+.go:hover,.bgo:hover{background:#34312c}
+.go:active,.bgo:active{transform:translateY(1px);box-shadow:none}
+.go.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink);box-shadow:none;text-shadow:none}
+.go.ghost:hover{background:rgba(30,28,25,.06)}
+.go:disabled{background:#8d887c;border-color:#8d887c;color:#e7e1d0;opacity:1;filter:none;box-shadow:none}
 .go:focus-visible,.bgo:focus-visible{outline:3px solid var(--seal);outline-offset:3px}
-.bgo{padding:10px 26px;font-size:16px}
-.chip.on,.seg input:checked+span{background:var(--grain),linear-gradient(180deg,var(--wood-hi),var(--wood-lo));color:var(--wood-text);border-color:var(--wood-edge);text-shadow:0 1px 0 var(--wood-edge)}
-.go{margin-bottom:6px}
-
-/* ───── 더 나무다운 판자 ───── */
-:root{--grain2:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='90'><filter id='a'><feTurbulence type='fractalNoise' baseFrequency='.006 .16' numOctaves='4' seed='11'/><feColorMatrix values='0 0 0 0 .20  0 0 0 0 .10  0 0 0 0 .03  0 0 0 1.5 -.55'/></filter><filter id='b'><feTurbulence type='fractalNoise' baseFrequency='.02 .9' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 .18  0 0 0 0 .09  0 0 0 0 .02  0 0 0 .8 -.3'/></filter><rect width='300' height='90' filter='url(%23a)'/><rect width='300' height='90' filter='url(%23b)' opacity='.7'/></svg>")}
-.go,.bgo{border-radius:9px 18px 10px 16px / 14px 9px 16px 11px;border-width:3px;padding-top:15px;padding-bottom:15px;transform:rotate(-.35deg);
-  background:
-    radial-gradient(ellipse 15px 9px at 74% 52%,rgba(45,24,8,.6) 0 28%,rgba(100,60,26,.4) 30% 55%,transparent 72%),
-    radial-gradient(circle at 13px 50%,#ecd9a8 0 1.6px,#3e250e 2.6px,transparent 3.6px),
-    radial-gradient(circle at calc(100% - 13px) 50%,#ecd9a8 0 1.6px,#3e250e 2.6px,transparent 3.6px),
-    linear-gradient(90deg,transparent 22px,rgba(35,18,6,.5) 23px,transparent 25px,transparent calc(100% - 25px),rgba(35,18,6,.5) calc(100% - 23px),transparent calc(100% - 22px)),
-    var(--grain2),
-    linear-gradient(180deg,#bf8a4d,#98652f 50%,#7a4b21)}
-.go:nth-of-type(even),.brow .bgo,.row .go+.go{border-radius:16px 8px 17px 9px / 10px 15px 9px 14px;transform:rotate(.3deg)}
-.go.ghost{background:
-    radial-gradient(ellipse 15px 9px at 26% 50%,rgba(110,70,30,.45) 0 28%,rgba(150,105,55,.3) 30% 55%,transparent 72%),
-    radial-gradient(circle at 13px 50%,#6b4620 0 1.6px,transparent 2.8px),
-    radial-gradient(circle at calc(100% - 13px) 50%,#6b4620 0 1.6px,transparent 2.8px),
-    linear-gradient(90deg,transparent 22px,rgba(90,55,20,.4) 23px,transparent 25px,transparent calc(100% - 25px),rgba(90,55,20,.4) calc(100% - 23px),transparent calc(100% - 22px)),
-    var(--grain2),
-    linear-gradient(180deg,#e6cc9b,#d6b682 50%,#c4a06b)}
-.bgo{padding-top:11px;padding-bottom:11px}
-.chip.on,.seg input:checked+span{background:var(--grain2),linear-gradient(180deg,#bf8a4d,#7a4b21)}
+.bgo{padding:10px 26px;font-size:15px}
+.chip.on,.seg input:checked+span{background:var(--ink);color:var(--card);border-color:var(--ink);text-shadow:none}
+h1{font-family:"Song Myung",var(--serif);font-weight:400;font-size:36px;letter-spacing:.04em}
+.top:has(.emblem.sm) h1{font-size:26px}
