@@ -27,7 +27,7 @@ const T = {
     today: '오늘',
     home: '홈',
     freeTitle: '무료 사주 맛보기',
-    freeSub: '이름도 가입도 없이, 생년월일만으로 대충 한번 봐 드려요',
+    freeSub: '이름도 가입도 필요 없어요. 생일만 알려주면 여의가 슬쩍 봐 줄게요!',
     freeGo: '무료 사주 보기',
     freeBack: '다시 입력',
     todayLockT: '오늘의 운세',
@@ -103,7 +103,7 @@ const T = {
     today: 'Today',
     home: 'Home',
     freeTitle: 'Free Saju taste',
-    freeSub: 'No name, no sign-up. Just a birth date for a quick look',
+    freeSub: 'No name, no sign-up. Tell Yeoui your birthday for a quick peek!',
     freeGo: 'See my free reading',
     freeBack: 'Enter again',
     todayLockT: "Today's fortune",
@@ -259,8 +259,7 @@ function homeHtml(): string {
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   return `
   <section class="card freebox" aria-label="${esc(x.freeTitle)}">
-    <h2>${esc(x.freeTitle)}</h2>
-    <p class="meta">${esc(x.freeSub)}</p>
+    <div class="freehead"><div><h2>${esc(x.freeTitle)}</h2><p class="meta">${esc(x.freeSub)}</p></div><img class="fmascot" src="/mascot.png" alt="" width="92" height="111"></div>
     <form id="freeform" novalidate>
       <label>${x.date}<input type="date" name="fdate" min="1900-01-01" max="2100-12-31" required></label>
       <div class="row">
