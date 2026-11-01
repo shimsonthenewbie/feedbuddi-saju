@@ -392,3 +392,17 @@ export function luckAt(r: SajuResult, a: Analysis, date: Date): LuckAt {
   }
   return { date: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, daewoon, year: yearL, month: monthL }
 }
+
+/** 하루(일진) 운 — 오늘의 운세용. 일진 간지를 원국·대운·세운과 부딪혀 점수와 부딪힘 목록을 돌려준다 */
+export function dayLuck(r: SajuResult, a: Analysis, date: Date): Luck {
+  const y = date.getFullYear()
+  const m = date.getMonth() + 1
+  const d = date.getDate()
+  const four = getFourPillars(y, m, d, 12, 0)
+  const natal = natalTargets(r)
+  const nb = natal.map((t) => t.branch!)
+  const dw = currentDaewoon(r, y, Date.UTC(y, m - 1, d))
+  const yT: Target = { name: '세운', palace: '세운', stem: four[0][0], branch: four[0][1], ganzi: four[0] }
+  const mT: Target = { name: '월운', palace: '세운', stem: four[1][0], branch: four[1][1], ganzi: four[1] }
+  return buildLuck(r, a, `${y}-${m}-${d}`, four[2], [...natal, ...daewoonTargets(dw?.item ?? null), yT, mT], nb, 0.8)
+}
