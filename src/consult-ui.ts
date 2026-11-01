@@ -1,5 +1,5 @@
 import type { SajuResult } from '@orrery/core/types'
-import { analyze } from './myeongri'
+import { analyze, analysisText } from './myeongri'
 import { ASK_CATS, consultCalc, type AskCat } from './myeongri/consult'
 import { composeConsult, consultPool } from './i18n/consult'
 
@@ -46,16 +46,36 @@ export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
     const tip = () => `<p class="tip"><b>${esc(t.tips.title)}</b><br>${esc(t.tips.items[i % t.tips.items.length])}</p>`
     box.innerHTML = `<section class="card wait" aria-live="polite"><div class="ring" aria-hidden="true"><span>命</span></div><h2>${esc(t.ui.loading)}</h2><p class="meta">${esc(t.ui.loadingSub)}</p><div id="tip">${tip()}</div></section>`
     const timer = setInterval(() => { i++; const el = box.querySelector('#tip'); if (el) el.innerHTML = tip() }, 1800)
-    setTimeout(() => { clearInterval(timer); result() }, 3600)
+    const t0 = Date.now()
+    fetchCards().then((cards) => {
+      const wait = Math.max(0, 3600 - (Date.now() - t0))
+      setTimeout(() => { clearInterval(timer); result(cards) }, wait)
+    })
   }
 
-  const result = () => {
+  type Card = ReturnType<typeof composeConsult>[number]
+  /** 엔진이 만든 초안 카드 → 서버(AI)가 다시 쓰기. 실패하면 초안 그대로. */
+  const fetchCards = async (): Promise<Card[]> => {
     const a = analyze(r)
     const ev = date ? new Date(date + 'T12:00:00') : null
     const calc = consultCalc(r, a, cat!, new Date(), 24, ev)
     let seed = 0
     for (const ch of q + date + cat) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0
-    const cards = composeConsult(calc, a, lang, seed)
+    const draft = composeConsult(calc, a, lang, seed)
+    try {
+      const res = await fetch('/api/ask', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ lang, cat, question: q, date, facts: analysisText(a).slice(0, 7000), cards: draft }),
+      })
+      if (!res.ok) return draft
+      const data = await res.json()
+      return Array.isArray(data.cards) ? (data.cards as Card[]) : draft
+    } catch {
+      return draft
+    }
+  }
+
+  const result = (cards: Card[]) => {
     box.innerHTML = `
     <div class="bubble me"><small>${esc(t.ui.mine)} · ${esc(t.cats[cat!])}</small>${esc(q)}</div>
     ${cards.map((c, idx) => `<article class="rcard ${c.kind}${idx === 0 ? ' lead' : ''}"><h3><span class="ri">${ICON[c.kind]}</span>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}${c.list ? `<ul>${c.list.map((l) => (l.startsWith('#') ? `<li class="lh">${esc(l.slice(1))}</li>` : `<li>${esc(l)}</li>`)).join('')}</ul>` : ''}</article>`).join('')}
