@@ -13,7 +13,7 @@ type Mode = 'today' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
-const EL_EMOJI: Record<El, string> = { tree: '🌿', fire: '🔥', earth: '🍯', metal: '⭐', water: '💧' }
+const EL_EMOJI: Record<El, string> = { tree: '木', fire: '火', earth: '土', metal: '金', water: '水' }
 
 const T = {
   ko: {
@@ -45,7 +45,7 @@ const T = {
     aiTitle: 'AI에게 풀이 받기',
     aiDesc: '아래 요청문을 복사해서 AI에 붙여넣으면, 이 차트를 바탕으로 풀이해줘요.',
     copy: '요청문 복사하기',
-    copied: '복사했어요! AI에 붙여넣으세요 ✨',
+    copied: '복사했어요! AI에 붙여넣으세요',
     open: '복사하고 열기',
     preview: '요청문 미리보기',
     privacy: '계산은 이 브라우저 안에서만 해요. 입력한 생년월일은 이 기기에만 저장돼요. 단, AI에 붙여넣으면 그 서비스로 전송되니 참고하세요.',
@@ -62,12 +62,12 @@ const T = {
     shopTitle: '준비 중인 풀이',
     shopNote: '가격과 구성은 아직 정해지지 않았어요. 지금은 둘러보기만 가능해요.',
     shopItems: [
-      ['🌤', '오늘의 운세', '매일 확인하는 하루 흐름', '무료'],
-      ['📅', '올해 흐름', '월별로 보는 올해의 기회와 쉬어갈 때', '990원'],
-      ['💘', '연애·궁합', '나의 인연 스타일과 시기', '990원'],
-      ['💰', '재물·직업', '어울리는 일의 형태와 돈의 흐름', '990원'],
-      ['🌿', '건강·컨디션', '타고난 체질 경향과 생활 팁', '990원'],
-      ['📖', '종합 풀이 리포트', '12단계로 풀어 쓰는 평생 사주', '9,900원'],
+      ['運', '오늘의 운세', '매일 확인하는 하루 흐름', '무료'],
+      ['歲', '올해 흐름', '월별로 보는 올해의 기회와 쉬어갈 때', '990원'],
+      ['緣', '연애·궁합', '나의 인연 스타일과 시기', '990원'],
+      ['財', '재물·직업', '어울리는 일의 형태와 돈의 흐름', '990원'],
+      ['健', '건강·컨디션', '타고난 체질 경향과 생활 팁', '990원'],
+      ['書', '종합 풀이 리포트', '12단계로 풀어 쓰는 평생 사주', '9,900원'],
     ],
     shared: '궁합',
   },
@@ -100,7 +100,7 @@ const T = {
     aiTitle: 'Get your reading from AI',
     aiDesc: 'Copy the prompt below and paste it into any AI. It will read this exact chart.',
     copy: 'Copy prompt',
-    copied: 'Copied! Paste it into the AI ✨',
+    copied: 'Copied! Paste it into the AI',
     open: 'Copy & open',
     preview: 'Prompt preview',
     privacy: 'Everything is calculated in your browser. Your birth details are saved on this device only. Note: when you paste into an AI, the text goes to that service.',
@@ -117,12 +117,12 @@ const T = {
     shopTitle: 'Coming soon',
     shopNote: 'Prices and contents are not final. For now you can only browse.',
     shopItems: [
-      ['🌤', "Today's fortune", 'Your daily flow, every day', 'Free'],
-      ['📅', 'This year', 'Month-by-month openings and rest periods', '₩990'],
-      ['💘', 'Love & compatibility', 'Your relationship style and timing', '₩990'],
-      ['💰', 'Money & career', 'Work styles that fit you and money flow', '₩990'],
-      ['🌿', 'Health & energy', 'Natural tendencies and lifestyle tips', '₩990'],
-      ['📖', 'Full report', 'A 12-stage life reading', '₩9,900'],
+      ['運', "Today's fortune", 'Your daily flow, every day', 'Free'],
+      ['歲', 'This year', 'Month-by-month openings and rest periods', '₩990'],
+      ['緣', 'Love & compatibility', 'Your relationship style and timing', '₩990'],
+      ['財', 'Money & career', 'Work styles that fit you and money flow', '₩990'],
+      ['健', 'Health & energy', 'Natural tendencies and lifestyle tips', '₩990'],
+      ['書', 'Full report', 'A 12-stage life reading', '₩9,900'],
     ],
     shared: 'Compatibility',
   },
@@ -171,7 +171,7 @@ function showToday() {
       <div class="dtitle"><b>${esc(dstr)}</b>${label ? `<span>${esc(label)}</span>` : ''}</div>
       <button type="button" id="next" aria-label="${x.dTom}">›</button>
     </div>
-    <div class="hero">
+    <div class="hero"><span class="seal" aria-hidden="true">運</span>
       <div class="stars" role="img" aria-label="${v.stars}/5">${starRow(v.stars)}</div>
       <div class="slabel">${esc(v.starLabel)}</div>
     </div>
@@ -179,7 +179,7 @@ function showToday() {
     <p class="dbody">${esc(v.body)}</p>
     ${v.event ? `<p class="devent">${esc(v.event)}</p>` : ''}
     <div class="dcats">${v.cats.map((c) => `<div class="dcat"><div class="cn">${esc(c.name)}</div><div class="cs" aria-label="${c.stars}/5">${starRow(c.stars)}</div><p>${esc(c.line)}</p></div>`).join('')}</div>
-    <p class="dtip">💡 ${esc(v.tip)}</p>
+    <p class="dtip">✦ ${esc(v.tip)}</p>
     <h3>${esc(v.lucky.title)}</h3>
     <div class="lucky">${v.lucky.items.map((i) => `<div><span>${esc(i.label)}</span><b>${esc(i.value)}</b></div>`).join('')}</div>
     <p class="note">${esc(v.disclaimer)}</p>
@@ -234,16 +234,16 @@ function render() {
   document.title = x.title
   app.innerHTML = `
   <header class="top">
-    <img class="cat" src="/cat.jpg" alt="" width="72" height="72">
+    <svg class="emblem" viewBox="0 0 80 80" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="40" cy="40" r="36"/><circle cx="40" cy="40" r="31" stroke-opacity=".45"/><path d="M52 40a14 14 0 1 1-14-14 11 11 0 0 0 14 14z" fill="currentColor" stroke="none"/><circle cx="52" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="24" cy="54" r="1.2" fill="currentColor" stroke="none"/></svg>
     <h1>${x.title}</h1>
     <p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
   <div class="tabs" role="tablist">
-    <button role="tab" class="${mode === 'today' ? 'on' : ''}" data-mode="today">🌤 ${x.today}</button>
-    <button role="tab" class="${mode === 'solo' ? 'on' : ''}" data-mode="solo">🔮 ${x.solo}</button>
-    <button role="tab" class="${mode === 'match' ? 'on' : ''}" data-mode="match">💘 ${x.match}</button>
-    <button role="tab" class="${mode === 'shop' ? 'on' : ''}" data-mode="shop">🛍 ${x.shop}</button>
+    <button role="tab" class="${mode === 'today' ? 'on' : ''}" data-mode="today"><span class="hj">運</span>${x.today}</button>
+    <button role="tab" class="${mode === 'solo' ? 'on' : ''}" data-mode="solo"><span class="hj">命</span>${x.solo}</button>
+    <button role="tab" class="${mode === 'match' ? 'on' : ''}" data-mode="match"><span class="hj">緣</span>${x.match}</button>
+    <button role="tab" class="${mode === 'shop' ? 'on' : ''}" data-mode="shop"><span class="hj">籤</span>${x.shop}</button>
   </div>
   ${mode === 'shop' ? shopHtml() : mode === 'today' && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${personForm('a', x.me)}
@@ -372,11 +372,11 @@ function showResult(people: Person[]) {
   const render2 = () => buildPrompt(mode === 'match' ? 'match' : 'solo', readLang, people)
   out.innerHTML = `${people.map(chartHtml).join('')}
   <article class="card ai">
-    <h2>🤖 ${x.aiTitle}</h2>
+    <h2>${x.aiTitle}</h2>
     <p>${x.aiDesc}</p>
     <div class="row between"><span>${x.reading}</span>
       <div class="seg small"><label><input type="radio" name="rl" value="ko" ${readLang === 'ko' ? 'checked' : ''}><span>한국어</span></label><label><input type="radio" name="rl" value="en" ${readLang === 'en' ? 'checked' : ''}><span>English</span></label></div></div>
-    <button class="go" id="copy" type="button">📋 ${x.copy}</button>
+    <button class="go" id="copy" type="button">${x.copy}</button>
     <div class="ais">
       <a data-u="https://gemini.google.com/app" href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini</a>
       <a data-u="https://chatgpt.com/" href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT</a>
