@@ -1,6 +1,6 @@
 /* 한지 바탕 + 먹빛 글씨 + 수묵 산 + 주사(붉은 낙관). 동양화 분위기를 위해 항상 밝은 한지 테마로 고정. */
 :root{
-  --bg:#ece5d2; --bg2:#e2d9c0; --card:#f7f2e4; --inset:#eee7d3; --line:#cfc5aa; --ink:#1e1c19; --mute:#665f52; --gold:#7e5f1a; --gold2:#b39a5c; --seal:#b3342b; --seal-ink:#fbf3e2; --jade:#2f6f58; --star:#b8851f;
+  --bg:#ece5d2; --bg2:#e2d9c0; --card:#f7f2e4; --inset:#eee7d3; --line:#cfc5aa; --ink:#1e1c19; --mute:#665f52; --gold:#7e5f1a; --gold2:#b39a5c; --seal:#7a5a1e; --seal-ink:#fbf3e2; --jade:#2f6f58; --star:#b8851f;
   --wood:#5b9a78; --fire:#c9473c; --earth:#cfa94c; --metal:#e9e5da; --water:#35588c; --on-el:#1e1c19;
   --serif:"Noto Serif KR","Gowun Batang","Nanum Myeongjo","Songti SC",serif;
   --brush:"Nanum Brush Script","Noto Serif KR",serif;
@@ -270,15 +270,24 @@ input[type=date],input[type=time],input[type=text],textarea{background:var(--car
 .ok{color:var(--jade)}
 .bar .bl{color:var(--ink)}
 
-/* ───── 먹 버튼 ───── */
-.go,.bgo{border:1px solid var(--ink);background:var(--ink);color:var(--card);border-radius:3px;box-shadow:none;text-shadow:none;transform:none;font:700 17px var(--serif);letter-spacing:.14em;padding:14px;transition:background .15s,color .15s}
-.go:hover,.bgo:hover{background:#34312c}
-.go:active,.bgo:active{transform:translateY(1px);box-shadow:none}
-.go.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink);box-shadow:none;text-shadow:none}
-.go.ghost:hover{background:rgba(30,28,25,.06)}
+/* ───── 버튼: 짙은 자주빛 갈색 + 금빛 가는 테두리 ───── */
+:root{--wine:#561c1a;--wine2:#6b2724;--tan:#d2b574;--paper-text:#f6ead0}
+.go,.bgo{display:flex;align-items:center;justify-content:center;gap:12px;border:1px solid var(--tan);background:linear-gradient(180deg,var(--wine2),var(--wine));color:var(--paper-text);border-radius:3px;box-shadow:inset 0 0 0 3px var(--wine),inset 0 0 0 4px rgba(210,181,116,.35);text-shadow:none;transform:none;font:700 17px var(--serif);letter-spacing:.12em;padding:14px 18px;transition:filter .15s}
+.go::after,.bgo::after{content:"›";flex:none;width:22px;height:22px;border:1px solid var(--tan);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:400 16px/1 var(--sans);padding-bottom:2px;letter-spacing:0}
+.go:hover,.bgo:hover{filter:brightness(1.12);background:linear-gradient(180deg,var(--wine2),var(--wine))}
+.go:active,.bgo:active{transform:translateY(1px);box-shadow:inset 0 0 0 3px var(--wine),inset 0 0 0 4px rgba(210,181,116,.35)}
+.go.ghost{background:transparent;color:var(--ink);border:1px solid var(--ink);box-shadow:none}
+.go.ghost::after{border-color:var(--ink)}
+.go.ghost:hover{background:rgba(30,28,25,.06);filter:none}
 .go:disabled{background:#8d887c;border-color:#8d887c;color:#e7e1d0;opacity:1;filter:none;box-shadow:none}
+.go:disabled::after{border-color:#e7e1d0}
 .go:focus-visible,.bgo:focus-visible{outline:3px solid var(--seal);outline-offset:3px}
-.bgo{padding:10px 26px;font-size:15px}
+.bgo{padding:10px 20px;font-size:15px}
 .chip.on,.seg input:checked+span{background:var(--ink);color:var(--card);border-color:var(--ink);text-shadow:none}
 h1{font-family:"Song Myung",var(--serif);font-weight:400;font-size:36px;letter-spacing:.04em}
 .top:has(.emblem.sm) h1{font-size:26px}
+
+/* 붉은 포인트 제거: 배지·도장·말풍선은 먹색 */
+.badge,.seal,.bubble.me{background:var(--ink);color:var(--card)}
+.rcard.lead{border-left-color:var(--ink)}
+.devent{border-left-color:var(--ink)}
