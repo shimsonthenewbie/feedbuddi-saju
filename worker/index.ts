@@ -4,7 +4,13 @@
  * - 키가 있으면 초안 카드를 근거로 Gemini가 쉬운 말로 다시 써서 같은 카드 형식(JSON)으로 돌려준다.
  * 어떤 오류든 초안 카드로 되돌아가므로 화면은 항상 결과를 보여 줄 수 있다.
  */
+import { D1Store, MemoryStore, DAILY_CAP, type D1, type Store } from './tickets'
+
 interface Env {
+  DB?: D1
+  /** 테스트 전용. 운영에서는 설정하지 않는다. */
+  DEV_TICKET_SECRET?: string
+  DAILY_CAP?: string
   ASSETS: { fetch(req: Request): Promise<Response> }
   GEMINI_API_KEY?: string
   GEMINI_MODEL?: string
@@ -83,15 +89,43 @@ async function rewrite(b: AskBody, env: Env): Promise<Card[] | null> {
   }
 }
 
+const mem = new MemoryStore()
+const storeOf = (env: Env): Store => (env.DB ? new D1Store(env.DB) : mem)
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url)
-    if (url.pathname !== '/api/ask') return env.ASSETS.fetch(req)
+    if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(req)
     if (req.method !== 'POST') return json({ error: 'method' }, 405)
+    // 같은 사이트에서 온 요청만 받는다(다른 사이트가 우리 서버를 끌어 쓰는 것 방지).
+    const origin = req.headers.get('origin')
+    if (origin && origin !== url.origin) return json({ error: 'origin' }, 403)
+    const store = storeOf(env)
+    const now = Date.now()
+
+    // 결제 확인 없이 질문권 발급 금지. 이 경로는 테스트 비밀값이 설정된 환경에서만 열린다.
+    // (실제 결제 연동 후에는 결제 웹훅이 store.issue()를 호출하고, 이 경로는 쓰지 않는다.)
+    if (url.pathname === '/api/dev-ticket') {
+      if (!env.DEV_TICKET_SECRET || req.headers.get('x-dev-secret') !== env.DEV_TICKET_SECRET) return json({ error: 'forbidden' }, 403)
+      const owner = (await req.json().catch(() => ({})) as any).owner
+      return json({ ticket: await store.issue(typeof owner === 'string' && owner ? owner.slice(0, 64) : 'dev', now) })
+    }
+
+    if (url.pathname !== '/api/ask') return json({ error: 'not_found' }, 404)
     let body: unknown
     try { body = await req.json() } catch { return json({ error: 'json' }, 400) }
     if (!valid(body)) return json({ error: 'invalid' }, 400)
+
+    // 질문권이 없으면 AI를 호출하지 않고 엔진 풀이만 돌려준다(비용 0).
+    const auth = req.headers.get('authorization') ?? ''
+    const ticket = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+    if (!ticket) return json({ mode: 'engine', reason: 'no_ticket', cards: body.cards })
+    const cap = Number(env.DAILY_CAP) > 0 ? Number(env.DAILY_CAP) : DAILY_CAP
+    const deny = await store.consume(ticket, now, cap)
+    if (deny) return json({ mode: 'engine', reason: deny, cards: body.cards })
+
     const ai = await rewrite(body, env)
-    return json({ mode: ai ? 'ai' : 'engine', cards: ai ?? body.cards })
+    if (!ai) { await store.release(ticket, now); return json({ mode: 'engine', reason: 'ai_failed', refunded: true, cards: body.cards }) }
+    return json({ mode: 'ai', cards: ai })
   },
 }

@@ -6,6 +6,8 @@ import { composeConsult, consultPool } from './i18n/consult'
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 const ICON: Record<string, string> = { answer: '✦', why: '據', you: '我', timeline: '時', event: '日', do: '行', care: '慎', close: '語' }
 
+const ticket = () => { try { return localStorage.getItem('fb-saju-ticket') || '' } catch { return '' } }
+
 export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
   const t = consultPool(lang)
   let cat: AskCat | null = null
@@ -64,11 +66,12 @@ export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
     const draft = composeConsult(calc, a, lang, seed)
     try {
       const res = await fetch('/api/ask', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
+        method: 'POST', headers: { 'content-type': 'application/json', ...(ticket() ? { authorization: `Bearer ${ticket()}` } : {}) },
         body: JSON.stringify({ lang, cat, question: q, date, facts: analysisText(a).slice(0, 7000), cards: draft }),
       })
       if (!res.ok) return draft
       const data = await res.json()
+      if (data.mode === 'ai') { try { localStorage.removeItem('fb-saju-ticket') } catch { /* 사용한 질문권은 지운다 */ } }
       return Array.isArray(data.cards) ? (data.cards as Card[]) : draft
     } catch {
       return draft
