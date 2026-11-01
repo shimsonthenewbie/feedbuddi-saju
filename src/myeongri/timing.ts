@@ -71,7 +71,7 @@ export interface Luck {
   stemSipsin: string
   branchSipsin: string
   score: number
-  tone: '좋은 흐름' | '무난·약간 좋음' | '평탄·혼재' | '주의' | '조심'
+  tone: '좋은 흐름' | '무난·약간 좋음' | '평탄·혼재' | '다소 부담' | '부담 큼'
   hits: Hit[]
   domains: string[]
   notes: string[]
@@ -215,8 +215,8 @@ function toneOf(score: number): Luck['tone'] {
   if (score >= 3) return '좋은 흐름'
   if (score >= 1) return '무난·약간 좋음'
   if (score > -1) return '평탄·혼재'
-  if (score > -3) return '주의'
-  return '조심'
+  if (score > -3) return '다소 부담'
+  return '부담 큼'
 }
 
 function buildLuck(
@@ -303,6 +303,16 @@ export function daewoonOverview(r: SajuResult, a: Analysis): DaewoonLuck[] {
   })
 }
 
+
+/** 점수 배열에서 각 항목의 이 사람 기준 상대 위치(상위/중간/하위 3분위) */
+export function relativeTiers(scores: number[]): ('상위' | '중간' | '하위')[] {
+  const sorted = [...scores].sort((a, b) => a - b)
+  const lo = sorted[Math.floor((sorted.length - 1) / 3)]
+  const hi = sorted[Math.ceil(((sorted.length - 1) * 2) / 3)]
+  return scores.map((v) => (v >= hi && v > lo ? '상위' : v <= lo && v < hi ? '하위' : '중간'))
+}
+const TIER_LABEL = { 상위: '이 사람 기준 좋은 구간', 중간: '이 사람 기준 보통', 하위: '이 사람 기준 신중할 구간' } as const
+
 /* ───────── AI에게 줄 텍스트 ───────── */
 const sgn = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 const hitStr = (h: Hit) => `${h.pair} ${h.kind}→${h.target}(${h.meaning})`
@@ -314,10 +324,12 @@ function luckLine(l: Luck, withDomains = false): string {
 }
 
 export function daewoonText(r: SajuResult, a: Analysis): string {
-  const L = ['[코드가 계산한 대운 분석 — 용신 기준 역할과 원국과의 합충]']
-  for (const d of daewoonOverview(r, a)) {
-    L.push(`${d.ageFrom}~${d.ageTo}세(${d.startYear}년~) ${luckLine({ ...d, label: d.ganzi }, true).replace(/^\S+ /, '')}`)
-  }
+  const L = ['[코드가 계산한 대운 분석 — 용신 기준 역할과 원국과의 합충. 점수는 절대 평가이니, 좋고 나쁨은 "이 사람 기준 상대 구간"을 우선해 서술할 것]']
+  const list = daewoonOverview(r, a)
+  const tiers = relativeTiers(list.map((d) => d.score))
+  list.forEach((d, i) => {
+    L.push(`${d.ageFrom}~${d.ageTo}세(${d.startYear}년~) ${luckLine({ ...d, label: d.ganzi }, true).replace(/^\S+ /, '')} → ${TIER_LABEL[tiers[i]]}`)
+  })
   return L.join('\n')
 }
 
@@ -337,13 +349,17 @@ export function yearText(r: SajuResult, a: Analysis, year: number, opts: { month
   return L.join('\n')
 }
 
-/** 여러 해를 한 줄씩 요약 (세운 핵심 연도 선정용) */
+/** 여러 해를 한 줄씩 요약 (세운 핵심 연도 선정용). 이 사람 기준 상대 평가로 좋은 해와 신중할 해를 균형 있게 제시 */
 export function yearsOverviewText(r: SajuResult, a: Analysis, from: number, count: number): string {
-  const L = [`[코드가 계산한 ${from}~${from + count - 1}년 세운 요약]`]
-  for (let y = from; y < from + count; y++) {
-    const lk = yearLuck(r, a, y, false)
-    L.push(luckLine(lk))
-  }
+  const L = [`[코드가 계산한 ${from}~${from + count - 1}년 세운 요약 — 점수는 절대값이 아니라 이 사람 기준 상대 구간으로 해석할 것]`]
+  const lks: YearLuck[] = []
+  for (let y = from; y < from + count; y++) lks.push(yearLuck(r, a, y, false))
+  const tiers = relativeTiers(lks.map((l) => l.score))
+  lks.forEach((lk, i) => L.push(luckLine(lk) + ` → ${TIER_LABEL[tiers[i]]}`))
+  const sorted = [...lks].sort((p, q) => q.score - p.score)
+  const n = Math.min(3, Math.floor(count / 2))
+  L.push('상대적으로 가장 좋은 해: ' + sorted.slice(0, n).map((l) => `${l.year}년(${l.ganzi})`).join(', '))
+  L.push('상대적으로 가장 신중할 해: ' + sorted.slice(-n).reverse().map((l) => `${l.year}년(${l.ganzi})`).join(', '))
   return L.join('\n')
 }
 

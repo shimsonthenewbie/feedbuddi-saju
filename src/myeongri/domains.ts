@@ -170,6 +170,75 @@ function wealthFacts(r: SajuResult, a: Analysis): string[] {
   return F
 }
 
+
+/* ───────── 업종·일하는 형태 가설 ───────── */
+const WORK_DETAIL: Record<Element, string> = {
+  tree: '목재·가구·인테리어·원예·교육·출판·기획·콘텐츠·섬유',
+  fire: '미디어·IT·마케팅·조명·에너지·뷰티·불을 쓰는 요식',
+  earth: '부동산·건설·중개·농업·상담·보험·창고·유통 관리',
+  metal: '금융·법·기계·금속·자동차·의료기기·정밀 기술',
+  water: '유통·무역·물류·음료·수산·연구·서비스·여행',
+}
+/**
+ * "지금 하고 있을 법한 일" 가설.
+ * 업종은 용신이 아니라 천간에 드러난 식상·재성의 오행(= 실제로 손에 쥐고 쓰는 재주와 돈의 통로)에서 뽑는다.
+ * 일하는 형태(독립·조직·책임자)는 십신 구성에서 뽑는다. 모두 경향이며 확정이 아니다.
+ */
+export function workProfileLines(r: SajuResult, a: Analysis): string[] {
+  const L: string[] = []
+  const unk = !!r.input.unknownTime
+  const day = r.pillars[1].pillar.stem
+  const P = r.pillars
+  const stemIdx = [3, 2, ...(unk ? [] : [0])]
+  const stems = stemIdx.map((i) => ({ i, s: P[i].pillar.stem, sip: sipsinOf(day, P[i].pillar.stem) }))
+  const weightOf = (i: number) => (i === 2 ? 1.3 : 1)
+  const elScore: Partial<Record<Element, number>> = {}
+  const addEl = (e: Element, w: number) => { elScore[e] = (elScore[e] ?? 0) + w }
+  for (const x of stems) {
+    const g = GROUP_OF[x.sip]
+    if (g === '식상') addEl(STEM_INFO[x.s].element, 3 * weightOf(x.i))
+    else if (g === '재성') addEl(STEM_INFO[x.s].element, 2.5 * weightOf(x.i))
+  }
+  const branchDefs = [{ i: 2, w: 2 }, { i: 3, w: 1 }, { i: 1, w: 1 }, ...(unk ? [] : [{ i: 0, w: 1 }])]
+  for (const b of branchDefs) {
+    const ms = mainStemOf(P[b.i].pillar.branch)
+    const g = GROUP_OF[sipsinOf(day, ms)]
+    if (g === '식상' || g === '재성') addEl(STEM_INFO[ms].element, b.w)
+  }
+  const ranked = (Object.entries(elScore) as [Element, number][]).sort((x, y) => y[1] - x[1])
+  if (ranked.length) {
+    const top = ranked.slice(0, 2)
+    L.push(`업종 후보(재주·돈의 통로가 드러난 오행 기준): ${top.map(([e]) => `${KO[e]} 방향 — ${WORK_DETAIL[e]}`).join(' / ')}`)
+  } else {
+    const e = STEM_INFO[mainStemOf(P[2].pillar.branch)].element
+    L.push(`천간에 식상·재성이 드러나지 않아 업종 신호가 약함. 월지 기운(${KO[e]}) 방향 참고: ${WORK_DETAIL[e]}`)
+  }
+
+  const sipOf = (sip: Sipsin) => stems.filter((x) => x.sip === sip).length
+  const hasGroupStem = (g: Group) => stems.some((x) => GROUP_OF[x.sip] === g)
+  const hidJae = hiddenCount(r, '재성') > 0
+  const sikSin = sipOf('식신') > 0
+  const pyeonGwan = sipOf('편관') > 0
+  const indep =
+    (hasGroupStem('식상') ? 1 : 0) + (hasGroupStem('비겁') ? 1 : 0) + (sipOf('편재') > 0 ? 1 : 0) +
+    (sikSin && (hasGroupStem('재성') || hidJae) ? 0.5 : 0) +
+    (r.relations.pairs.size > 0 && dayBranchRelationsMonthClash(r) ? 0.5 : 0)
+  const org = (sipOf('정관') > 0 ? 1.5 : 0) + (sipOf('정인') > 0 ? 1 : 0) + (pyeonGwan ? 0.7 : 0)
+  if (indep >= org + 1) L.push('일하는 형태: 독립·자영·프리랜서 쪽 경향(자기 재주와 판단으로 먹고사는 구조)')
+  else if (org >= indep + 1) L.push('일하는 형태: 조직·직장·공적 영역 쪽 경향')
+  else L.push('일하는 형태: 조직과 독립의 중간(전문기술직, 팀장·책임자, 소규모 사업 등)')
+  if (sikSin && pyeonGwan) L.push('식신제살 구조: 책임과 위험을 직접 다루는 기술·현장형, 압박을 일(손재주·기술)로 풀어내는 타입. 대표·책임자 자리와 잘 맞음')
+  if (sikSin && (hasGroupStem('재성') || hidJae)) L.push('식신생재 경향: 손기술·제작·콘텐츠 같은 "만드는 일"이 곧 수입이 되는 구조')
+  if (!hasGroupStem('비겁')) L.push('천간에 비겁이 없음: 동업·팀보다 혼자 결정하고 혼자 감당하는 방식을 선호, 일이 1인 중심으로 굴러가기 쉬움')
+  else L.push('천간에 비겁 있음: 동료·동업·팀 단위 활동이 일의 일부가 되기 쉬움')
+  if (a.groups.관성 >= 0.35) L.push('관성이 매우 강함: 어떤 형태로 일하든 책임·압박이 무거운 자리(대표·책임자·전문직)를 맡는 경향')
+  return L
+}
+
+function dayBranchRelationsMonthClash(r: SajuResult): boolean {
+  return dayBranchRelations(r).some((t) => /월지 沖|월지 刑/.test(t))
+}
+
 /* ───────── 직업 ───────── */
 const WORK_BY_ELEMENT: Record<Element, string> = {
   tree: '교육·출판·기획·콘텐츠·환경·섬유',
@@ -196,6 +265,7 @@ function careerFacts(r: SajuResult, a: Analysis): string[] {
   if (a.yongsin.secondary) F.push(`보조 후보 ${KO[a.yongsin.secondary.element]} 방향: ${WORK_BY_ELEMENT[a.yongsin.secondary.element]}`)
   const month = places(r).filter((p) => p.palace === '월주')
   F.push(`직업궁(월주): ${fmt(month)}`)
+  for (const w of workProfileLines(r, a)) F.push(w)
   const pl = places(r)
   const gwan = pl.filter((p) => p.group === '관성')
   if (gwan.length) F.push(`관성 위치: ${fmt(gwan)} → 조직·책임과의 접점`)

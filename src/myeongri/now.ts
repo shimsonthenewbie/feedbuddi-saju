@@ -11,6 +11,7 @@
 import type { SajuResult } from '@orrery/core/types'
 import { GROUP_OF, type Analysis, type Group, type Sipsin } from './index'
 import { daewoonOverview, luckAt, yearLuck, type Hit, type Luck } from './timing'
+import { workProfileLines } from './domains'
 
 export interface Theme {
   key: string
@@ -153,6 +154,8 @@ export function nowText(r: SajuResult, a: Analysis, now = new Date()): string {
   ranked.forEach((h, i) => L.push(`${i + 1}. ${h.t.text} — 시점: ${h.from.join('+')}, 근거: ${h.t.basis}, 강도 ${Math.round(h.w * 10) / 10}`))
   if (!ranked.length) L.push('- 뚜렷한 충돌·합 신호가 약해 비교적 평탄한 시기')
 
+  L.push('일·직업 형태 가설 (원국의 타고난 경향, 지금 하는 일을 짚을 때 참고):')
+  for (const w of workProfileLines(r, a)) L.push('- ' + w)
   const marks = pastMarkers(r, a, now)
   L.push('과거 연도 검증 마커 (사용자가 직접 맞는지 확인할 수 있는 해):')
   for (const m of marks) L.push('- ' + markerLine(m))
