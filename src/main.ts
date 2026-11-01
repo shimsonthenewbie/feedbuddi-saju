@@ -34,7 +34,7 @@ const T = {
     todayLockD: '로그인하면 매일 열려요',
     todayLockB: '베타 체험으로 열기',
     svcTitle: '모든 운세 보기',
-    homeBannerT: '용에게 물어보기',
+    homeBannerT: '여의에게 물어보기',
     homeBannerD: '고민을 적으면 좋은 시기까지 짚어 드려요',
     homeBannerB: '질문하기',
     homeBeta: '베타 기간 무료',
@@ -110,7 +110,7 @@ const T = {
     todayLockD: 'Opens every day when you log in',
     todayLockB: 'Open as beta trial',
     svcTitle: 'All readings',
-    homeBannerT: 'Ask the Dragon',
+    homeBannerT: 'Ask Yeoui',
     homeBannerD: 'Write your worry and get the timing pointed out',
     homeBannerB: 'Ask now',
     homeBeta: 'Free during beta',
@@ -385,7 +385,7 @@ function render() {
   document.title = x.title
   app.innerHTML = `
   <header class="top">
-    <svg class="emblem ${mode === 'home' ? '' : 'sm'}" viewBox="0 0 80 80" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="40" cy="40" r="36"/><circle cx="40" cy="40" r="31" stroke-opacity=".45"/><path d="M52 40a14 14 0 1 1-14-14 11 11 0 0 0 14 14z" fill="currentColor" stroke="none"/><circle cx="52" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="24" cy="54" r="1.2" fill="currentColor" stroke="none"/></svg>
+    <svg class="mtn" viewBox="0 0 560 120" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="mist" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e1c19" stop-opacity=".0"/><stop offset="1" stop-color="#ece5d2" stop-opacity=".95"/></linearGradient></defs><path d="M0 92 L60 58 L96 76 L150 30 L205 80 L250 52 L300 88 L350 40 L410 84 L460 56 L520 80 L560 62 V120 H0Z" fill="#1e1c19" opacity=".10"/><path d="M0 104 L50 84 L110 98 L170 66 L240 100 L320 74 L390 102 L450 80 L520 100 L560 90 V120 H0Z" fill="#1e1c19" opacity=".16"/><rect width="560" height="120" fill="url(#mist)"/></svg><svg class="emblem ${mode === 'home' ? '' : 'sm'}" viewBox="0 0 80 80" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="40" cy="40" r="36"/><circle cx="40" cy="40" r="31" stroke-opacity=".45"/><path d="M52 40a14 14 0 1 1-14-14 11 11 0 0 0 14 14z" fill="currentColor" stroke="none"/><circle cx="52" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="24" cy="54" r="1.2" fill="currentColor" stroke="none"/></svg>
     <h1>${x.title}</h1>
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>

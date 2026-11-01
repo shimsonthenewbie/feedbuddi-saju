@@ -1,11 +1,11 @@
-/* 밤하늘 먹빛 + 한지색 글씨 + 금박 + 주사(붉은 낙관). 분위기를 위해 항상 밤 테마로 고정. */
+/* 한지 바탕 + 먹빛 글씨 + 수묵 산 + 주사(붉은 낙관). 동양화 분위기를 위해 항상 밝은 한지 테마로 고정. */
 :root{
-  --bg:#0e1124; --bg2:#171a38; --card:#191d3b; --inset:#12152e; --line:#2e3566; --ink:#efe6d2; --mute:#a6a7c6;
-  --gold:#d8b567; --gold2:#8f7234; --seal:#c8453a; --seal-ink:#fff4e6; --jade:#62b79b; --star:#e5bf6a;
-  --wood:#6fbf9a; --fire:#e0675a; --earth:#dcb765; --metal:#dcdbe4; --water:#5b84d6; --on-el:#14122b;
-  --serif:"Gowun Batang","Noto Serif KR","Nanum Myeongjo","Songti SC",serif;
+  --bg:#ece5d2; --bg2:#e2d9c0; --card:#f7f2e4; --inset:#eee7d3; --line:#cfc5aa; --ink:#1e1c19; --mute:#665f52; --gold:#7e5f1a; --gold2:#b39a5c; --seal:#b3342b; --seal-ink:#fbf3e2; --jade:#2f6f58; --star:#b8851f;
+  --wood:#5b9a78; --fire:#c9473c; --earth:#cfa94c; --metal:#e9e5da; --water:#35588c; --on-el:#1e1c19;
+  --serif:"Noto Serif KR","Gowun Batang","Nanum Myeongjo","Songti SC",serif;
+  --brush:"Nanum Brush Script","Noto Serif KR",serif;
   --sans:"Noto Sans KR","Pretendard","Apple SD Gothic Neo",system-ui,sans-serif;
-  --r:16px; color-scheme:dark;
+  --r:6px; color-scheme:light;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -196,3 +196,76 @@ textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .fhead{font:700 18px var(--serif);color:var(--gold);margin:2px 0 0}
 .mascot{flex:none;width:96px;height:auto;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45))}
 .rcard p+p{margin-top:8px}
+
+/* ───── 수묵 테마 덮어쓰기 ───── */
+body{background:radial-gradient(120% 60% at 50% -10%,rgba(30,28,25,.07),transparent 60%),radial-gradient(80% 50% at 100% 100%,rgba(30,28,25,.06),transparent 60%),url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .3  0 0 0 0 .25  0 0 0 0 .15  0 0 0 .07 0'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>"),linear-gradient(180deg,var(--bg),var(--bg2)) fixed;background-color:var(--bg)}
+h1{font-family:var(--brush);font-weight:400;font-size:42px;letter-spacing:.02em;margin:0 0 2px;line-height:1.1}
+.top:has(.emblem.sm) h1{font-size:30px;margin:2px 0 10px}
+.emblem{color:var(--ink)}
+.emblem path[fill]{fill:var(--seal)}
+.sub{color:var(--mute)}
+.top{padding-bottom:4px}
+.mtn{position:absolute;left:50%;top:-22px;transform:translateX(-50%);width:min(560px,100vw);height:120px;pointer-events:none;z-index:-1;opacity:.9}
+.top:has(.emblem.sm) .mtn{height:80px;opacity:.6}
+.langbtn{border-radius:2px;color:var(--mute);background:var(--card)}
+.card{border-radius:var(--r);box-shadow:0 1px 0 rgba(30,28,25,.06),0 6px 14px -10px rgba(30,28,25,.35)}
+.card,.rcard,.lockcard,.hot,.svc{background:var(--card)}
+.rcard{border-radius:var(--r)}
+.rcard.lead{border-color:var(--line);border-left:4px solid var(--seal);box-shadow:0 6px 14px -10px rgba(30,28,25,.35)}
+.rcard h3,.card h3{color:var(--ink)}
+.tag,.freebox h2{color:var(--seal)}
+.freebox{border-color:var(--ink)}
+h3{color:var(--ink)}
+.sec{display:flex;align-items:center;gap:8px;font-size:18px}
+.sec::before{content:"";width:9px;height:9px;background:var(--seal);transform:rotate(45deg);flex:none}
+.go,.bgo{border:0;background:var(--seal);color:var(--seal-ink);border-radius:3px;box-shadow:0 3px 0 #7d2019;letter-spacing:.08em}
+.go:active{transform:translateY(2px);box-shadow:0 1px 0 #7d2019}
+.go.ghost{background:none;color:var(--ink);border:1px solid var(--ink);box-shadow:none}
+.go:disabled{box-shadow:none}
+.chip{background:var(--card);border-radius:3px}
+.chip.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.seg{border-radius:3px;background:var(--card)}
+.seg span{border-radius:2px}
+.seg input:checked+span{background:var(--ink);color:var(--card)}
+.seg input:focus-visible+span{outline-color:var(--seal)}
+input[type=date],input[type=time],input[type=text],textarea{background:var(--card);border-radius:3px;color:var(--ink)}
+.pillar{background:var(--card);border-radius:4px;border:1px solid var(--line)}
+.pillar.me{border-color:var(--seal);background:var(--inset)}
+.ch{border-radius:3px;color:var(--on-el)}
+.ch.fire,.ch.wood,.ch.water{color:#fbf3e2}
+.ch.sm{border-radius:3px}
+.ch.inline{border-radius:3px}
+.track{background:var(--inset);border:1px solid var(--line)}
+.lk{background:var(--card);border:1px solid var(--line);border-radius:4px}
+.hero{background:var(--inset);border-radius:var(--r);border:1px solid var(--line)}
+.stars{color:var(--star)}
+.seal{border-radius:2px;box-shadow:0 1px 0 rgba(0,0,0,.2)}
+.dnav button{background:var(--card);color:var(--ink);border-radius:3px}
+.devent{background:var(--inset);border-left-color:var(--seal)}
+.dcat,.lucky div,.prod,.pieces li,.tip{background:var(--inset);border-radius:4px}
+.dcat .cn,.lucky b{color:var(--ink)}
+.bubble.me{border-radius:10px 10px 2px 10px}
+.ring{border-color:var(--line);border-top-color:var(--seal)}
+.ring span{color:var(--seal)}
+.ri{border-color:var(--ink);color:var(--ink);border-radius:2px;font-family:var(--serif)}
+.pe,.lockic,.svc .hj,.qk .hj{border-color:var(--ink);color:var(--ink);background:var(--card);border-radius:50%}
+.rcard li.lh{color:var(--seal)}
+.rk{color:var(--seal)}
+.pr.free,.beta{color:var(--jade);border-color:var(--jade)}
+.badge{border-radius:2px}
+.newc{background:var(--card);border-radius:4px}
+.newc em{color:var(--gold)}
+.banner{background:linear-gradient(120deg,rgba(30,28,25,.06),transparent 60%),var(--card);border:1px solid var(--ink);border-radius:var(--r);box-shadow:3px 3px 0 rgba(30,28,25,.85)}
+.bmain h2{color:var(--ink);font-size:21px}
+.mascot{filter:drop-shadow(0 3px 5px rgba(30,28,25,.35))}
+.lockcard{border:1px dashed var(--ink)}
+.dim{color:var(--star)}
+.bnav{background:var(--card);border-top:1px solid var(--ink)}
+.bnav .hj{color:var(--mute)}
+.bnav button.on,.bnav button.on .hj{color:var(--seal)}
+.linkbtn{color:var(--seal)}
+.fhead{color:var(--seal)}
+.tip b{color:var(--seal)}
+.dtitle b,.dnav button{color:var(--ink)}
+.ok{color:var(--jade)}
+.bar .bl{color:var(--ink)}
