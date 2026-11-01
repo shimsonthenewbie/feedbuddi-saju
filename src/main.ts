@@ -5,8 +5,11 @@ import { BRANCH_ELEMENT, STEM_INFO } from '@orrery/core/constants'
 import type { SajuResult } from '@orrery/core/types'
 import tzlookup from '@photostructure/tz-lookup'
 import { buildPrompt, type Lang, type Person } from './prompt'
+import { analyze } from './myeongri'
+import { dailyFortune } from './myeongri/daily'
+import { composeDaily } from './i18n/daily'
 
-type Mode = 'solo' | 'match'
+type Mode = 'today' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -16,6 +19,8 @@ const T = {
   ko: {
     title: '피드버디 사주',
     sub: '생년월일시만 넣으면 사주 차트를 그려주고,\nAI한테 바로 물어볼 요청문까지 만들어줘요',
+    today: '오늘',
+    shop: '풀이 목록',
     solo: '내 사주',
     match: '최애와 궁합',
     me: '나',
@@ -29,6 +34,7 @@ const T = {
     place: '태어난 곳',
     placeHint: '도시 이름 검색 (예: 서울, 도쿄, 뉴욕)',
     go: '사주 보기',
+    todayGo: '오늘의 운세 보기',
     goMatch: '궁합 보기',
     pillars: ['시주', '일주', '월주', '년주'],
     dayMaster: '나의 일간',
@@ -42,7 +48,7 @@ const T = {
     copied: '복사했어요! AI에 붙여넣으세요 ✨',
     open: '복사하고 열기',
     preview: '요청문 미리보기',
-    privacy: '계산은 이 브라우저 안에서만 해요. 생년월일은 저장하지 않아요. 단, AI에 붙여넣으면 그 서비스로 전송되니 참고하세요.',
+    privacy: '계산은 이 브라우저 안에서만 해요. 입력한 생년월일은 이 기기에만 저장돼요. 단, AI에 붙여넣으면 그 서비스로 전송되니 참고하세요.',
     fun: '재미와 참고용이에요. 중요한 결정은 스스로 판단해 주세요.',
     errDate: '생년월일을 입력해 주세요.',
     errTime: '태어난 시각을 입력하거나 "시간을 몰라요"를 체크해 주세요.',
@@ -52,13 +58,26 @@ const T = {
     footer: '사주 계산은 오픈소스 orrery(AGPL-3.0)를 사용해요.',
     source: '소스 코드 보기',
     who: '의 사주',
+    dToday: '오늘', dYest: '어제', dTom: '내일', change: '정보 바꾸기',
+    shopTitle: '준비 중인 풀이',
+    shopNote: '가격과 구성은 아직 정해지지 않았어요. 지금은 둘러보기만 가능해요.',
+    shopItems: [
+      ['🌤', '오늘의 운세', '매일 확인하는 하루 흐름', '무료'],
+      ['📅', '올해 흐름', '월별로 보는 올해의 기회와 쉬어갈 때', '990원'],
+      ['💘', '연애·궁합', '나의 인연 스타일과 시기', '990원'],
+      ['💰', '재물·직업', '어울리는 일의 형태와 돈의 흐름', '990원'],
+      ['🌿', '건강·컨디션', '타고난 체질 경향과 생활 팁', '990원'],
+      ['📖', '종합 풀이 리포트', '12단계로 풀어 쓰는 평생 사주', '9,900원'],
+    ],
     shared: '궁합',
   },
   en: {
     title: 'Feedbuddi Saju',
     sub: 'Enter your birth details to get your BaZi chart\nand a ready-made prompt to ask any AI',
+    today: 'Today',
+    shop: 'Shop',
     solo: 'My chart',
-    match: 'Bias match',
+    match: 'Match',
     me: 'Me',
     fav: 'My bias',
     date: 'Birth date',
@@ -70,6 +89,7 @@ const T = {
     place: 'Birthplace',
     placeHint: 'Search a city (e.g. Seoul, Tokyo, New York)',
     go: 'Show my chart',
+    todayGo: "See today's fortune",
     goMatch: 'Check compatibility',
     pillars: ['Hour', 'Day', 'Month', 'Year'],
     dayMaster: 'Day Master',
@@ -83,7 +103,7 @@ const T = {
     copied: 'Copied! Paste it into the AI ✨',
     open: 'Copy & open',
     preview: 'Prompt preview',
-    privacy: 'Everything is calculated in your browser and nothing is stored. Note: when you paste into an AI, the text goes to that service.',
+    privacy: 'Everything is calculated in your browser. Your birth details are saved on this device only. Note: when you paste into an AI, the text goes to that service.',
     fun: 'For fun and reference only. Please make big decisions yourself.',
     errDate: 'Please enter the birth date.',
     errTime: 'Enter the birth time or check "I don\'t know the time".',
@@ -93,13 +113,94 @@ const T = {
     footer: 'Chart calculation uses the open-source orrery engine (AGPL-3.0).',
     source: 'View source code',
     who: "'s chart",
+    dToday: 'Today', dYest: 'Yesterday', dTom: 'Tomorrow', change: 'Change details',
+    shopTitle: 'Coming soon',
+    shopNote: 'Prices and contents are not final. For now you can only browse.',
+    shopItems: [
+      ['🌤', "Today's fortune", 'Your daily flow, every day', 'Free'],
+      ['📅', 'This year', 'Month-by-month openings and rest periods', '₩990'],
+      ['💘', 'Love & compatibility', 'Your relationship style and timing', '₩990'],
+      ['💰', 'Money & career', 'Work styles that fit you and money flow', '₩990'],
+      ['🌿', 'Health & energy', 'Natural tendencies and lifestyle tips', '₩990'],
+      ['📖', 'Full report', 'A 12-stage life reading', '₩9,900'],
+    ],
     shared: 'Compatibility',
   },
 } as const
 
+
+/* ───────── 저장된 프로필 (이 기기에만) ───────── */
+interface Profile { y: number; m: number; d: number; hh: number; mm: number; gender: 'M' | 'F'; unk: boolean; lat: number; lon: number; place: string }
+const PKEY = 'fb-saju-profile'
+function saveProfile(p: Person) {
+  const i = p.result.input
+  const v: Profile = { y: i.year, m: i.month, d: i.day, hh: i.hour, mm: i.minute, gender: i.gender, unk: !!i.unknownTime, lat: i.latitude ?? SEOUL.lat, lon: i.longitude ?? SEOUL.lon, place: p.placeName }
+  try { localStorage.setItem(PKEY, JSON.stringify(v)) } catch { /* 저장 불가 환경 */ }
+  memProfile = v
+}
+let memProfile: Profile | null = null
+function loadProfile(): Profile | null {
+  if (memProfile) return memProfile
+  try { const raw = localStorage.getItem(PKEY); if (raw) memProfile = JSON.parse(raw) } catch { /* 무시 */ }
+  return memProfile
+}
+function clearProfile() {
+  memProfile = null
+  try { localStorage.removeItem(PKEY) } catch { /* 무시 */ }
+}
+
+/* ───────── 오늘의 운세 화면 ───────── */
+const starRow = (n: number) => '★'.repeat(n) + '<span class="off">' + '★'.repeat(5 - n) + '</span>'
+
+function showToday() {
+  const x = t()
+  const pr = loadProfile()!
+  const out = document.getElementById('out')!
+  const r = calculateSaju({ year: pr.y, month: pr.m, day: pr.d, hour: pr.hh, minute: pr.mm, gender: pr.gender, unknownTime: pr.unk, latitude: pr.lat, longitude: pr.lon, timezone: tzlookup(pr.lat, pr.lon) })
+  const a = analyze(r)
+  const base = new Date()
+  const date = new Date(base.getFullYear(), base.getMonth(), base.getDate() + dayOffset)
+  const f = dailyFortune(r, a, date)
+  const v = composeDaily(f, lang)
+  const dstr = date.toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US', { month: 'long', day: 'numeric', weekday: 'short' })
+  const label = dayOffset === 0 ? x.dToday : dayOffset === -1 ? x.dYest : dayOffset === 1 ? x.dTom : ''
+  out.innerHTML = `
+  <article class="card daily">
+    <div class="dnav">
+      <button type="button" id="prev" aria-label="${x.dYest}">‹</button>
+      <div class="dtitle"><b>${esc(dstr)}</b>${label ? `<span>${esc(label)}</span>` : ''}</div>
+      <button type="button" id="next" aria-label="${x.dTom}">›</button>
+    </div>
+    <div class="hero">
+      <div class="stars" role="img" aria-label="${v.stars}/5">${starRow(v.stars)}</div>
+      <div class="slabel">${esc(v.starLabel)}</div>
+    </div>
+    <h2 class="dh">${esc(v.title)}</h2>
+    <p class="dbody">${esc(v.body)}</p>
+    ${v.event ? `<p class="devent">${esc(v.event)}</p>` : ''}
+    <div class="dcats">${v.cats.map((c) => `<div class="dcat"><div class="cn">${esc(c.name)}</div><div class="cs" aria-label="${c.stars}/5">${starRow(c.stars)}</div><p>${esc(c.line)}</p></div>`).join('')}</div>
+    <p class="dtip">💡 ${esc(v.tip)}</p>
+    <h3>${esc(v.lucky.title)}</h3>
+    <div class="lucky">${v.lucky.items.map((i) => `<div><span>${esc(i.label)}</span><b>${esc(i.value)}</b></div>`).join('')}</div>
+    <p class="note">${esc(v.disclaimer)}</p>
+  </article>
+  <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${x.change}</button></p>`
+  document.getElementById('prev')!.onclick = () => { dayOffset--; showToday() }
+  document.getElementById('next')!.onclick = () => { dayOffset++; showToday() }
+  document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
+}
+
+/* ───────── 풀이 목록 (준비 중 카탈로그) ───────── */
+function shopHtml(): string {
+  const x = t()
+  const items = x.shopItems.map(([emoji, name, desc, price]) => `<li class="prod"><span class="pe">${emoji}</span><div><b>${esc(name)}</b><p>${esc(desc)}</p></div><span class="pp">${esc(price)}</span></li>`).join('')
+  return `<section class="card shop"><h2>${esc(x.shopTitle)}</h2><p class="meta">${esc(x.shopNote)}</p><ul class="prods">${items}</ul></section>`
+}
+
 const app = document.getElementById('app')!
 let lang: Lang = (navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'
-let mode: Mode = 'solo'
+let mode: Mode = 'today'
+let dayOffset = 0
 let readLang: Lang = lang
 const cityState: Record<string, City> = { a: SEOUL, b: SEOUL }
 
@@ -139,16 +240,18 @@ function render() {
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
   <div class="tabs" role="tablist">
+    <button role="tab" class="${mode === 'today' ? 'on' : ''}" data-mode="today">🌤 ${x.today}</button>
     <button role="tab" class="${mode === 'solo' ? 'on' : ''}" data-mode="solo">🔮 ${x.solo}</button>
     <button role="tab" class="${mode === 'match' ? 'on' : ''}" data-mode="match">💘 ${x.match}</button>
+    <button role="tab" class="${mode === 'shop' ? 'on' : ''}" data-mode="shop">🛍 ${x.shop}</button>
   </div>
-  <form id="form" novalidate>
-    ${personForm('a', mode === 'solo' ? x.me : x.me)}
+  ${mode === 'shop' ? shopHtml() : mode === 'today' && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+    ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
-    <button class="go" type="submit">${mode === 'solo' ? x.go : x.goMatch}</button>
+    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' ? x.todayGo : x.goMatch}</button>
   </form>
-  <section id="out"></section>
+  <section id="out"></section>`}
   <footer>
     <p>${x.fun}</p>
     <p>${x.footer} <a href="https://github.com/rath/orrery" target="_blank" rel="noopener">orrery</a></p>
@@ -173,7 +276,8 @@ function bind() {
       if (exact) cityState[id] = exact
     }
   })
-  document.getElementById('form')!.addEventListener('submit', onSubmit)
+  document.getElementById('form')?.addEventListener('submit', onSubmit)
+  if (mode === 'today' && loadProfile()) showToday()
 }
 
 function readPerson(id: 'a' | 'b', label: string): Person | string {
@@ -209,6 +313,12 @@ function onSubmit(e: Event) {
   const a = readPerson('a', x.me)
   if (typeof a === 'string') { err.textContent = a; return }
   people.push(a)
+  if (mode === 'today') {
+    saveProfile(a)
+    dayOffset = 0
+    render()
+    return
+  }
   if (mode === 'match') {
     const b = readPerson('b', x.fav)
     if (typeof b === 'string') { err.textContent = b; return }
@@ -259,7 +369,7 @@ function chartHtml(p: Person): string {
 function showResult(people: Person[]) {
   const x = t()
   const out = document.getElementById('out')!
-  const render2 = () => buildPrompt(mode, readLang, people)
+  const render2 = () => buildPrompt(mode === 'match' ? 'match' : 'solo', readLang, people)
   out.innerHTML = `${people.map(chartHtml).join('')}
   <article class="card ai">
     <h2>🤖 ${x.aiTitle}</h2>
