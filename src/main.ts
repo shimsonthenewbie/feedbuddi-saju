@@ -5,12 +5,14 @@ import { BRANCH_ELEMENT, STEM_INFO } from '@orrery/core/constants'
 import type { SajuResult } from '@orrery/core/types'
 import tzlookup from '@photostructure/tz-lookup'
 import { buildPrompt, type Lang, type Person } from './prompt'
-import { analyze } from './myeongri'
+import { analyze, GROUP_OF, mainStemOf, sipsinOf } from './myeongri'
+import { luckAt } from './myeongri/timing'
+import { freeCards, freePool } from './i18n/free'
 import { dailyFortune } from './myeongri/daily'
 import { composeDaily } from './i18n/daily'
 import { mountAsk } from './consult-ui'
 
-type Mode = 'home' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -22,6 +24,14 @@ const T = {
     sub: '생년월일만 넣으면 오늘의 운세와\n고민 상담까지 바로 받아볼 수 있어요',
     today: '오늘',
     home: '홈',
+    freeTitle: '무료 사주 맛보기',
+    freeSub: '이름도 가입도 없이, 생년월일만으로 대충 한번 봐 드려요',
+    freeGo: '무료 사주 보기',
+    freeBack: '다시 입력',
+    todayLockT: '오늘의 운세',
+    todayLockD: '로그인하면 매일 열려요',
+    todayLockB: '베타 체험으로 열기',
+    svcTitle: '모든 운세 보기',
     homeBannerT: '램프 요정에게 물어보기',
     homeBannerD: '고민을 적으면 좋은 시기까지 짚어 드려요',
     homeBannerB: '질문하기',
@@ -90,6 +100,14 @@ const T = {
     sub: 'Enter your birth date to get today\'s fortune\nand ask about what is on your mind',
     today: 'Today',
     home: 'Home',
+    freeTitle: 'Free Saju taste',
+    freeSub: 'No name, no sign-up. Just a birth date for a quick look',
+    freeGo: 'See my free reading',
+    freeBack: 'Enter again',
+    todayLockT: "Today's fortune",
+    todayLockD: 'Opens every day when you log in',
+    todayLockB: 'Open as beta trial',
+    svcTitle: 'All readings',
     homeBannerT: 'Ask the Lamp Genie',
     homeBannerD: 'Write your worry and get the timing pointed out',
     homeBannerB: 'Ask now',
@@ -232,22 +250,93 @@ function navHtml(): string {
 
 function homeHtml(): string {
   const x = t()
-  const quick = x.quick.map(([m, hj, label]) => `<button type="button" class="qk" data-mode="${m}"><span class="hj">${hj}</span><span>${esc(label)}</span></button>`).join('')
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
-  const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${price === x.hotItems[0][1] || /무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
+  const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ...x.shopItems.slice(1).map(([, name]) => ['shop', '籤', name])]
+    .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   return `
+  <section class="card freebox" aria-label="${esc(x.freeTitle)}">
+    <h2>${esc(x.freeTitle)}</h2>
+    <p class="meta">${esc(x.freeSub)}</p>
+    <form id="freeform" novalidate>
+      <label>${x.date}<input type="date" name="fdate" min="1900-01-01" max="2100-12-31" required></label>
+      <div class="row">
+        <label class="grow">${x.time}<input type="time" name="ftime"></label>
+        <label class="chk"><input type="checkbox" name="funk"> ${x.unknownTime}</label>
+      </div>
+      <div class="row">
+        <span class="gl">${x.gender}</span>
+        <div class="seg" role="radiogroup" aria-label="${x.gender}">
+          <label><input type="radio" name="fg" value="F" checked><span>${x.female}</span></label>
+          <label><input type="radio" name="fg" value="M"><span>${x.male}</span></label>
+        </div>
+      </div>
+      <p class="err" id="ferr" role="alert"></p>
+      <button class="go" type="submit">${esc(x.freeGo)}</button>
+    </form>
+  </section>
+  <section class="lockcard" aria-label="${esc(x.todayLockT)}">
+    <div class="lk1"><span class="lockic" aria-hidden="true">運</span><div><b>${esc(x.todayLockT)}</b><span>${esc(x.todayLockD)}</span></div></div>
+    <div class="dim" aria-hidden="true">★★★★☆</div>
+    <button type="button" class="bgo" data-mode="today">${esc(x.todayLockB)}</button>
+  </section>
   <section class="banner" aria-label="${esc(x.homeBannerT)}">
     <div class="bmain">${LAMP}<div><h2>${esc(x.homeBannerT)}</h2><p>${esc(x.homeBannerD)}</p></div></div>
     <div class="brow"><span class="beta">${esc(x.homeBeta)}</span><button type="button" class="bgo" data-mode="ask">${esc(x.homeBannerB)}</button></div>
   </section>
-  <div class="quick">${quick}</div>
-  <h3 class="sec">${esc(x.newTitle)}</h3>
-  <div class="news">${news}</div>
   <h3 class="sec">${esc(x.hotTitle)}</h3>
   <ol class="hot">${hot}</ol>
+  <h3 class="sec">${esc(x.newTitle)}</h3>
+  <div class="news">${news}</div>
+  <h3 class="sec">${esc(x.svcTitle)}</h3>
+  <ul class="svc">${svc}</ul>
   <h3 class="sec">${esc(x.pieceTitle)}</h3>
   <ul class="pieces">${pieces}</ul>`
+}
+
+let freePerson: Person | null = null
+function showFree() {
+  const x = t()
+  const out = document.getElementById('out')!
+  if (!freePerson) { mode = 'home'; render(); return }
+  const r = freePerson.result
+  const a = analyze(r)
+  const dayBranch = r.pillars[1].pillar.branch
+  const dg = GROUP_OF[sipsinOf(a.dayStem, mainStemOf(dayBranch))]
+  const tone = luckAt(r, a, new Date()).year.tone
+  const cards = freeCards(a, lang, dg, tone)
+  const fp = freePool(lang)
+  out.innerHTML = `${chartHtml(freePerson)}
+  ${cards.map((c, i) => `<article class="rcard${i === 0 ? ' lead' : ''}"><h3>${esc(c.title)}</h3>${c.head ? `<p class="fhead">${esc(c.head)}</p>` : ''}${c.body.map((b) => `<p>${esc(b)}</p>`).join('')}</article>`).join('')}
+  <article class="card"><h3>${esc(fp.t.next)}</h3><div class="row"><button class="go" data-mode="today" type="button">${esc(fp.t.todayCta)}</button><button class="go ghost" data-mode="ask" type="button">${esc(fp.t.askCta)}</button></div></article>
+  <p class="note demo">${esc(fp.t.free)}</p>
+  <button class="go ghost" id="freeback" type="button">${esc(x.freeBack)}</button>`
+  out.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
+  document.getElementById('freeback')!.onclick = () => { mode = 'home'; render() }
+}
+
+function onFreeSubmit(e: Event) {
+  e.preventDefault()
+  const x = t()
+  const f = e.target as HTMLFormElement
+  const err = document.getElementById('ferr')!
+  const date = (f.elements.namedItem('fdate') as HTMLInputElement).value
+  const timeV = (f.elements.namedItem('ftime') as HTMLInputElement).value
+  const unk = (f.elements.namedItem('funk') as HTMLInputElement).checked
+  const gender = (f.querySelector('input[name=fg]:checked') as HTMLInputElement).value as 'M' | 'F'
+  if (!date) { err.textContent = x.errDate; return }
+  if (!unk && !timeV) { err.textContent = x.errTime; return }
+  const [y, m, d] = date.split('-').map(Number)
+  const [hh, mm] = unk ? [12, 0] : timeV.split(':').map(Number)
+  try {
+    const result = calculateSaju({ year: y, month: m, day: d, hour: hh, minute: mm, gender, unknownTime: unk, latitude: SEOUL.lat, longitude: SEOUL.lon, timezone: 'Asia/Seoul' })
+    freePerson = { label: x.me, placeName: formatCityName(SEOUL), result }
+    saveProfile(freePerson)
+    mode = 'free'
+    window.scrollTo(0, 0)
+    render()
+  } catch { err.textContent = x.errCalc }
 }
 
 /* ───────── 풀이 목록 (준비 중 카탈로그) ───────── */
@@ -299,7 +388,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
@@ -332,6 +421,8 @@ function bind() {
     }
   })
   document.getElementById('form')?.addEventListener('submit', onSubmit)
+  document.getElementById('freeform')?.addEventListener('submit', onFreeSubmit)
+  if (mode === 'free') showFree()
   if (mode === 'today' && loadProfile()) showToday()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
