@@ -8,8 +8,9 @@ import { buildPrompt, type Lang, type Person } from './prompt'
 import { analyze } from './myeongri'
 import { dailyFortune } from './myeongri/daily'
 import { composeDaily } from './i18n/daily'
+import { mountAsk } from './consult-ui'
 
-type Mode = 'today' | 'solo' | 'match' | 'shop'
+type Mode = 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -20,7 +21,8 @@ const T = {
     title: '피드버디 사주',
     sub: '생년월일시만 넣으면 사주 차트를 그려주고,\nAI한테 바로 물어볼 요청문까지 만들어줘요',
     today: '오늘',
-    shop: '풀이 목록',
+    ask: '상담',
+    shop: '풀이',
     solo: '내 사주',
     match: '최애와 궁합',
     me: '나',
@@ -75,6 +77,7 @@ const T = {
     title: 'Feedbuddi Saju',
     sub: 'Enter your birth details to get your BaZi chart\nand a ready-made prompt to ask any AI',
     today: 'Today',
+    ask: 'Ask',
     shop: 'Shop',
     solo: 'My chart',
     match: 'Match',
@@ -149,6 +152,10 @@ function clearProfile() {
   try { localStorage.removeItem(PKEY) } catch { /* 무시 */ }
 }
 
+function resultOf(pr: Profile): SajuResult {
+  return calculateSaju({ year: pr.y, month: pr.m, day: pr.d, hour: pr.hh, minute: pr.mm, gender: pr.gender, unknownTime: pr.unk, latitude: pr.lat, longitude: pr.lon, timezone: tzlookup(pr.lat, pr.lon) })
+}
+
 /* ───────── 오늘의 운세 화면 ───────── */
 const starRow = (n: number) => '★'.repeat(n) + '<span class="off">' + '★'.repeat(5 - n) + '</span>'
 
@@ -156,7 +163,7 @@ function showToday() {
   const x = t()
   const pr = loadProfile()!
   const out = document.getElementById('out')!
-  const r = calculateSaju({ year: pr.y, month: pr.m, day: pr.d, hour: pr.hh, minute: pr.mm, gender: pr.gender, unknownTime: pr.unk, latitude: pr.lat, longitude: pr.lon, timezone: tzlookup(pr.lat, pr.lon) })
+  const r = resultOf(pr)
   const a = analyze(r)
   const base = new Date()
   const date = new Date(base.getFullYear(), base.getMonth(), base.getDate() + dayOffset)
@@ -241,15 +248,16 @@ function render() {
   </header>
   <div class="tabs" role="tablist">
     <button role="tab" class="${mode === 'today' ? 'on' : ''}" data-mode="today"><span class="hj">運</span>${x.today}</button>
+    <button role="tab" class="${mode === 'ask' ? 'on' : ''}" data-mode="ask"><span class="hj">問</span>${x.ask}</button>
     <button role="tab" class="${mode === 'solo' ? 'on' : ''}" data-mode="solo"><span class="hj">命</span>${x.solo}</button>
     <button role="tab" class="${mode === 'match' ? 'on' : ''}" data-mode="match"><span class="hj">緣</span>${x.match}</button>
     <button role="tab" class="${mode === 'shop' ? 'on' : ''}" data-mode="shop"><span class="hj">籤</span>${x.shop}</button>
   </div>
-  ${mode === 'shop' ? shopHtml() : mode === 'today' && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
-    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' ? x.todayGo : x.goMatch}</button>
+    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' ? x.todayGo : x.goMatch}</button>
   </form>
   <section id="out"></section>`}
   <footer>
@@ -278,6 +286,7 @@ function bind() {
   })
   document.getElementById('form')?.addEventListener('submit', onSubmit)
   if (mode === 'today' && loadProfile()) showToday()
+  if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
 
 function readPerson(id: 'a' | 'b', label: string): Person | string {
@@ -313,7 +322,7 @@ function onSubmit(e: Event) {
   const a = readPerson('a', x.me)
   if (typeof a === 'string') { err.textContent = a; return }
   people.push(a)
-  if (mode === 'today') {
+  if (mode === 'today' || mode === 'ask') {
     saveProfile(a)
     dayOffset = 0
     render()

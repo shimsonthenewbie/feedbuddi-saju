@@ -1,0 +1,55 @@
+import type { ConsultText } from './types'
+export const en: ConsultText = {
+  cats: { love: 'Love & marriage', work: 'Work & career', money: 'Money', health: 'Health', family: 'Family & people', etc: 'Other' },
+  sipsin: { 비견: 'self-reliance', 겁재: 'rivalry and teamwork', 식신: 'expression and ease', 상관: 'talent and change', 편재: 'active money and chances', 정재: 'steady income', 편관: 'responsibility and review', 정관: 'order and position', 편인: 'new learning', 정인: 'support and stability' },
+  headline: {
+    love: ['{when}: a door to connection opens', '{when}: a good time for hearts to meet'],
+    work: ['{when}: a good time to be recognized', '{when}: your role may grow'],
+    money: ['{when}: a path to income shows', '{when}: money flows well'],
+    health: ['{when}: your body rhythm steadies', '{when}: a good time to raise your energy'],
+    family: ['{when}: relationships ease up', '{when}: conversations go well'],
+    etc: ['{when}: the flow is good', '{when}: a good time to try'],
+  },
+  answerBody: {
+    best: ['Within the next 24 months, this is the strongest stretch for you. Plan around it.', 'Your chart is well supported in this month. The more you prepare, the more it pays off.'],
+    flat: ['No sharp peak shows up in the next 24 months. The flow is fairly even, so steady building works best.'],
+  },
+  why: {
+    lead: 'In the {ganzi} month,',
+    stem: '{stem} ({stemSip}) energy and',
+    branch: '{branch} ({branchSip}) energy arrive together.',
+    clash: ' It also clashes with parts of your chart ({kinds}), so plans may shift. Leave some slack.',
+    harmony: ' It also combines with your chart, so people and tasks fit together.',
+    year: '{year} is a {yg} year.',
+  },
+  you: {
+    strong: 'Your chart is strong. You push forward well, and results come once you decide where to use that force (work, expression, relationships).',
+    weak: 'You gain strength from support. Sharing with someone you trust works better than holding on alone.',
+    mid: 'Your chart is balanced. Moving flexibly with the situation suits you.',
+    yongsin: 'The energy that helps you is {el}. Activities or settings tied to {el} are good to keep close.',
+    el: { tree: 'Wood', fire: 'Fire', earth: 'Earth', metal: 'Metal', water: 'Water' },
+  },
+  timeline: { title: 'When is good', best: 'Good months', care: 'Careful months', none: 'No clear peak', month: '{month}/{year} ({ganzi})' },
+  event: { title: 'The date you wrote', best: '{when} is a strong month for you. A good time to show what you prepared.', mid: '{when} is an ordinary month. Do your usual work calmly.', care: '{when} may bring changes. Do not rush, and double-check schedule and preparations.' },
+  doIt: {
+    love: ['Set up chances to meet people before the good months.', 'If you have someone in mind, reach out first in a good month.'],
+    work: ['Prepare something to show before the good months.', 'If a review or meeting is coming, try to place it in a good month.'],
+    money: ['Check your contracts, deals and income sources before the good months.', 'Start a new income source small, in a good month.'],
+    health: ['Start an exercise or checkup routine in a good month.', 'Fix your sleep and meal rhythm first.'],
+    family: ['Bring up the talk you have been postponing in a good month.', 'Listening first loosens things.'],
+    etc: ['Place important things in the good months.', 'Prepare early, act in the good months.'],
+  },
+  careIt: {
+    love: ['Feelings run sensitive in careful months. It is fine to delay big decisions.', 'Polishing your tone once reduces misunderstandings.'],
+    work: ['In careful months, focus on wrapping up and checking instead of big moves.', 'Review once more before deadlines.'],
+    money: ['In careful months, avoid large spending, investing or guarantees.', 'Decide impulse purchases a day later.'],
+    health: ['In careful months, trim your schedule and protect rest time.', 'Rest before fatigue builds up.'],
+    family: ['In careful months, do not drag out sensitive topics.', 'Give it time instead of forcing a conclusion.'],
+    etc: ['In careful months, make fewer big decisions and tidy up.', 'If you do not rush, it passes fine.'],
+  },
+  closing: ['The flow is only a direction. The more you prepare, the more a good period gives.', 'Knowing the good times helps you gather strength; knowing the quiet times keeps you steady.'],
+  tips: { title: 'While you wait · a piece of Saju', items: ['A chart has four pillars: the year, month, day and hour of birth. Each has a heaven and an earth character, making eight characters in all.', 'The five elements are Wood, Fire, Earth, Metal and Water. Having a lot or none of one is not bad; how you use it shapes your temperament.', 'The Day Master is the heaven character of your birth day, and it stands for "you".', 'Luck cycles change about every 10 years, with smaller yearly and monthly flows inside them.', 'Good periods differ from person to person, because each chart meets incoming energy in its own way.'] },
+  ui: {
+    title: 'What is on your mind?', sub: 'Pick a topic and write your question.', catTitle: 'What kind of question?', qTitle: 'Tell me what is on your mind', qPh: 'e.g. Should I prepare for a job change or stay where I am?', dTitle: 'Any fixed date? (optional)', dHint: 'If you add one, the reading will refer to that date.', go: 'Get my reading', loading: 'Looking closely', loadingSub: 'One moment please', mine: 'My question', fit: 'Did this fit you?', fitYes: 'Yes, it fit', fitNo: 'Not really', thanks: 'Thanks. It helps us improve.', again: 'Ask something else', disclaimer: 'A flow reading based on traditional Saju theory. It is a reference for preparing, not a prediction of fixed events.', answerTitle: 'Short answer', whyTitle: 'Why', youTitle: 'You, facing this', doTitle: 'Good to do now', careTitle: 'Be careful', closeTitle: 'One last word', demo: 'This test version is built from calculated results. A more detailed AI reading is coming.',
+  },
+}
