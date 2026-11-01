@@ -269,3 +269,20 @@ input[type=date],input[type=time],input[type=text],textarea{background:var(--car
 .dtitle b,.dnav button{color:var(--ink)}
 .ok{color:var(--jade)}
 .bar .bl{color:var(--ink)}
+
+/* ───── 나무 판자 버튼 ───── */
+:root{--wood-hi:#b07d43;--wood-mid:#8d5c2c;--wood-lo:#6f4520;--wood-edge:#3d240d;--wood-text:#fbefd5;
+  --grain:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='80'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.012 .5' numOctaves='3' seed='4'/><feColorMatrix values='0 0 0 0 .22  0 0 0 0 .12  0 0 0 0 .04  0 0 0 .55 -.12'/></filter><rect width='220' height='80' filter='url(%23g)'/></svg>")}
+.go,.bgo{position:relative;border:2px solid var(--wood-edge);border-radius:5px;color:var(--wood-text);text-shadow:0 2px 0 var(--wood-edge);font-family:var(--serif);font-weight:700;letter-spacing:.1em;
+  background:radial-gradient(circle at 11px 50%,#e8d4a0 0 1.5px,#4a2d10 2.5px,transparent 3.5px),radial-gradient(circle at calc(100% - 11px) 50%,#e8d4a0 0 1.5px,#4a2d10 2.5px,transparent 3.5px),var(--grain),linear-gradient(180deg,var(--wood-hi),var(--wood-mid) 55%,var(--wood-lo));
+  box-shadow:inset 0 2px 0 rgba(255,225,170,.4),inset 0 -3px 0 rgba(0,0,0,.28),0 4px 0 #2a1807,0 6px 8px -2px rgba(30,20,8,.4)}
+.go:active,.bgo:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,225,170,.3),inset 0 -2px 0 rgba(0,0,0,.28),0 1px 0 #2a1807}
+.go:hover,.bgo:hover{filter:brightness(1.06)}
+.go.ghost{color:var(--wood-edge);text-shadow:0 1px 0 rgba(255,235,190,.6);
+  background:radial-gradient(circle at 11px 50%,#7a5426 0 1.5px,transparent 2.5px),radial-gradient(circle at calc(100% - 11px) 50%,#7a5426 0 1.5px,transparent 2.5px),var(--grain),linear-gradient(180deg,#e2c795,#d2b17c 55%,#c19f68);
+  box-shadow:inset 0 2px 0 rgba(255,245,215,.55),inset 0 -3px 0 rgba(90,55,20,.25),0 4px 0 #6f4520,0 6px 8px -2px rgba(30,20,8,.3)}
+.go:disabled{filter:grayscale(.7) brightness(.9);opacity:.6;cursor:not-allowed;box-shadow:inset 0 -3px 0 rgba(0,0,0,.2),0 2px 0 #2a1807}
+.go:focus-visible,.bgo:focus-visible{outline:3px solid var(--seal);outline-offset:3px}
+.bgo{padding:10px 26px;font-size:16px}
+.chip.on,.seg input:checked+span{background:var(--grain),linear-gradient(180deg,var(--wood-hi),var(--wood-lo));color:var(--wood-text);border-color:var(--wood-edge);text-shadow:0 1px 0 var(--wood-edge)}
+.go{margin-bottom:6px}
