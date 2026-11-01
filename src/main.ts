@@ -26,6 +26,7 @@ const T = {
     sub: '생년월일만 넣으면 오늘의 운세와\n고민 상담까지 바로 받아볼 수 있어요',
     today: '오늘',
     home: '홈',
+    heroT: '내 사주, 여의가 쉽게 풀어 줄게요!',
     freeTitle: '무료 사주 맛보기',
     freeSub: '이름도 가입도 필요 없어요. 생일만 알려주면 여의가 슬쩍 봐 줄게요!',
     freeGo: '무료 사주 보기',
@@ -102,6 +103,7 @@ const T = {
     sub: 'Enter your birth date to get today\'s fortune\nand ask about what is on your mind',
     today: 'Today',
     home: 'Home',
+    heroT: 'Yeoui reads your chart in plain words!',
     freeTitle: 'Free Saju taste',
     freeSub: 'No name, no sign-up. Tell Yeoui your birthday for a quick peek!',
     freeGo: 'See my free reading',
@@ -258,8 +260,12 @@ function homeHtml(): string {
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   return `
+  <section class="hero2" aria-label="${esc(x.heroT)}">
+    <div class="in"><div class="bubble2">${esc(x.heroT)}</div><img class="hm" src="/mascot.png" alt="" width="150" height="181"></div>
+    <svg class="hmtn" viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60 V38 L40 18 L70 34 L120 4 L170 40 L214 22 L262 48 L310 14 L356 40 L400 24 V60Z" fill="#1b1a17"/></svg>
+  </section>
   <section class="card freebox" aria-label="${esc(x.freeTitle)}">
-    <div class="freehead"><div><h2>${esc(x.freeTitle)}</h2><p class="meta">${esc(x.freeSub)}</p></div><img class="fmascot" src="/mascot.png" alt="" width="92" height="111"></div>
+    <h2>${esc(x.freeTitle)}</h2><p class="meta">${esc(x.freeSub)}</p>
     <form id="freeform" novalidate>
       <label>${x.date}<input type="date" name="fdate" min="1900-01-01" max="2100-12-31" required></label>
       <div class="row">
@@ -384,9 +390,8 @@ function render() {
   document.title = x.title
   app.innerHTML = `
   <header class="top">
-    <svg class="mtn" viewBox="0 0 560 200" preserveAspectRatio="xMidYMin slice" aria-hidden="true"><defs><filter id="wash" x="-5%" y="-10%" width="110%" height="120%"><feGaussianBlur stdDeviation="2.4"/></filter><filter id="rough" x="-5%" y="-10%" width="110%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".03" numOctaves="3" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="9"/><feGaussianBlur stdDeviation=".7"/></filter><linearGradient id="peak" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e1c19" stop-opacity=".95"/><stop offset=".7" stop-color="#1e1c19" stop-opacity=".35"/><stop offset="1" stop-color="#1e1c19" stop-opacity="0"/></linearGradient><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset=".55" stop-color="#ece5d2" stop-opacity="0"/><stop offset="1" stop-color="#ece5d2" stop-opacity="1"/></linearGradient></defs><path d="M0 128 L38 96 L70 110 L118 62 L160 104 L206 78 L250 116 L300 72 L352 112 L402 84 L452 118 L504 90 L560 110 V200 H0Z" fill="url(#peak)" opacity=".3" filter="url(#wash)"/><ellipse cx="190" cy="120" rx="230" ry="13" fill="#ece5d2" opacity=".8" filter="url(#wash)"/><path d="M0 156 L46 120 L92 142 L146 88 L206 146 L262 108 L334 156 L398 114 L458 150 L512 112 L560 138 V200 H0Z" fill="url(#peak)" opacity=".55" filter="url(#rough)"/><ellipse cx="400" cy="150" rx="210" ry="11" fill="#ece5d2" opacity=".75" filter="url(#wash)"/><path d="M0 184 L64 154 L126 174 L192 146 L262 180 L340 150 L424 180 L498 156 L560 176 V200 H0Z" fill="#1e1c19" opacity=".62" filter="url(#rough)"/><path d="M96 168 q3-16 7-4 q2-10 6 0 q-2 6-6 8z M470 170 q3-14 7-3 q3-9 6 1 q-3 6-7 7z" fill="#1e1c19" opacity=".7"/><rect width="560" height="200" fill="url(#fade)"/></svg><svg class="emblem ${mode === 'home' ? '' : 'sm'}" viewBox="0 0 80 80" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="40" cy="40" r="36"/><circle cx="40" cy="40" r="31" stroke-opacity=".45"/><path d="M52 40a14 14 0 1 1-14-14 11 11 0 0 0 14 14z" fill="currentColor" stroke="none"/><circle cx="52" cy="24" r="1.6" fill="currentColor" stroke="none"/><circle cx="24" cy="54" r="1.2" fill="currentColor" stroke="none"/></svg>
+    <svg class="emblem" viewBox="0 0 80 80" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3"><circle cx="40" cy="40" r="34"/><path d="M52 40a14 14 0 1 1-14-14 11 11 0 0 0 14 14z" fill="currentColor" stroke="none"/></svg>
     <h1>${x.title}</h1>
-    ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
   ${mode === 'home' ? homeHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
