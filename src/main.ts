@@ -16,6 +16,8 @@ type Mode = 'home' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
+const SIP_KO: Record<string, string> = { 比肩: '비견', 劫財: '겁재', 食神: '식신', 傷官: '상관', 偏財: '편재', 正財: '정재', 偏官: '편관', 正官: '정관', 偏印: '편인', 正印: '정인', 本元: '나' }
+const UN_KO: Record<string, string> = { 長生: '장생', 沐浴: '목욕', 冠帶: '관대', 建祿: '건록', 帝旺: '제왕', 衰: '쇠', 病: '병', 死: '사', 墓: '묘', 絶: '절', 胎: '태', 養: '양' }
 const EL_EMOJI: Record<El, string> = { tree: '木', fire: '火', earth: '土', metal: '金', water: '水' }
 
 const T = {
@@ -32,7 +34,7 @@ const T = {
     todayLockD: '로그인하면 매일 열려요',
     todayLockB: '베타 체험으로 열기',
     svcTitle: '모든 운세 보기',
-    homeBannerT: '램프 요정에게 물어보기',
+    homeBannerT: '용에게 물어보기',
     homeBannerD: '고민을 적으면 좋은 시기까지 짚어 드려요',
     homeBannerB: '질문하기',
     homeBeta: '베타 기간 무료',
@@ -60,11 +62,11 @@ const T = {
     go: '사주 보기',
     todayGo: '오늘의 운세 보기',
     goMatch: '궁합 보기',
-    pillars: ['시주', '일주', '월주', '년주'],
-    dayMaster: '나의 일간',
+    pillars: ['시', '일', '월', '년'],
+    dayMaster: '나를 나타내는 글자 (일간)',
     elements: ['목', '화', '토', '금', '수'],
-    elTitle: '오행 분포',
-    luck: '대운 흐름',
+    elTitle: '다섯 기운 분포 (오행)',
+    luck: '10년 단위 큰 흐름 (대운)',
     age: '세',
     aiTitle: 'AI에게 풀이 받기',
     aiDesc: '아래 요청문을 복사해서 AI에 붙여넣으면, 이 차트를 바탕으로 풀이해줘요.',
@@ -108,7 +110,7 @@ const T = {
     todayLockD: 'Opens every day when you log in',
     todayLockB: 'Open as beta trial',
     svcTitle: 'All readings',
-    homeBannerT: 'Ask the Lamp Genie',
+    homeBannerT: 'Ask the Dragon',
     homeBannerD: 'Write your worry and get the timing pointed out',
     homeBannerB: 'Ask now',
     homeBeta: 'Free during beta',
@@ -240,7 +242,7 @@ function showToday() {
 }
 
 
-const LAMP = `<svg class="lamp" viewBox="0 0 120 96" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M60 30c-9-7 9-12 0-24" stroke-opacity=".6"/><path d="M22 62c0-16 18-24 38-24s38 8 38 24c0 12-16 18-38 18S22 74 22 62z" fill="var(--card)"/><path d="M98 54c10-4 14-12 14-20"/><path d="M22 58c-10 0-16-6-14-14 1-4 6-6 12-2"/><path d="M48 38c3-10 21-10 24 0"/><path d="M44 80h32v8H44z"/><circle cx="104" cy="22" r="2" fill="currentColor"/><circle cx="14" cy="24" r="1.5" fill="currentColor"/></svg>`
+
 
 function navHtml(): string {
   const x = t()
@@ -282,7 +284,7 @@ function homeHtml(): string {
     <button type="button" class="bgo" data-mode="today">${esc(x.todayLockB)}</button>
   </section>
   <section class="banner" aria-label="${esc(x.homeBannerT)}">
-    <div class="bmain">${LAMP}<div><h2>${esc(x.homeBannerT)}</h2><p>${esc(x.homeBannerD)}</p></div></div>
+    <div class="bmain"><img class="mascot" src="/mascot.png" alt="" width="96" height="116"><div><h2>${esc(x.homeBannerT)}</h2><p>${esc(x.homeBannerD)}</p></div></div>
     <div class="brow"><span class="beta">${esc(x.homeBeta)}</span><button type="button" class="bgo" data-mode="ask">${esc(x.homeBannerB)}</button></div>
   </section>
   <h3 class="sec">${esc(x.hotTitle)}</h3>
@@ -305,7 +307,7 @@ function showFree() {
   const dayBranch = r.pillars[1].pillar.branch
   const dg = GROUP_OF[sipsinOf(a.dayStem, mainStemOf(dayBranch))]
   const tone = luckAt(r, a, new Date()).year.tone
-  const cards = freeCards(a, lang, dg, tone)
+  const cards = freeCards(r, a, lang, dg, tone)
   const fp = freePool(lang)
   out.innerHTML = `${chartHtml(freePerson)}
   ${cards.map((c, i) => `<article class="rcard${i === 0 ? ' lead' : ''}"><h3>${esc(c.title)}</h3>${c.head ? `<p class="fhead">${esc(c.head)}</p>` : ''}${c.body.map((b) => `<p>${esc(b)}</p>`).join('')}</article>`).join('')}
@@ -490,11 +492,11 @@ function chartHtml(p: Person): string {
     if (be) counts[be]++
     return `<div class="pillar ${i === 1 ? 'me' : ''}">
       <div class="plabel">${x.pillars[i]}</div>
-      <div class="ss">${hide ? '?' : esc(d.stemSipsin)}</div>
+      <div class="ss">${hide ? '?' : esc(lang === 'ko' ? (SIP_KO[d.stemSipsin] ?? d.stemSipsin) : d.stemSipsin)}</div>
       <div class="ch ${se ? EL_CLASS[se] : ''}">${hide ? '?' : d.pillar.stem}</div>
       <div class="ch ${be ? EL_CLASS[be] : ''}">${hide ? '?' : d.pillar.branch}</div>
-      <div class="ss">${hide ? '?' : esc(d.branchSipsin)}</div>
-      <div class="us">${hide ? '' : esc(d.unseong)}</div>
+      <div class="ss">${hide ? '?' : esc(lang === 'ko' ? (SIP_KO[d.branchSipsin] ?? d.branchSipsin) : d.branchSipsin)}</div>
+      <div class="us">${hide ? '' : esc(lang === 'ko' ? (UN_KO[d.unseong] ?? d.unseong) : d.unseong)}</div>
     </div>`
   })
   const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1

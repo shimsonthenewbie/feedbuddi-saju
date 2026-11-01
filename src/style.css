@@ -194,3 +194,5 @@ textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .svc .hj{width:30px;height:30px;border-radius:50%;border:1px solid var(--gold2);display:flex;align-items:center;justify-content:center;font:700 15px var(--serif);color:var(--gold);flex:none}
 .chev{color:var(--mute);font-size:20px}
 .fhead{font:700 18px var(--serif);color:var(--gold);margin:2px 0 0}
+.mascot{flex:none;width:96px;height:auto;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45))}
+.rcard p+p{margin-top:8px}

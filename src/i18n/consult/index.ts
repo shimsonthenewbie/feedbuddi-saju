@@ -27,7 +27,8 @@ export function composeConsult(c: ConsultCalc, a: Analysis, lang: string, seed: 
   const t = consultPool(lang)
   const cards: Card[] = []
   const main = c.best[0] ?? null
-  const kindLabel = (k: string) => (lang === 'ko' ? k : k.startsWith('충') ? 'clash' : k.startsWith('합') ? 'harmony' : 'friction')
+  const KO_KIND: Record<string, string> = { 충: '정면으로 부딪히는', 형: '마찰이 생기는', 해: '엇갈리는', 파: '살짝 어긋나는' }
+  const kindLabel = (k: string) => (lang === 'ko' ? KO_KIND[k.slice(0, 1)] ?? k : k.startsWith('충') ? 'a clash' : k.startsWith('형') ? 'friction' : 'a mismatch')
 
   if (main) {
     cards.push({ kind: 'answer', title: fill(pick(t.headline[c.cat], seed), { when: whenOf(main, lang) }), paras: [pick(t.answerBody.best, seed)] })
@@ -35,8 +36,8 @@ export function composeConsult(c: ConsultCalc, a: Analysis, lang: string, seed: 
     const clashes = main.hitKinds.filter((k) => /^(충|형|해|파)/.test(k))
     const harm = main.hitKinds.some((k) => k.startsWith('합'))
     const name = lang === 'ko' ? ganziKo(g) : g
-    let p = fill(t.why.lead, { ganziKo: name, ganzi: g }) + ' ' + fill(t.why.stem, { stem: lang === 'ko' ? `${STEM_KO[STEMS.indexOf(g[0])]}(${g[0]})` : g[0], stemSip: main.stemSip }) + ' ' + fill(t.why.branch, { branch: lang === 'ko' ? `${BRANCH_KO[BRANCHES.indexOf(g[1])]}(${g[1]})` : g[1], branchSip: main.branchSip })
-    if (clashes.length) p += fill(t.why.clash, { kinds: Array.from(new Set(clashes.map(kindLabel))).join('·') })
+    let p = fill(t.why.lead, { ganziKo: name, ganzi: g }) + ' ' + fill(t.why.stem, { stemMean: t.sipsin[main.stemSip], stemSip: main.stemSip }) + ' ' + fill(t.why.branch, { branchMean: t.sipsin[main.branchSip], branchSip: main.branchSip })
+    if (clashes.length) p += fill(t.why.clash, { kinds: Array.from(new Set(clashes.map(kindLabel))).join(lang === 'ko' ? ', ' : ' and ') })
     else if (harm) p += t.why.harmony
     const y = main.year
     const yg = c.yearGanzi[y]
@@ -52,7 +53,7 @@ export function composeConsult(c: ConsultCalc, a: Analysis, lang: string, seed: 
   const weak = st === '신약' || st === '극신약'
   cards.push({ kind: 'you', title: t.ui.youTitle, paras: [strong ? t.you.strong : weak ? t.you.weak : t.you.mid, fill(t.you.yongsin, { el: t.you.el[a.yongsin.primary] })] })
 
-  const line = (w: Win) => fill(t.timeline.month, { year: w.year, month: w.month, ganziKo: ganziKo(w.ganzi), ganzi: w.ganzi }) + ' · ' + w.stemSip + '/' + w.branchSip
+  const line = (w: Win) => fill(t.timeline.month, { year: w.year, month: w.month }) + ' · ' + Array.from(new Set([t.sipsin[w.stemSip], t.sipsin[w.branchSip]])).join(' · ')
   cards.push({
     kind: 'timeline', title: t.timeline.title, paras: [],
     list: [

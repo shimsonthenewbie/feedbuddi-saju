@@ -15,11 +15,11 @@ export const ko: ConsultText = {
     flat: ['앞으로 24개월 안에 뚜렷하게 치솟는 시기는 없고, 비교적 고른 흐름이에요. 꾸준히 쌓는 쪽이 유리해요.'],
   },
   why: {
-    lead: '{ganziKo}({ganzi})월에는',
-    stem: '{stem}({stemSip})의 기운과',
-    branch: '{branch}({branchSip})의 기운이 함께 들어와요.',
-    clash: ' 다만 원국과 부딪히는 자리({kinds})가 있어 일정이 흔들릴 수 있으니 여유를 두세요.',
-    harmony: ' 원국과 합이 이뤄져 사람·일이 잘 맞물려요.',
+    lead: '{ganziKo}월에는',
+    stem: '{stemMean}({stemSip})의 기운과',
+    branch: '{branchMean}({branchSip})의 기운이 함께 들어와요.',
+    clash: ' 다만 내 사주와 {kinds} 부분이 있어 일정이 흔들릴 수 있으니 여유를 두세요.',
+    harmony: ' 내 사주와 서로 끌려서 사람과 일이 잘 맞물려요.',
     year: '{year}년은 {yg}년이에요.',
   },
   you: {
@@ -27,9 +27,9 @@ export const ko: ConsultText = {
     weak: '주변의 도움을 받을 때 힘이 나는 사주예요. 혼자 버티기보다 믿을 사람과 나누면 흐름이 좋아져요.',
     mid: '힘이 한쪽으로 치우치지 않은 균형형이에요. 상황에 맞춰 유연하게 움직이는 쪽이 잘 맞아요.',
     yongsin: '나에게 도움이 되는 기운은 {el}이에요. {el} 쪽 활동이나 환경을 가까이 하면 좋아요.',
-    el: { tree: '목(木)', fire: '화(火)', earth: '토(土)', metal: '금(金)', water: '수(水)' },
+    el: { tree: '나무(목)', fire: '불(화)', earth: '흙(토)', metal: '쇠(금)', water: '물(수)' },
   },
-  timeline: { title: '언제가 좋은가', best: '좋은 달', care: '신중할 달', none: '뚜렷한 시기가 없어요', month: '{year}년 {month}월 ({ganziKo})' },
+  timeline: { title: '언제가 좋은가', best: '좋은 달', care: '신중할 달', none: '뚜렷한 시기가 없어요', month: '{year}년 {month}월' },
   event: { title: '적어 주신 날짜', best: '{when}은 이 사람 기준 흐름이 좋은 달이에요. 준비한 대로 보여 주기 좋아요.', mid: '{when}은 무난한 달이에요. 평소 실력대로 차분히 하면 돼요.', care: '{when}은 변동이 생기기 쉬운 달이에요. 서두르지 말고 일정과 준비물을 한 번 더 확인하세요.' },
   doIt: {
     love: ['좋은 달에 맞춰 사람 만날 자리를 먼저 만들어 보세요.', '마음이 있다면 좋은 달에 먼저 연락하는 쪽이 유리해요.'],

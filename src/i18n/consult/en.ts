@@ -16,10 +16,10 @@ export const en: ConsultText = {
   },
   why: {
     lead: 'In the {ganzi} month,',
-    stem: '{stem} ({stemSip}) energy and',
-    branch: '{branch} ({branchSip}) energy arrive together.',
-    clash: ' It also clashes with parts of your chart ({kinds}), so plans may shift. Leave some slack.',
-    harmony: ' It also combines with your chart, so people and tasks fit together.',
+    stem: 'the energy of {stemMean} ({stemSip}) and',
+    branch: 'the energy of {branchMean} ({branchSip}) arrive together.',
+    clash: ' It also has {kinds} with your chart, so plans may shift. Leave some slack.',
+    harmony: ' It also pulls toward your chart, so people and tasks fit together.',
     year: '{year} is a {yg} year.',
   },
   you: {
@@ -29,7 +29,7 @@ export const en: ConsultText = {
     yongsin: 'The energy that helps you is {el}. Activities or settings tied to {el} are good to keep close.',
     el: { tree: 'Wood', fire: 'Fire', earth: 'Earth', metal: 'Metal', water: 'Water' },
   },
-  timeline: { title: 'When is good', best: 'Good months', care: 'Careful months', none: 'No clear peak', month: '{month}/{year} ({ganzi})' },
+  timeline: { title: 'When is good', best: 'Good months', care: 'Careful months', none: 'No clear peak', month: '{month}/{year}' },
   event: { title: 'The date you wrote', best: '{when} is a strong month for you. A good time to show what you prepared.', mid: '{when} is an ordinary month. Do your usual work calmly.', care: '{when} may bring changes. Do not rush, and double-check schedule and preparations.' },
   doIt: {
     love: ['Set up chances to meet people before the good months.', 'If you have someone in mind, reach out first in a good month.'],
