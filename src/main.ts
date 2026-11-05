@@ -309,6 +309,7 @@ function homeHtml(): string {
           <label><input type="radio" name="fg" value="M"><span>${x.male}</span></label>
         </div>
       </div>
+      ${cityField('f')}
       <p class="err" id="ferr" role="alert"></p>
       <button class="go" type="submit">${esc(x.freeGo)}</button>
     </form>
@@ -356,6 +357,27 @@ function showFree() {
   document.getElementById('freeback')!.onclick = () => { mode = 'home'; render() }
 }
 
+/** 출생지 입력칸(홈 무료풀이·별자리용). 기본값은 서울. */
+function cityField(id: string): string {
+  const x = t()
+  return `<label>${x.place}<input type="text" name="${id}city" list="cities-${id}" placeholder="${x.placeHint}" autocomplete="off" value="${esc(formatCityName(SEOUL))}"></label><datalist id="cities-${id}"></datalist>`
+}
+function bindCity(id: string) {
+  const input = document.querySelector<HTMLInputElement>(`input[name=${id}city]`)
+  const list = document.getElementById(`cities-${id}`)
+  if (!input || !list) return
+  input.oninput = () => { list.innerHTML = filterCities(input.value).map((c) => `<option value="${esc(formatCityName(c))}"></option>`).join('') }
+}
+/** 입력한 도시를 찾는다. 비어 있으면 서울, 못 찾으면 null */
+function pickCity(f: HTMLFormElement, id: string): { lat: number; lon: number; tz: string; name: string } | null {
+  const typed = (f.elements.namedItem(`${id}city`) as HTMLInputElement).value.trim()
+  if (!typed) return { lat: SEOUL.lat, lon: SEOUL.lon, tz: 'Asia/Seoul', name: formatCityName(SEOUL) }
+  const found = filterCities(typed)
+  const c = found.find((k) => formatCityName(k) === typed) ?? found[0]
+  if (!c) return null
+  return { lat: c.lat, lon: c.lon, tz: tzlookup(c.lat, c.lon), name: formatCityName(c) }
+}
+
 function starHtml(): string {
   const x = t()
   return `<section class="card" aria-label="${esc(x.starPageT)}">
@@ -366,6 +388,7 @@ function starHtml(): string {
         <label class="grow">${x.time}<input type="time" name="stime"></label>
         <label class="chk"><input type="checkbox" name="sunk" checked> ${x.unknownTime}</label>
       </div>
+      ${cityField('s')}
       <p class="err" id="serr" role="alert"></p>
       <button class="go" type="submit">${esc(x.starGo)}</button>
     </form>
@@ -382,10 +405,12 @@ function onStarSubmit(e: Event) {
   const timeV = (f.elements.namedItem('stime') as HTMLInputElement).value
   const unk = (f.elements.namedItem('sunk') as HTMLInputElement).checked || !timeV
   if (!date) { err.textContent = x.errDate; return }
+  const city = pickCity(f, 's')
+  if (!city) { err.textContent = x.errPlace; return }
   err.textContent = ''
   const [y, m, d] = date.split('-').map(Number)
   const [hh, mm] = unk ? [12, 0] : timeV.split(':').map(Number)
-  const ac = astroFreeCard(natal({ year: y, month: m, day: d, hour: hh, minute: mm, latitude: SEOUL.lat, longitude: SEOUL.lon, timezone: 'Asia/Seoul', unknownTime: unk }), lang)
+  const ac = astroFreeCard(natal({ year: y, month: m, day: d, hour: hh, minute: mm, latitude: city.lat, longitude: city.lon, timezone: city.tz, unknownTime: unk }), lang)
   const out = document.getElementById('sout')!
   out.innerHTML = `<article class="rcard lead"><h3>${esc(ac.title)}</h3>${ac.paras.map((p) => `<p>${esc(p)}</p>`).join('')}</article>
   <article class="card"><div class="row"><button class="go" type="button" data-mode="home">${esc(x.starMore)}</button></div></article>`
@@ -403,11 +428,13 @@ function onFreeSubmit(e: Event) {
   const gender = (f.querySelector('input[name=fg]:checked') as HTMLInputElement).value as 'M' | 'F'
   if (!date) { err.textContent = x.errDate; return }
   if (!unk && !timeV) { err.textContent = x.errTime; return }
+  const city = pickCity(f, 'f')
+  if (!city) { err.textContent = x.errPlace; return }
   const [y, m, d] = date.split('-').map(Number)
   const [hh, mm] = unk ? [12, 0] : timeV.split(':').map(Number)
   try {
-    const result = calculateSaju({ year: y, month: m, day: d, hour: hh, minute: mm, gender, unknownTime: unk, latitude: SEOUL.lat, longitude: SEOUL.lon, timezone: 'Asia/Seoul' })
-    freePerson = { label: x.me, placeName: formatCityName(SEOUL), result }
+    const result = calculateSaju({ year: y, month: m, day: d, hour: hh, minute: mm, gender, unknownTime: unk, latitude: city.lat, longitude: city.lon, timezone: city.tz })
+    freePerson = { label: x.me, placeName: city.name, result }
     saveProfile(freePerson)
     mode = 'free'
     window.scrollTo(0, 0)
@@ -518,6 +545,7 @@ function bind() {
     }
   })
   document.getElementById('form')?.addEventListener('submit', onSubmit)
+  bindCity('f'); bindCity('s')
   document.getElementById('freeform')?.addEventListener('submit', onFreeSubmit)
   document.getElementById('starform')?.addEventListener('submit', onStarSubmit)
   if (mode === 'free') showFree()
