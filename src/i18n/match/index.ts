@@ -23,6 +23,10 @@ interface T {
   tips: { argue: string; speak: string; thanks: string; comfy: string; give: string; keep: string; rest: string }
   t: Record<string, string>
   sub: Record<string, string>
+  axes: { overall: string; flow: string; express: string; conflict: string; together: string }
+  chip: { stem: string; heart: string; month: string; year: string; v: Record<string, string> }
+  selfTalk: Record<El, string>
+  selfStem: { giveA: string; getB: string; ctrl: string; ctrled: string; space: string }
 }
 
 const ko: T = {
@@ -89,8 +93,20 @@ const ko: T = {
     keep: '같은 취미나 정해진 만남처럼 함께하는 시간을 만들면 더 가까워져요.',
     rest: '가까워도 각자 혼자 쉬는 시간은 꼭 지켜 주세요.',
   },
-  t: { talk: '대화 방식', score: '어울림 점수', stem: '첫인상과 끌림', heart: '가까워졌을 때', life: '생활과 주변', see: '서로에게 어떤 사람일까', fill: '서로 채워 주는 것', care: '조심하면 좋은 점', tips: '잘 지내는 방법' },
+  t: { each: '서로에게 해 주면 좋은 것', talk: '대화 방식', score: '어울림 점수', stem: '첫인상과 끌림', heart: '가까워졌을 때', life: '생활과 주변', see: '서로에게 어떤 사람일까', fill: '서로 채워 주는 것', care: '조심하면 좋은 점', tips: '잘 지내는 방법' },
   sub: {},
+  axes: { overall: '전체 어울림', flow: '관계가 굴러가는 방식', express: '마음을 표현하는 조화', conflict: '갈등을 푸는 힘', together: '함께 맞춰 갈 힘' },
+  chip: { stem: '중심 기운', heart: '가까운 마음', month: '생활 리듬', year: '띠',
+    v: { combine: '서로 끌려 합쳐짐', same: '비슷한 결', feedA: '내가 상대를 북돋음', feedB: '상대가 나를 북돋음', controlA: '내가 상대를 누름', controlB: '상대가 나를 누름', clash: '정면으로 부딪힘', plain: '특별한 신호 없음',
+      harmony: '맞물림', half: '반쯤 맞물림', punish: '가시처럼 걸림', harm: '은근히 엇나감', break: '작은 어긋남', none: '특별한 신호 없음', cl: '부딪힘' } },
+  selfTalk: {
+    tree: '곧은 말투를 한 템포만 부드럽게 해 보세요.',
+    fire: '감정이 올라오면 바로 말하기 전에 숨을 한 번 고르세요.',
+    earth: '해결책부터 말하기 전에 "그랬구나" 한마디를 먼저 해 주세요.',
+    metal: '옳고 그름을 따지기 전에 마음부터 먼저 알아 주세요.',
+    water: '혼자 삭이지 말고 짧게라도 마음을 말로 꺼내 주세요.',
+  },
+  selfStem: { giveA: '내가 주는 쪽이니, 지칠 땐 쉬고 싶다고 말하세요.', getB: '받는 만큼 고마움과 마음을 자주 표현해 주세요.', ctrl: '결정을 혼자 하지 말고 의견을 먼저 물어보세요.', ctrled: '맞추기만 하지 말고 하고 싶은 말을 분명히 하세요.', space: '부담될 땐 잠깐 거리를 두고 싶다고 솔직하게 말하세요.' },
 }
 
 const en: T = {
@@ -157,14 +173,27 @@ const en: T = {
     keep: 'A shared hobby or fixed meetup brings you closer.',
     rest: 'Even when close, protect each person’s alone time.',
   },
-  t: { talk: 'How you talk', score: 'Harmony score', stem: 'First pull', heart: 'When you get close', life: 'Life and surroundings', see: 'What you are to each other', fill: 'What you give each other', care: 'Watch out for', tips: 'How to get along' },
+  t: { each: 'What to do for each other', talk: 'How you talk', score: 'Harmony score', stem: 'First pull', heart: 'When you get close', life: 'Life and surroundings', see: 'What you are to each other', fill: 'What you give each other', care: 'Watch out for', tips: 'How to get along' },
   sub: {},
+  axes: { overall: 'Overall harmony', flow: 'How the bond runs', express: 'Harmony in expressing feelings', conflict: 'Power to resolve conflict', together: 'Power to grow together' },
+  chip: { stem: 'Core energy', heart: 'Closest heart', month: 'Daily rhythm', year: 'Birth-year animal',
+    v: { combine: 'pull together', same: 'similar nature', feedA: 'you nourish them', feedB: 'they nourish you', controlA: 'you press them', controlB: 'they press you', clash: 'head-on', plain: 'no special sign',
+      harmony: 'interlock', half: 'half-interlock', punish: 'snag', harm: 'drift', break: 'small mismatch', none: 'no special sign', cl: 'collide' } },
+  selfTalk: {
+    tree: 'Soften your straight talk by one beat.',
+    fire: 'When emotions rise, take one breath before speaking.',
+    earth: 'Before offering solutions, say "I hear you" first.',
+    metal: 'Before judging right and wrong, acknowledge the feeling first.',
+    water: 'Do not keep it inside — say your feeling briefly out loud.',
+  },
+  selfStem: { giveA: 'You are the giving side — say so when you are tired.', getB: 'Voice thanks and feelings often for what you receive.', ctrl: 'Ask their view before deciding alone.', ctrled: 'Do not only adapt — say clearly what you want.', space: 'When it feels heavy, honestly ask for a little space.' },
 }
 const POOL: Record<string, T> = { ko, en }
 export const matchPool = (lang: string) => POOL[lang] ?? POOL.en
 
 const rank: Record<RelKind, number> = { harmony: 2, half: 1, none: 0, break: -1, harm: -1, punish: -2, clash: -3 }
-export function composeMatch(c: MatchCalc, lang: string): { score: number; tier: string; headline: string; cards: MatchCard[] } {
+export interface MatchOut { score: number; tier: string; headline: string; cards: MatchCard[]; axes: { label: string; value: number }[]; chips: { k: string; v: string }[] }
+export function composeMatch(c: MatchCalc, lang: string): MatchOut {
   const t = matchPool(lang)
   const cards: MatchCard[] = []
   const [headline, summary] = t.tier[c.tier]
@@ -190,6 +219,15 @@ export function composeMatch(c: MatchCalc, lang: string): { score: number; tier:
   const strainLines = c.strains.map((s) => t.strain(s.who, t.el[s.el][0]))
   cards.push({ kind: 'fill', title: t.t.fill, paras: fillLines.length ? [...fillLines, ...strainLines] : [t.fillNone, ...strainLines] })
 
+  // 사람별 조언
+  const me: string[] = [], you: string[] = []
+  if (ta !== tb) { me.push(t.selfTalk[ta]); you.push(t.selfTalk[tb]) }
+  if (c.stemRel === 'feed') { (c.direction === 'a' ? me : you).push(t.selfStem.giveA); (c.direction === 'a' ? you : me).push(t.selfStem.getB) }
+  if (c.stemRel === 'control') { (c.direction === 'a' ? me : you).push(t.selfStem.ctrl); (c.direction === 'a' ? you : me).push(t.selfStem.ctrled) }
+  for (const st of c.strains) (st.who === 'a' ? me : you).push(t.selfStem.space)
+  const uq = (a: string[]) => Array.from(new Set(a)).slice(0, 3)
+  if (me.length || you.length) cards.push({ kind: 'each', title: t.t.each, paras: [], list: [...uq(me).map((x) => `${lang === 'ko' ? '나' : 'You'}: ${x}`), ...uq(you).map((x) => `${lang === 'ko' ? '상대' : 'Them'}: ${x}`)] })
+
   // 조심할 점·방법
   const tips: string[] = []
   const hard = c.stemRel === 'clash' || c.stemRel === 'control' || rank[c.dayBranch] <= -1
@@ -201,7 +239,19 @@ export function composeMatch(c: MatchCalc, lang: string): { score: number; tier:
   tips.push(t.tips.keep)
   const uniqTips = Array.from(new Set(tips)).slice(0, 4)
   cards.push({ kind: 'care', title: t.t.tips, paras: [], list: uniqTips })
-  return { score: c.score, tier: c.tier, headline, cards }
+  const A = t.axes
+  const stemChip = t.chip.v[stemKey]
+  const chips = [
+    { k: t.chip.stem, v: stemChip },
+    { k: t.chip.heart, v: t.chip.v[c.dayBranch] },
+    { k: t.chip.month, v: t.chip.v[c.monthBranch] },
+    { k: t.chip.year, v: t.chip.v[c.yearBranch] },
+  ]
+  const axes = [
+    { label: A.overall, value: c.score }, { label: A.flow, value: c.axes.flow }, { label: A.express, value: c.axes.express },
+    { label: A.conflict, value: c.axes.conflict }, { label: A.together, value: c.axes.together },
+  ]
+  return { score: c.score, tier: c.tier, headline, cards, axes, chips }
 }
 export function matchReading(rA: SajuResult, aA: Analysis, rB: SajuResult, aB: Analysis, lang: string) {
   return composeMatch(matchCalc(rA, aA, rB, aB), lang)

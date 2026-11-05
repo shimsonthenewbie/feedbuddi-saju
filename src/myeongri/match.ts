@@ -14,6 +14,7 @@ export interface Cross { where: string; kind: RelKind }
 export interface Fill { who: 'a' | 'b'; el: Element; level: 'rich' | 'some' }
 export interface MatchCalc {
   score: number
+  axes: { flow: number; express: number; conflict: number; together: number }
   tier: 'top' | 'good' | 'work' | 'diff' | 'hard'
   stemRel: StemRel
   /** 일간 오행 관계에서 누가 누구를 살리는지(feed/control일 때) */
@@ -94,8 +95,24 @@ export function matchCalc(rA: SajuResult, aA: Analysis, rB: SajuResult, aB: Anal
 
   const score = Math.max(25, Math.min(96, Math.round(44 + sum * 0.9)))
   const tier = score >= 85 ? 'top' : score >= 72 ? 'good' : score >= 58 ? 'work' : score >= 45 ? 'diff' : 'hard'
+  // 5개 항목 중 4개(나머지 하나는 전체 점수). 모두 양쪽 합이라 순서와 무관.
+  const rk = (k: RelKind) => PTS[k]
+  const stemPts = stemRel === 'combine' ? 18 : stemRel === 'feed' ? 10 : stemRel === 'same' ? 6 : stemRel === 'control' ? -7 : stemRel === 'clash' ? -10 : 0
+  const ELREL = ea === eb ? 8 : GEN[ea] === eb || GEN[eb] === ea ? 10 : CTRL[ea] === eb || CTRL[eb] === ea ? -8 : 0
+  const strongOf0 = (an: Analysis) => ELEMENTS.reduce((m, e) => (an.elements[e] > an.elements[m] ? e : m), ELEMENTS[0])
+  const sa = strongOf0(aA), sb = strongOf0(aB)
+  const talkRel = sa === sb ? 8 : GEN[sa] === sb || GEN[sb] === sa ? 4 : CTRL[sa] === sb || CTRL[sb] === sa ? -10 : -3
+  const fillPts = fills.reduce((n, f) => n + (f.level === 'rich' ? 1 : 0.5), 0)
+  const pos = (k: RelKind) => (rk(k) > 0 ? rk(k) : 0), neg = (k: RelKind) => (rk(k) < 0 ? -rk(k) : 0)
+  const cl = (v: number) => Math.max(30, Math.min(96, Math.round(v)))
+  const axes = {
+    flow: cl(56 + stemPts * 0.9 + rk(dayBranch) * 9 + ((SS[aSeesB] ?? 0) + (SS[bSeesA] ?? 0)) * 1.5),
+    express: cl(60 + talkRel * 1.4 + ELREL * 0.6 + rk(dayBranch) * 5),
+    conflict: cl(82 - strains.length * 7 - (stemRel === 'clash' ? 12 : stemRel === 'control' ? 8 : 0) - neg(dayBranch) * 22 - (neg(monthBranch) + neg(yearBranch)) * 8 + (stemRel === 'combine' ? 4 : 0) + pos(dayBranch) * 4),
+    together: cl(54 + fillPts * 7 + (pos(monthBranch) + pos(yearBranch)) * 7 + pos(dayBranch) * 8 + (ea === eb ? 4 : 0)),
+  }
   const strongOf = (an: Analysis) => ELEMENTS.reduce((m, e) => (an.elements[e] > an.elements[m] ? e : m), ELEMENTS[0])
-  return { score, tier, stemRel, direction, dayBranch, yearBranch, monthBranch, aSeesB, bSeesA, fills, strains, dayStemA: dA.stem, dayStemB: dB.stem, strongA: strongOf(aA), strongB: strongOf(aB) }
+  return { score, axes, tier, stemRel, direction, dayBranch, yearBranch, monthBranch, aSeesB, bSeesA, fills, strains, dayStemA: dA.stem, dayStemB: dB.stem, strongA: strongOf(aA), strongB: strongOf(aB) }
 }
 export { GROUP_OF }
 export type { Group }

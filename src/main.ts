@@ -527,6 +527,8 @@ function matchHtml(people: Person[]): string {
     <img class="smascot" src="${art('match-sprite')}" alt="" width="110" height="110">
     <div class="sc"><b>${m.score}</b><span>${esc(mp.ui.ofHundred)}</span><small>${esc(mp.ui.score)}</small></div>
     <h3>${esc(lead.title)}</h3>${lead.paras.map((p) => `<p>${esc(p)}</p>`).join('')}
+    <div class="axes">${m.axes.slice(1).map((a) => `<div class="ax"><span>${esc(a.label)}</span><i class="tr"><b style="width:${a.value}%"></b></i><em>${a.value}</em></div>`).join('')}</div>
+    <ul class="chips2">${m.chips.map((c) => `<li><small>${esc(c.k)}</small>${esc(c.v)}</li>`).join('')}</ul>
   </article>
   ${rest.map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}${c.list ? `<ul>${c.list.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}</article>`).join('')}
   <p class="note">${esc(mp.ui.note)}</p>`
