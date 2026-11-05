@@ -12,6 +12,8 @@ import { dailyFortune } from './myeongri/daily'
 import { composeDaily } from './i18n/daily'
 import { mountAsk } from './consult-ui'
 import { art } from './art'
+import { natal } from './astro'
+import { astroFreeCard, astroMatchCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
 type Mode = 'home' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
@@ -318,7 +320,9 @@ function showFree() {
   const dayBranch = r.pillars[1].pillar.branch
   const dg = GROUP_OF[sipsinOf(a.dayStem, mainStemOf(dayBranch))]
   const tone = luckAt(r, a, new Date()).year.tone
-  const cards = freeCards(r, a, lang, dg, tone)
+  const base = freeCards(r, a, lang, dg, tone)
+  const ac = astroFreeCard(natal(r.input as Parameters<typeof natal>[0]), lang)
+  const cards = [base[0], { title: ac.title, head: '', body: ac.paras }, ...base.slice(1)] as typeof base
   const fp = freePool(lang)
   out.innerHTML = `${chartHtml(freePerson)}
   ${cards.map((c, i) => `<article class="rcard${i === 0 ? ' lead' : ''}"><h3>${esc(c.title)}</h3>${c.head ? `<p class="fhead">${esc(c.head)}</p>` : ''}${c.body.map((b) => `<p>${esc(b)}</p>`).join('')}</article>`).join('')}
@@ -550,7 +554,9 @@ function matchHtml(people: Person[]): string {
   const mp = matchPool(lang)
   const [A, B] = people
   const m = matchReading(A.result, analyze(A.result), B.result, analyze(B.result), lang)
-  const [lead, ...rest] = m.cards
+  const [lead, ...rest0] = m.cards
+  const ac = astroMatchCard(natal(A.result.input as Parameters<typeof natal>[0]), natal(B.result.input as Parameters<typeof natal>[0]), lang)
+  const rest = [...rest0, { kind: 'astro', title: ac.title, paras: ac.paras } as (typeof rest0)[number]]
   return `<article class="rcard lead score">
     <img class="smascot" src="${art('match-sprite')}" alt="" width="110" height="110">
     <div class="sc"><b>${m.score}</b><span>${esc(mp.ui.ofHundred)}</span><small>${esc(mp.ui.score)}</small></div>
