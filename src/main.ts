@@ -32,7 +32,7 @@ const T = {
     today: '오늘',
     home: '홈',
     freeTitle: '무료 사주 맛보기',
-    shT: '친구와 나누기', shSend: '친구에게 궁합 보내기', shCard: '결과 카드 저장', shPriv: '링크에는 내 생년월일이 들어 있어요. 믿는 사람에게만 보내세요.', shCopied: '링크를 복사했어요. 친구에게 붙여 넣어 보내세요.', shSaved: '카드를 저장했어요.', shText: (sc: number, hl: string) => `여의가 본 우리 궁합은 ${sc}점, "${hl}"! 너랑도 궁합 볼래?`,
+    shT: '친구와 나누기', again: '나도 다른 사람과 궁합 보기', shSend: '친구에게 궁합 보내기', shCard: '결과 카드 저장', shPriv: '링크에는 내 생년월일이 들어 있어요. 믿는 사람에게만 보내세요.', shCopied: '링크를 복사했어요. 친구에게 붙여 넣어 보내세요.', shSaved: '카드를 저장했어요.', shText: (sc: number, hl: string) => `여의가 본 우리 궁합은 ${sc}점, "${hl}"! 너랑도 궁합 볼래?`,
     invT: (n: string) => (n ? `${n}님이 궁합을 보내왔어요` : '친구가 궁합을 보내왔어요'), invD: '내 생년월일만 넣으면 둘의 궁합을 바로 볼 수 있어요. 가입은 필요 없어요.', invGo: '우리 궁합 보기',
     starTag: '해외 인기', starT: '해외에선 이렇게 봐요', starD: '서양 별자리로 보는 내 성격. 생일만 넣으면 태양·달·상승 별자리를 풀어 드려요.', starCta: '별자리 맛보기',
     starPageT: '별자리 맛보기', starPageD: '생일만 넣으면 돼요. 해외에서 가장 많이 보는 방식이에요.', starGo: '별자리 보기', starMore: '내 사주도 보기',
@@ -118,7 +118,7 @@ const T = {
     today: 'Today',
     home: 'Home',
     freeTitle: 'Free Saju taste',
-    shT: 'Share with a friend', shSend: 'Send match to a friend', shCard: 'Save result card', shPriv: 'The link contains your birth info. Send it only to people you trust.', shCopied: 'Link copied. Paste it to your friend.', shSaved: 'Card saved.', shText: (sc: number, hl: string) => `Yeoui read our match at ${sc}/100 — "${hl}". Check yours with me!`,
+    shT: 'Share with a friend', again: 'Check my match with someone else', shSend: 'Send match to a friend', shCard: 'Save result card', shPriv: 'The link contains your birth info. Send it only to people you trust.', shCopied: 'Link copied. Paste it to your friend.', shSaved: 'Card saved.', shText: (sc: number, hl: string) => `Yeoui read our match at ${sc}/100 — "${hl}". Check yours with me!`,
     invT: (n: string) => (n ? `${n} sent you a match` : 'A friend sent you a match'), invD: 'Enter your birth date and see your match right away. No sign-up needed.', invGo: 'See our match',
     starTag: 'WORLD', starT: 'How the world reads itself', starD: 'Your personality by Western star signs — Sun, Moon and Rising in plain words.', starCta: 'Try star signs',
     starPageT: 'Star sign taste', starPageD: 'Just your birthday. The most popular way to read a chart worldwide.', starGo: 'See my star signs', starMore: 'See my Saju too',
@@ -425,7 +425,7 @@ function shopHtml(): string {
 const app = document.getElementById('app')!
 let lang: Lang = (navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'
 let mode: Mode = 'home'
-const invite: Invite | null = readInvite(location.hash)
+let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
 let lastMatch: { people: Person[]; m: ReturnType<typeof matchReading> } | null = null
 let dayOffset = 0
@@ -640,7 +640,8 @@ function matchHtml(people: Person[]): string {
   ${rest.map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}${c.list ? `<ul>${c.list.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}</article>`).join('')}
   <p class="note">${esc(mp.ui.note)}</p>
   <article class="card share"><h3>${esc(t().shT)}</h3>
-    <div class="row"><button class="go" type="button" id="shsend">${esc(t().shSend)}</button></div>
+    ${invite ? `<div class="row"><button class="go" type="button" id="again">${esc(t().again)}</button></div>` : ''}
+    <div class="row"><button class="go${invite ? ' ghost' : ''}" type="button" id="shsend">${esc(t().shSend)}</button></div>
     <div class="row"><button class="go ghost" type="button" id="shcard">${esc(t().shCard)}</button></div>
     <p class="note">${esc(t().shPriv)}</p><p class="ok" id="shok" role="status"></p></article>`
 }
@@ -687,6 +688,7 @@ function bindShare() {
   if (!send || !card || !lastMatch) return
   const x = t(), ok = document.getElementById('shok')!
   const { people, m } = lastMatch
+  document.getElementById('again')?.addEventListener('click', () => { history.replaceState(null, '', location.pathname); invite = null; mode = 'match'; render(); window.scrollTo(0, 0) })
   send.onclick = async () => {
     const a = people[0]
     const url = makeInviteUrl(a.result.input as Parameters<typeof makeInviteUrl>[0], a.label === x.me ? '' : a.label)
