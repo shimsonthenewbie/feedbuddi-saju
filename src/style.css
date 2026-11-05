@@ -353,3 +353,12 @@ input[type=date],input[type=time],input[type=text],textarea{border-radius:16px;p
 .chip.on,.seg input:checked+span{background:var(--ink);color:#f8ecd2;border-color:var(--ink);text-shadow:none;box-shadow:none}
 .chip{border-width:1.5px}
 @media (prefers-reduced-motion:reduce){.go,.bgo{transition:none}}
+
+/* 궁합 점수 */
+.rcard.score{text-align:center}
+.sc{display:flex;align-items:baseline;justify-content:center;gap:6px;flex-wrap:wrap;margin:4px 0 6px}
+.sc b{font:400 64px/1 var(--serif);color:var(--wine)}
+.sc span{font-size:18px;color:var(--mute)}
+.sc small{flex-basis:100%;font-size:13px;color:var(--mute)}
+.rcard.score h3{justify-content:center}
+details.charts{margin:0 0 14px}

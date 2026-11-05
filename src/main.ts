@@ -11,6 +11,7 @@ import { freeCards, freePool } from './i18n/free'
 import { dailyFortune } from './myeongri/daily'
 import { composeDaily } from './i18n/daily'
 import { mountAsk } from './consult-ui'
+import { matchReading, matchPool } from './i18n/match'
 
 type Mode = 'home' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
@@ -40,17 +41,17 @@ const T = {
     homeBeta: '베타 기간 무료',
     quick: [['today', '運', '오늘의 운세'], ['solo', '命', '내 사주'], ['ask', '問', '고민 상담'], ['match', '緣', '궁합'], ['shop', '籤', '풀이 목록']],
     newTitle: '새로 나온 운세',
-    newItems: [['NEW', '2027 신년운세', '정미년 한 해 흐름을 월별로', '12월 공개 예정', 'shop'], ['NEW', '그 사람과 이어질 수 있을까', '두 사람의 인연과 시기', '곧 공개', 'match']],
+    newItems: [['NEW', '2027 신년운세', '정미년 한 해 흐름을 월별로', '12월 공개 예정', 'shop'], ['NEW', '두 사람의 궁합', '서로 끌리는 이유와 부딪히는 점', '베타 무료', 'match']],
     hotTitle: '지금 많이 보는 운세',
-    hotItems: [['오늘의 운세', '무료', 'today'], ['무료 사주 풀이', '무료', 'solo'], ['고민 상담 (시기 짚기)', '베타 무료', 'ask'], ['올해 흐름 (월별)', '990원', 'shop'], ['재물·직업 풀이', '990원', 'shop'], ['종합 풀이 리포트', '9,900원', 'shop']],
+    hotItems: [['오늘의 운세', '무료', 'today'], ['무료 사주 풀이', '무료', 'solo'], ['고민 상담 (시기 짚기)', '베타 무료', 'ask'], ['사주 궁합', '베타 무료', 'match'], ['올해 흐름 (월별)', '990원', 'shop'], ['재물·직업 풀이', '990원', 'shop'], ['종합 풀이 리포트', '9,900원', 'shop']],
     pieceTitle: '사주 한 조각',
     pieces: ['오행은 목·화·토·금·수예요. 하나가 많거나 없다고 나쁜 게 아니라 그 기운을 어떻게 쓰는지가 성향을 만들어요.', '일간은 태어난 날의 하늘 글자로, 사주에서 "나"를 뜻해요.', '대운은 약 10년 단위로 바뀌는 큰 흐름이에요.'],
     ask: '상담',
     shop: '풀이',
     solo: '내 사주',
-    match: '최애와 궁합',
+    match: '궁합',
     me: '나',
-    fav: '최애',
+    fav: '상대',
     date: '생년월일',
     time: '태어난 시각',
     unknownTime: '시간을 몰라요',
@@ -116,9 +117,9 @@ const T = {
     homeBeta: 'Free during beta',
     quick: [['today', '運', "Today's fortune"], ['solo', '命', 'My chart'], ['ask', '問', 'Ask'], ['match', '緣', 'Match'], ['shop', '籤', 'Readings']],
     newTitle: 'New readings',
-    newItems: [['NEW', '2027 New Year reading', 'The Ding-Wei year, month by month', 'Coming in December', 'shop'], ['NEW', 'Can we become close?', 'The bond and timing between two people', 'Coming soon', 'match']],
+    newItems: [['NEW', '2027 New Year reading', 'The Ding-Wei year, month by month', 'Coming in December', 'shop'], ['NEW', 'Compatibility', 'Why you click — and where you clash', 'Free beta', 'match']],
     hotTitle: 'Popular now',
-    hotItems: [["Today's fortune", 'Free', 'today'], ['Free chart reading', 'Free', 'solo'], ['Ask about your worry', 'Free beta', 'ask'], ['This year, month by month', '₩990', 'shop'], ['Money & career', '₩990', 'shop'], ['Full life report', '₩9,900', 'shop']],
+    hotItems: [["Today's fortune", 'Free', 'today'], ['Free chart reading', 'Free', 'solo'], ['Ask about your worry', 'Free beta', 'ask'], ['Compatibility', 'Free beta', 'match'], ['This year, month by month', '₩990', 'shop'], ['Money & career', '₩990', 'shop'], ['Full life report', '₩9,900', 'shop']],
     pieceTitle: 'A piece of Saju',
     pieces: ['The five elements are Wood, Fire, Earth, Metal and Water. Having a lot or none is not bad; how you use it shapes you.', 'The Day Master is the heaven character of your birth day. It stands for "you".', 'Luck cycles change about every ten years.'],
     ask: 'Ask',
@@ -126,7 +127,7 @@ const T = {
     solo: 'My chart',
     match: 'Match',
     me: 'Me',
-    fav: 'My bias',
+    fav: 'Them',
     date: 'Birth date',
     time: 'Birth time',
     unknownTime: "I don't know the time",
@@ -471,6 +472,8 @@ function onSubmit(e: Event) {
     const b = readPerson('b', x.fav)
     if (typeof b === 'string') { err.textContent = b; return }
     people.push(b)
+    showResult(people, matchHtml(people))
+    return
   }
   showResult(people)
 }
@@ -514,11 +517,24 @@ function chartHtml(p: Person): string {
   </article>`
 }
 
-function showResult(people: Person[]) {
+function matchHtml(people: Person[]): string {
+  const mp = matchPool(lang)
+  const [A, B] = people
+  const m = matchReading(A.result, analyze(A.result), B.result, analyze(B.result), lang)
+  const [lead, ...rest] = m.cards
+  return `<article class="rcard lead score">
+    <div class="sc"><b>${m.score}</b><span>${esc(mp.ui.ofHundred)}</span><small>${esc(mp.ui.score)}</small></div>
+    <h3>${esc(lead.title)}</h3>${lead.paras.map((p) => `<p>${esc(p)}</p>`).join('')}
+  </article>
+  ${rest.map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}${c.list ? `<ul>${c.list.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}</article>`).join('')}
+  <p class="note">${esc(mp.ui.note)}</p>`
+}
+
+function showResult(people: Person[], lead = '') {
   const x = t()
   const out = document.getElementById('out')!
   const render2 = () => buildPrompt(mode === 'match' ? 'match' : 'solo', readLang, people)
-  out.innerHTML = `${people.map(chartHtml).join('')}
+  out.innerHTML = `${lead}${lead ? `<details class="charts"><summary>${esc(matchPool(lang).ui.charts)}</summary>${people.map(chartHtml).join('')}</details>` : people.map(chartHtml).join('')}
   <article class="card ai">
     <h2>${x.aiTitle}</h2>
     <p>${x.aiDesc}</p>
