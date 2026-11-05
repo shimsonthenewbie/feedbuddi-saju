@@ -61,6 +61,11 @@ const T = {
     female: '여',
     place: '태어난 곳',
     placeHint: '도시 이름 검색 (예: 서울, 도쿄, 뉴욕)',
+    nm: '이름 또는 별명 (선택)', nmHint: '결과에 이 이름으로 불러 드려요. 서버에 저장하지 않아요.',
+    acc: '풀이 정확도', accDate: '생년월일', accTime: '태어난 시간', accPlace: '태어난 곳',
+    accTimeTip: '태어난 시간을 알면 +25%예요. 모르면 가족에게 물어보거나 출생증명서·생활기록부에서 찾을 수 있어요.',
+    accPlaceTip: '태어난 곳이 서울이 아니라면 도시를 바꿔 주세요(+10%). 지역마다 해 뜨는 시각이 달라 계산이 더 정확해져요. 서울이 맞으면 그대로 두셔도 돼요.',
+    accFull: '좋아요! 가장 정확한 풀이가 나와요.',
     go: '사주 보기',
     todayGo: '오늘의 운세 보기',
     goMatch: '궁합 보기',
@@ -137,6 +142,11 @@ const T = {
     female: 'Female',
     place: 'Birthplace',
     placeHint: 'Search a city (e.g. Seoul, Tokyo, New York)',
+    nm: 'Name or nickname (optional)', nmHint: 'We use this name in your result. It is not stored on a server.',
+    acc: 'Reading accuracy', accDate: 'Birth date', accTime: 'Birth time', accPlace: 'Birthplace',
+    accTimeTip: 'Knowing your birth time adds +25%. Ask family, or check your birth certificate.',
+    accPlaceTip: 'If you were not born in Seoul, change the city (+10%) — sunrise differs by place. If Seoul is right, leave it.',
+    accFull: 'Great! This gives the most accurate reading.',
     go: 'Show my chart',
     todayGo: "See today's fortune",
     goMatch: 'Check compatibility',
@@ -363,6 +373,8 @@ function personForm(id: 'a' | 'b', label: string): string {
   const x = t()
   return `<fieldset class="card person" data-p="${id}">
     <legend class="tag">${esc(label)}</legend>
+    <label>${x.nm}<input type="text" name="nm" maxlength="12" autocomplete="off"></label>
+    <p class="note nmhint">${x.nmHint}</p>
     <label>${x.date}<input type="date" name="date" min="1900-01-01" max="2100-12-31" required></label>
     <div class="row">
       <label class="grow">${x.time}<input type="time" name="time"></label>
@@ -377,6 +389,7 @@ function personForm(id: 'a' | 'b', label: string): string {
     </div>
     <label>${x.place}<input type="text" name="city" list="cities-${id}" placeholder="${x.placeHint}" autocomplete="off" value="${esc(formatCityName(SEOUL))}"></label>
     <datalist id="cities-${id}"></datalist>
+    <div class="acc" aria-live="polite"><div class="accrow"><b>${x.acc}</b><span class="accn">60%</span></div><i class="tr"><b class="accbar"></b></i><p class="note acctip"></p></div>
   </fieldset>`
 }
 
@@ -415,12 +428,26 @@ function bind() {
     const list = fs.querySelector<HTMLDataListElement>('datalist')!
     const unk = fs.querySelector<HTMLInputElement>('input[name=unk]')!
     const time = fs.querySelector<HTMLInputElement>('input[name=time]')!
-    unk.onchange = () => { time.disabled = unk.checked }
+    const date = fs.querySelector<HTMLInputElement>('input[name=date]')!
+    const accN = fs.querySelector<HTMLElement>('.accn')!, accBar = fs.querySelector<HTMLElement>('.accbar')!, accTip = fs.querySelector<HTMLElement>('.acctip')!
+    let placeTouched = false
+    const updAcc = () => {
+      const x = t()
+      const hasTime = !unk.checked && !!time.value, hasPlace = placeTouched
+      const v = (date.value ? 60 : 0) + (hasTime ? 25 : 0) + (hasPlace ? 10 : 0) + 5
+      accN.textContent = `${v}%`; accBar.style.width = `${v}%`
+      accTip.textContent = !hasTime ? x.accTimeTip : !hasPlace ? x.accPlaceTip : x.accFull
+    }
+    unk.onchange = () => { time.disabled = unk.checked; updAcc() }
+    date.oninput = updAcc; time.oninput = updAcc
+    updAcc()
     input.oninput = () => {
       const found = filterCities(input.value)
       list.innerHTML = found.map((c) => `<option value="${esc(formatCityName(c))}"></option>`).join('')
       const exact = found.find((c) => formatCityName(c) === input.value)
       if (exact) cityState[id] = exact
+      placeTouched = true
+      updAcc()
     }
   })
   document.getElementById('form')?.addEventListener('submit', onSubmit)
@@ -448,7 +475,8 @@ function readPerson(id: 'a' | 'b', label: string): Person | string {
   try {
     const tz = tzlookup(city.lat, city.lon)
     const result = calculateSaju({ year: y, month: m, day: d, hour: hh, minute: mm, gender, unknownTime: unk, latitude: city.lat, longitude: city.lon, timezone: tz })
-    return { label, placeName: formatCityName(city), result }
+    const nm = fs.querySelector<HTMLInputElement>('input[name=nm]')!.value.trim().slice(0, 12)
+    return { label: nm || label, placeName: formatCityName(city), result }
   } catch {
     return x.errCalc
   }
