@@ -1,5 +1,6 @@
 import type { SajuResult } from '@orrery/core/types'
 import { analyze, analysisText } from './myeongri'
+import { art, catArt } from './art'
 import { ASK_CATS, consultCalc, type AskCat } from './myeongri/consult'
 import { composeConsult, consultPool } from './i18n/consult'
 
@@ -46,7 +47,7 @@ export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
   const loading = () => {
     let i = 0
     const tip = () => `<p class="tip"><b>${esc(t.tips.title)}</b><br>${esc(t.tips.items[i % t.tips.items.length])}</p>`
-    box.innerHTML = `<section class="card wait" aria-live="polite"><div class="ring" aria-hidden="true"><span>命</span></div><h2>${esc(t.ui.loading)}</h2><p class="meta">${esc(t.ui.loadingSub)}</p><div id="tip">${tip()}</div></section>`
+    box.innerHTML = `<section class="card wait" aria-live="polite"><div class="ring" aria-hidden="true"><img src="${art('dragon-think')}" alt="" width="84" height="84"></div><h2>${esc(t.ui.loading)}</h2><p class="meta">${esc(t.ui.loadingSub)}</p><div id="tip">${tip()}</div></section>`
     const timer = setInterval(() => { i++; const el = box.querySelector('#tip'); if (el) el.innerHTML = tip() }, 1800)
     const t0 = Date.now()
     fetchCards().then((cards) => {
@@ -80,6 +81,7 @@ export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
 
   const result = (cards: Card[]) => {
     box.innerHTML = `
+    <img class="cbanner" src="${catArt(cat!)}" alt="" width="520" height="260">
     <div class="bubble me"><small>${esc(t.ui.mine)} · ${esc(t.cats[cat!])}</small>${esc(q)}</div>
     ${cards.map((c, idx) => `<article class="rcard ${c.kind}${idx === 0 ? ' lead' : ''}"><h3><span class="ri">${ICON[c.kind]}</span>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}${c.list ? `<ul>${c.list.map((l) => (l.startsWith('#') ? `<li class="lh">${esc(l.slice(1))}</li>` : `<li>${esc(l)}</li>`)).join('')}</ul>` : ''}</article>`).join('')}
     <article class="card fit"><h3>${esc(t.ui.fit)}</h3><div class="row"><button class="chip" data-f="y" type="button">${esc(t.ui.fitYes)}</button><button class="chip" data-f="n" type="button">${esc(t.ui.fitNo)}</button></div><p class="ok" id="thx" role="status"></p></article>

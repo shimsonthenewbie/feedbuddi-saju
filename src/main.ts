@@ -11,6 +11,7 @@ import { freeCards, freePool } from './i18n/free'
 import { dailyFortune } from './myeongri/daily'
 import { composeDaily } from './i18n/daily'
 import { mountAsk } from './consult-ui'
+import { art } from './art'
 import { matchReading, matchPool } from './i18n/match'
 
 type Mode = 'home' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
@@ -223,7 +224,7 @@ function showToday() {
       <div class="dtitle"><b>${esc(dstr)}</b>${label ? `<span>${esc(label)}</span>` : ''}</div>
       <button type="button" id="next" aria-label="${x.dTom}">›</button>
     </div>
-    <div class="hero"><span class="seal" aria-hidden="true">運</span>
+    <div class="hero"><img class="dmascot" src="${art('daily-' + Math.min(5, Math.max(1, Math.round(v.stars))))}" alt="" width="150" height="150">
       <div class="stars" role="img" aria-label="${v.stars}/5">${starRow(v.stars)}</div>
       <div class="slabel">${esc(v.starLabel)}</div>
     </div>
@@ -260,7 +261,7 @@ function homeHtml(): string {
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   return `
   <section class="card freebox" aria-label="${esc(x.freeTitle)}">
-    <div class="freehead"><div><h2>${esc(x.freeTitle)}</h2><p class="meta">${esc(x.freeSub)}</p></div><img class="fmascot" src="/mascot.png" alt="" width="92" height="111"></div>
+    <div class="freehead"><div><h2>${esc(x.freeTitle)}</h2><p class="meta">${esc(x.freeSub)}</p></div><img class="fmascot" src="${art('dragon-cheer')}" alt="" width="92" height="92"></div>
     <form id="freeform" novalidate>
       <label>${x.date}<input type="date" name="fdate" min="1900-01-01" max="2100-12-31" required></label>
       <div class="row">
@@ -279,12 +280,12 @@ function homeHtml(): string {
     </form>
   </section>
   <section class="lockcard" aria-label="${esc(x.todayLockT)}">
-    <div class="lk1"><span class="lockic" aria-hidden="true">運</span><div><b>${esc(x.todayLockT)}</b><span>${esc(x.todayLockD)}</span></div></div>
+    <div class="lk1"><img class="lockic" src="${art('ui-lock')}" alt="" width="52" height="52"><div><b>${esc(x.todayLockT)}</b><span>${esc(x.todayLockD)}</span></div></div>
     <div class="dim" aria-hidden="true">★★★★☆</div>
     <button type="button" class="bgo" data-mode="today">${esc(x.todayLockB)}</button>
   </section>
   <section class="banner" aria-label="${esc(x.homeBannerT)}">
-    <div class="bmain"><img class="mascot" src="/mascot.png" alt="" width="96" height="116"><div><h2>${esc(x.homeBannerT)}</h2><p>${esc(x.homeBannerD)}</p></div></div>
+    <div class="bmain"><img class="mascot" src="${art('dragon-hello')}" alt="" width="104" height="104"><div><h2>${esc(x.homeBannerT)}</h2><p>${esc(x.homeBannerD)}</p></div></div>
     <div class="brow"><span class="beta">${esc(x.homeBeta)}</span><button type="button" class="bgo" data-mode="ask">${esc(x.homeBannerB)}</button></div>
   </section>
   <h3 class="sec">${esc(x.hotTitle)}</h3>
@@ -523,6 +524,7 @@ function matchHtml(people: Person[]): string {
   const m = matchReading(A.result, analyze(A.result), B.result, analyze(B.result), lang)
   const [lead, ...rest] = m.cards
   return `<article class="rcard lead score">
+    <img class="smascot" src="${art('match-sprite')}" alt="" width="110" height="110">
     <div class="sc"><b>${m.score}</b><span>${esc(mp.ui.ofHundred)}</span><small>${esc(mp.ui.score)}</small></div>
     <h3>${esc(lead.title)}</h3>${lead.paras.map((p) => `<p>${esc(p)}</p>`).join('')}
   </article>
