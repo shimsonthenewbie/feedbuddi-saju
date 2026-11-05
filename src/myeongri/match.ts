@@ -88,6 +88,7 @@ export function matchCalc(rA: SajuResult, aA: Analysis, rB: SajuResult, aB: Anal
     }
     const top = ELEMENTS.reduce((m, e) => (other.elements[e] > other.elements[m] ? e : m), ELEMENTS[0])
     if (top === an.yongsin.gisin && other.elements[top] >= 0.35) { strains.push({ who, el: top }); sum -= 5 }
+    else if ((top === an.yongsin.gisin || top === an.yongsin.gusin) && other.elements[top] >= 0.3) { strains.push({ who, el: top }); sum -= 3 }
   }
   need('a', aA, aB); need('b', aB, aA)
 

@@ -18,6 +18,8 @@ interface T {
   fillNone: string
   strain: (who: 'a' | 'b', el: string) => string
   el: Record<El, [string, string]>
+  talk: Record<El, string>
+  talkMix: { same: string; diff: string }
   tips: { argue: string; speak: string; thanks: string; comfy: string; give: string; keep: string; rest: string }
   t: Record<string, string>
   sub: Record<string, string>
@@ -67,6 +69,17 @@ const ko: T = {
   fillNone: '서로 채워 주는 기운이 크게 보이지는 않아요. 대신 각자 자기 균형을 스스로 챙겨 보세요.',
   strain: (w, e) => `${w === 'a' ? '나에게' : '상대에게'} 부담이 되는 ${e} 기운이 ${w === 'a' ? '상대' : '나'}에게 아주 강해서, 가끔 지칠 수 있어요.`,
   el: { tree: ['나무', '성장과 시작의 힘'], fire: ['불', '열정과 표현의 힘'], earth: ['흙', '안정과 중심의 힘'], metal: ['쇠', '결단과 정리의 힘'], water: ['물', '지혜와 쉼의 힘'] },
+  talk: {
+    tree: '솔직하고 곧게 말해요. 돌려 말하기보다 바로 말하고 싶어 해요.',
+    fire: '감정이 빠르고 표현이 커요. 기쁨도 화도 바로 드러나서, 먼저 "공감해 주길" 바라는 편이에요.',
+    earth: '느긋하고 현실적이에요. 감정보다 "그래서 어떻게 할까"를 먼저 말하는 편이에요.',
+    metal: '객관적이고 원칙을 따져요. 감정보다 옳고 그름을 먼저 보는 편이에요.',
+    water: '생각이 깊고 말을 아껴요. 마음을 천천히 정리한 뒤에 꺼내는 편이에요.',
+  },
+  talkMix: {
+    same: '말하는 방식이 비슷해서 서로 이해가 빨라요.',
+    diff: '말하는 방식이 달라서 어긋나기 쉬워요. 한쪽은 공감을, 다른 쪽은 해결을 말하다 서로 서운해질 수 있어요. 대화를 시작할 때 "지금은 들어줘" 또는 "지금은 방법이 필요해"라고 먼저 말해 보세요.',
+  },
   tips: {
     argue: '의견이 갈릴 땐 바로 결론 내지 말고, 하루 두었다가 이야기해 보세요.',
     speak: '서운한 건 쌓아 두지 말고 그날 짧게 말해 주세요.',
@@ -76,7 +89,7 @@ const ko: T = {
     keep: '같은 취미나 정해진 만남처럼 함께하는 시간을 만들면 더 가까워져요.',
     rest: '가까워도 각자 혼자 쉬는 시간은 꼭 지켜 주세요.',
   },
-  t: { score: '어울림 점수', stem: '첫인상과 끌림', heart: '가까워졌을 때', life: '생활과 주변', see: '서로에게 어떤 사람일까', fill: '서로 채워 주는 것', care: '조심하면 좋은 점', tips: '잘 지내는 방법' },
+  t: { talk: '대화 방식', score: '어울림 점수', stem: '첫인상과 끌림', heart: '가까워졌을 때', life: '생활과 주변', see: '서로에게 어떤 사람일까', fill: '서로 채워 주는 것', care: '조심하면 좋은 점', tips: '잘 지내는 방법' },
   sub: {},
 }
 
@@ -124,6 +137,17 @@ const en: T = {
   fillNone: 'No big mutual refilling shows up. Look after your own balance.',
   strain: (w, e) => `${w === 'a' ? 'They are' : 'You are'} very strong in ${e} energy, which ${w === 'a' ? 'you' : 'they'} find draining at times.`,
   el: { tree: ['wood', 'growth and beginnings'], fire: ['fire', 'passion and expression'], earth: ['earth', 'stability'], metal: ['metal', 'decisiveness'], water: ['water', 'wisdom and rest'] },
+  talk: {
+    tree: 'Speaks straight and frankly; prefers saying it directly.',
+    fire: 'Feels fast and expresses big. Joy and anger show right away, and often wants empathy first.',
+    earth: 'Easygoing and practical. Tends to ask "so what do we do?" before feelings.',
+    metal: 'Objective and principled. Tends to weigh right and wrong before feelings.',
+    water: 'Deep thinker who says little. Sorts feelings slowly before sharing.',
+  },
+  talkMix: {
+    same: 'You talk in a similar way, so you understand each other quickly.',
+    diff: 'Your talking styles differ, so it is easy to miss each other. One wants empathy, the other offers solutions, and both can feel unheard. Start by saying "just listen now" or "I need a solution now".',
+  },
   tips: {
     argue: 'When you disagree, sleep on it before deciding.',
     speak: 'Do not store up hurt — say it briefly the same day.',
@@ -133,7 +157,7 @@ const en: T = {
     keep: 'A shared hobby or fixed meetup brings you closer.',
     rest: 'Even when close, protect each person’s alone time.',
   },
-  t: { score: 'Harmony score', stem: 'First pull', heart: 'When you get close', life: 'Life and surroundings', see: 'What you are to each other', fill: 'What you give each other', care: 'Watch out for', tips: 'How to get along' },
+  t: { talk: 'How you talk', score: 'Harmony score', stem: 'First pull', heart: 'When you get close', life: 'Life and surroundings', see: 'What you are to each other', fill: 'What you give each other', care: 'Watch out for', tips: 'How to get along' },
   sub: {},
 }
 const POOL: Record<string, T> = { ko, en }
@@ -158,6 +182,9 @@ export function composeMatch(c: MatchCalc, lang: string): { score: number; tier:
   if (life.length) cards.push({ kind: 'life', title: t.t.life, paras: life })
 
   cards.push({ kind: 'see', title: t.t.see, paras: [`${t.see('a')} ${t.seeMap[c.aSeesB]}`, `${t.see('b')} ${t.seeMap[c.bSeesA]}`] })
+
+  const ta = c.strongA as El, tb = c.strongB as El
+  cards.push({ kind: 'talk', title: t.t.talk, paras: [`${lang === 'ko' ? '나: ' : 'You: '}${t.talk[ta]}`, `${lang === 'ko' ? '상대: ' : 'Them: '}${t.talk[tb]}`, ta === tb ? t.talkMix.same : t.talkMix.diff] })
 
   const fillLines = c.fills.map((f) => (f.level === 'rich' ? t.fillRich : t.fillSome)(f.who, t.el[f.el][0], t.el[f.el][1]))
   const strainLines = c.strains.map((s) => t.strain(s.who, t.el[s.el][0]))
