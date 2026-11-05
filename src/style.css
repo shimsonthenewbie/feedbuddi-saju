@@ -392,3 +392,12 @@ img.lockic{width:52px;height:52px;border:0;background:none;object-fit:contain;fi
 .acc .tr{display:block;height:9px;border-radius:999px;background:var(--soft,#efe7cf);border:1px solid var(--line);overflow:hidden}
 .acc .accbar{display:block;height:100%;background:var(--wine);transition:width .25s}
 .acctip{margin:8px 0 0}
+
+/* 소개 카드 */
+.promo{display:flex;gap:14px;align-items:center}
+.promo .pimg{flex:none;width:84px;height:auto;filter:drop-shadow(0 3px 5px rgba(30,28,25,.25))}
+.promo h2{font-size:20px;margin:2px 0}
+.promo p{margin:2px 0 8px;color:var(--mute);font-size:14.5px}
+.promo ul{margin:4px 0 0;padding-left:18px;font-size:14px;color:var(--ink)}
+.promo .badge{margin-bottom:2px}
+.promo.intro{align-items:flex-start}

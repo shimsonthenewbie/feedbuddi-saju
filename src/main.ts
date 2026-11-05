@@ -13,10 +13,10 @@ import { composeDaily } from './i18n/daily'
 import { mountAsk } from './consult-ui'
 import { art } from './art'
 import { natal } from './astro'
-import { astroFreeCard, astroMatchCard } from './i18n/astro'
+import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -31,6 +31,9 @@ const T = {
     today: '오늘',
     home: '홈',
     freeTitle: '무료 사주 맛보기',
+    starTag: '해외 인기', starT: '해외에선 이렇게 봐요', starD: '서양 별자리로 보는 내 성격. 생일만 넣으면 태양·달·상승 별자리를 풀어 드려요.', starCta: '별자리 맛보기',
+    starPageT: '별자리 맛보기', starPageD: '생일만 넣으면 돼요. 해외에서 가장 많이 보는 방식이에요.', starGo: '별자리 보기', starMore: '내 사주도 보기',
+    introT: '', introD: '', introL: [] as string[], introCta: '',
     freeSub: '이름도 가입도 필요 없어요. 생일만 알려주면 여의가 슬쩍 봐 줄게요!',
     freeGo: '무료 사주 보기',
     freeBack: '다시 입력',
@@ -112,6 +115,10 @@ const T = {
     today: 'Today',
     home: 'Home',
     freeTitle: 'Free Saju taste',
+    starTag: 'WORLD', starT: 'How the world reads itself', starD: 'Your personality by Western star signs — Sun, Moon and Rising in plain words.', starCta: 'Try star signs',
+    starPageT: 'Star sign taste', starPageD: 'Just your birthday. The most popular way to read a chart worldwide.', starGo: 'See my star signs', starMore: 'See my Saju too',
+    introT: 'Korea’s way to know yourself: Saju', introD: 'Koreans check their “Four Pillars” around New Year and before big life choices. Your birth date and time become a chart — explained in plain words.',
+    introL: ['Four Pillars from your birth date and time', 'Plain-language results, no jargon', 'Free taste — no sign-up needed'], introCta: 'Try my free Saju',
     freeSub: 'No name, no sign-up. Tell Yeoui your birthday for a quick peek!',
     freeGo: 'See my free reading',
     freeBack: 'Enter again',
@@ -245,6 +252,12 @@ function showToday() {
     ${v.event ? `<p class="devent">${esc(v.event)}</p>` : ''}
     <div class="dcats">${v.cats.map((c) => `<div class="dcat"><div class="cn">${esc(c.name)}</div><div class="cs" aria-label="${c.stars}/5">${starRow(c.stars)}</div><p>${esc(c.line)}</p></div>`).join('')}</div>
     <p class="dtip">✦ ${esc(v.tip)}</p>
+    ${(() => {
+      const ni = r.input as Parameters<typeof natal>[0]
+      const mt = natal({ ...ni, year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(), hour: 12, minute: 0, unknownTime: true }).planets.Moon.sign
+      const ac = astroTodayCard(natal(ni), mt, lang)
+      return `<h3 class="dh">${esc(ac.title)}</h3>${ac.paras.map((q) => `<p class="dbody">${esc(q)}</p>`).join('')}`
+    })()}
     <h3>${esc(v.lucky.title)}</h3>
     <div class="lucky">${v.lucky.items.map((i) => `<div><span>${esc(i.label)}</span><b>${esc(i.value)}</b></div>`).join('')}</div>
     <p class="note">${esc(v.disclaimer)}</p>
@@ -271,7 +284,11 @@ function homeHtml(): string {
   const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ...x.shopItems.slice(1).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
+  const promo = lang === 'ko'
+    ? `<section class="card promo"><img class="pimg" src="${art('dragon-orb')}" alt="" width="84" height="84"><div><span class="badge">${esc(x.starTag)}</span><h2>${esc(x.starT)}</h2><p>${esc(x.starD)}</p><button type="button" class="bgo" data-mode="star">${esc(x.starCta)}</button></div></section>`
+    : `<section class="card promo intro"><img class="pimg" src="${art('ui-teach')}" alt="" width="96" height="96"><div><h2>${esc(x.introT)}</h2><p>${esc(x.introD)}</p><ul>${x.introL.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div></section>`
   return `
+  ${lang === 'ko' ? '' : promo}
   <section class="card freebox" aria-label="${esc(x.freeTitle)}">
     <div class="freehead"><div><h2>${esc(x.freeTitle)}</h2><p class="meta">${esc(x.freeSub)}</p></div><img class="fmascot" src="${art('dragon-cheer')}" alt="" width="92" height="92"></div>
     <form id="freeform" novalidate>
@@ -300,6 +317,7 @@ function homeHtml(): string {
     <div class="bmain"><img class="mascot" src="${art('dragon-hello')}" alt="" width="104" height="104"><div><h2>${esc(x.homeBannerT)}</h2><p>${esc(x.homeBannerD)}</p></div></div>
     <div class="brow"><span class="beta">${esc(x.homeBeta)}</span><button type="button" class="bgo" data-mode="ask">${esc(x.homeBannerB)}</button></div>
   </section>
+  ${lang === 'ko' ? promo : ''}
   <h3 class="sec">${esc(x.hotTitle)}</h3>
   <ol class="hot">${hot}</ol>
   <h3 class="sec">${esc(x.newTitle)}</h3>
@@ -331,6 +349,42 @@ function showFree() {
   <button class="go ghost" id="freeback" type="button">${esc(x.freeBack)}</button>`
   out.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
   document.getElementById('freeback')!.onclick = () => { mode = 'home'; render() }
+}
+
+function starHtml(): string {
+  const x = t()
+  return `<section class="card" aria-label="${esc(x.starPageT)}">
+    <div class="freehead"><div><h2>${esc(x.starPageT)}</h2><p class="meta">${esc(x.starPageD)}</p></div><img class="fmascot" src="${art('dragon-orb')}" alt="" width="92" height="92"></div>
+    <form id="starform" novalidate>
+      <label>${x.date}<input type="date" name="sdate" min="1900-01-01" max="2100-12-31" required></label>
+      <div class="row">
+        <label class="grow">${x.time}<input type="time" name="stime"></label>
+        <label class="chk"><input type="checkbox" name="sunk" checked> ${x.unknownTime}</label>
+      </div>
+      <p class="err" id="serr" role="alert"></p>
+      <button class="go" type="submit">${esc(x.starGo)}</button>
+    </form>
+  </section>
+  <section id="sout"></section>`
+}
+
+function onStarSubmit(e: Event) {
+  e.preventDefault()
+  const x = t()
+  const f = e.target as HTMLFormElement
+  const err = document.getElementById('serr')!
+  const date = (f.elements.namedItem('sdate') as HTMLInputElement).value
+  const timeV = (f.elements.namedItem('stime') as HTMLInputElement).value
+  const unk = (f.elements.namedItem('sunk') as HTMLInputElement).checked || !timeV
+  if (!date) { err.textContent = x.errDate; return }
+  err.textContent = ''
+  const [y, m, d] = date.split('-').map(Number)
+  const [hh, mm] = unk ? [12, 0] : timeV.split(':').map(Number)
+  const ac = astroFreeCard(natal({ year: y, month: m, day: d, hour: hh, minute: mm, latitude: SEOUL.lat, longitude: SEOUL.lon, timezone: 'Asia/Seoul', unknownTime: unk }), lang)
+  const out = document.getElementById('sout')!
+  out.innerHTML = `<article class="rcard lead"><h3>${esc(ac.title)}</h3>${ac.paras.map((p) => `<p>${esc(p)}</p>`).join('')}</article>
+  <article class="card"><div class="row"><button class="go" type="button" data-mode="home">${esc(x.starMore)}</button></div></article>`
+  out.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
 }
 
 function onFreeSubmit(e: Event) {
@@ -408,7 +462,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
@@ -456,6 +510,7 @@ function bind() {
   })
   document.getElementById('form')?.addEventListener('submit', onSubmit)
   document.getElementById('freeform')?.addEventListener('submit', onFreeSubmit)
+  document.getElementById('starform')?.addEventListener('submit', onStarSubmit)
   if (mode === 'free') showFree()
   if (mode === 'today' && loadProfile()) showToday()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))

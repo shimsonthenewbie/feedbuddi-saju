@@ -2,6 +2,9 @@ import { SIGN_ELEMENT, aspect, elementRel, type AstroChart, type AspectKind, typ
 
 export interface AstroCard { kind: string; title: string; paras: string[] }
 interface P {
+  today: string[]
+  tToday: { title: string; moon: string; mood: string }
+  todayRel: Record<ElRel, string>
   names: string[]
   sun: string[]; moon: string[]; rise: string[]
   t: { free: string; sun: string; moon: string; rise: string; sunNote: string; moonNote: string; riseNote: string; noTime: string; moonMaybe: string; foot: string; match: string; mSun: string; mMoon: string; mCross: string; mLove: string }
@@ -12,6 +15,27 @@ interface P {
 }
 
 const ko: P = {
+  today: [
+    '행동이 빨라지는 날이에요. 미뤄 둔 일을 시작하기 좋지만, 말이 앞서지 않게 조심하세요.',
+    '차분하고 느긋해지는 날이에요. 맛있는 걸 먹고 몸을 편하게 두면 마음이 안정돼요.',
+    '말과 연락이 많아지는 날이에요. 새로운 정보나 사람을 만나기 좋고, 생각이 흩어지기 쉬워요.',
+    '감정이 예민해지는 날이에요. 집이나 가까운 사람 곁에서 마음이 놓이니, 무리한 약속은 줄이세요.',
+    '표현하고 싶은 마음이 커지는 날이에요. 당당하게 나서 보기 좋고, 인정받고 싶은 마음이 올라와요.',
+    '정리하고 점검하기 좋은 날이에요. 꼼꼼함이 살아나지만, 사소한 일에 예민해지지 않게 하세요.',
+    '관계와 균형에 마음이 가는 날이에요. 대화와 약속에 좋고, 결정은 서두르지 않는 게 좋아요.',
+    '속마음이 깊어지는 날이에요. 집중해서 파고들기 좋고, 말하지 않은 서운함이 올라올 수 있어요.',
+    '활기차고 자유로운 날이에요. 새로운 곳과 배움에 끌리고, 솔직함이 지나치지 않게 주의하세요.',
+    '책임과 현실에 마음이 가는 날이에요. 계획을 세우고 해야 할 일을 하기 좋아요.',
+    '생각이 독특해지는 날이에요. 친구나 새로운 아이디어와 어울리기 좋고, 혼자 있고 싶어질 수도 있어요.',
+    '감수성이 커지는 날이에요. 음악과 휴식이 도움이 되고, 남의 기분에 휩쓸리지 않게 하세요.',
+  ],
+  tToday: { title: '오늘의 달 (별자리)', moon: '오늘 달은', mood: '' },
+  todayRel: {
+    same: '내 태양 별자리와 결이 같아서 오늘은 내 모습 그대로 편안한 날이에요.',
+    support: '내 별자리와 잘 어울리는 기운이에요. 하려던 일에 힘이 실리는 편이에요.',
+    friction: '내 별자리와 결이 달라 마음이 조금 엇갈릴 수 있어요. 서두르지 말고 여유를 두세요.',
+    neutral: '내 별자리와 크게 맞닿지 않아서 평소 리듬대로 보내면 돼요.',
+  },
   names: ['양자리', '황소자리', '쌍둥이자리', '게자리', '사자자리', '처녀자리', '천칭자리', '전갈자리', '사수자리', '염소자리', '물병자리', '물고기자리'],
   sun: [
     '먼저 움직이는 사람이에요. 망설이기보다 부딪쳐 보며 배우고, 승부와 도전에서 힘이 나요.',
@@ -79,6 +103,27 @@ const ko: P = {
 }
 
 const en: P = {
+  today: [
+    'A fast-moving day. Good for starting delayed things; do not let words run ahead.',
+    'A calm, slow day. Good food and rest settle your mind.',
+    'A chatty day with lots of contact. Good for new info and people; thoughts scatter easily.',
+    'A sensitive day. You feel safe at home or with close people; cut back on overpromising.',
+    'A day you want to express yourself. Good for stepping up; the wish for recognition rises.',
+    'Good for tidying and checking. Care sharpens, but do not fret over small things.',
+    'A day for relationships and balance. Good for talks and plans; do not rush decisions.',
+    'Feelings run deeper. Good for focus; unspoken hurt may surface.',
+    'A lively, free day. Drawn to new places and learning; keep frankness in check.',
+    'A day for duty and reality. Good for planning and doing what must be done.',
+    'Your thinking turns unusual. Good with friends and new ideas; you may want to be alone.',
+    'Sensitivity grows. Music and rest help; do not get swept by others’ moods.',
+  ],
+  tToday: { title: 'Today’s Moon (star sign)', moon: 'Today the Moon is in', mood: '' },
+  todayRel: {
+    same: 'It matches your Sun sign, so you can be yourself comfortably today.',
+    support: 'It suits your sign well; what you set out to do gets a lift.',
+    friction: 'Its grain differs from your sign, so feelings may cross a little. Do not rush.',
+    neutral: 'It does not touch your sign strongly; keep your usual rhythm.',
+  },
   names: ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'],
   sun: [
     'You move first. You learn by diving in and get energy from challenge and competition.',
@@ -178,4 +223,10 @@ export function astroMatchCard(a: AstroChart, b: AstroChart, lang: string): Astr
   ]
   if (a.moonUncertain || b.moonUncertain || !a.timeKnown || !b.timeKnown) paras.push(p.t.moonMaybe)
   return { kind: 'astro', title: p.t.match, paras }
+}
+
+export function astroTodayCard(c: AstroChart, moonToday: number, lang: string): AstroCard {
+  const p = astroPool(lang)
+  const rel = elementRel(SIGN_ELEMENT[c.planets.Sun.sign], SIGN_ELEMENT[moonToday])
+  return { kind: 'astro-today', title: p.tToday.title, paras: [`${p.tToday.moon} ${p.names[moonToday]}${lang === 'ko' ? '에 있어요.' : '.'} ${p.today[moonToday]}`, p.todayRel[rel]] }
 }
