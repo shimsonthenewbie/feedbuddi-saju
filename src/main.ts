@@ -13,10 +13,11 @@ import { composeDaily } from './i18n/daily'
 import { mountAsk } from './consult-ui'
 import { art } from './art'
 import { natal } from './astro'
+import { makeInviteUrl, readInvite, makeCard, type Invite } from './share'
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -31,6 +32,8 @@ const T = {
     today: '오늘',
     home: '홈',
     freeTitle: '무료 사주 맛보기',
+    shT: '친구와 나누기', shSend: '친구에게 궁합 보내기', shCard: '결과 카드 저장', shPriv: '링크에는 내 생년월일이 들어 있어요. 믿는 사람에게만 보내세요.', shCopied: '링크를 복사했어요. 친구에게 붙여 넣어 보내세요.', shSaved: '카드를 저장했어요.', shText: (sc: number, hl: string) => `여의가 본 우리 궁합은 ${sc}점, "${hl}"! 너랑도 궁합 볼래?`,
+    invT: (n: string) => (n ? `${n}님이 궁합을 보내왔어요` : '친구가 궁합을 보내왔어요'), invD: '내 생년월일만 넣으면 둘의 궁합을 바로 볼 수 있어요. 가입은 필요 없어요.', invGo: '우리 궁합 보기',
     starTag: '해외 인기', starT: '해외에선 이렇게 봐요', starD: '서양 별자리로 보는 내 성격. 생일만 넣으면 태양·달·상승 별자리를 풀어 드려요.', starCta: '별자리 맛보기',
     starPageT: '별자리 맛보기', starPageD: '생일만 넣으면 돼요. 해외에서 가장 많이 보는 방식이에요.', starGo: '별자리 보기', starMore: '내 사주도 보기',
     introT: '', introD: '', introL: [] as string[], introCta: '',
@@ -115,6 +118,8 @@ const T = {
     today: 'Today',
     home: 'Home',
     freeTitle: 'Free Saju taste',
+    shT: 'Share with a friend', shSend: 'Send match to a friend', shCard: 'Save result card', shPriv: 'The link contains your birth info. Send it only to people you trust.', shCopied: 'Link copied. Paste it to your friend.', shSaved: 'Card saved.', shText: (sc: number, hl: string) => `Yeoui read our match at ${sc}/100 — "${hl}". Check yours with me!`,
+    invT: (n: string) => (n ? `${n} sent you a match` : 'A friend sent you a match'), invD: 'Enter your birth date and see your match right away. No sign-up needed.', invGo: 'See our match',
     starTag: 'WORLD', starT: 'How the world reads itself', starD: 'Your personality by Western star signs — Sun, Moon and Rising in plain words.', starCta: 'Try star signs',
     starPageT: 'Star sign taste', starPageD: 'Just your birthday. The most popular way to read a chart worldwide.', starGo: 'See my star signs', starMore: 'See my Saju too',
     introT: 'Korea’s way to know yourself: Saju', introD: 'Koreans check their “Four Pillars” around New Year and before big life choices. Your birth date and time become a chart — explained in plain words.',
@@ -420,6 +425,9 @@ function shopHtml(): string {
 const app = document.getElementById('app')!
 let lang: Lang = (navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'
 let mode: Mode = 'home'
+const invite: Invite | null = readInvite(location.hash)
+if (invite) mode = 'invite'
+let lastMatch: { people: Person[]; m: ReturnType<typeof matchReading> } | null = null
 let dayOffset = 0
 let readLang: Lang = lang
 const cityState: Record<string, City> = { a: SEOUL, b: SEOUL }
@@ -463,10 +471,11 @@ function render() {
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
   ${mode === 'home' ? homeHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+    ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
-    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' ? x.todayGo : x.goMatch}</button>
+    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
   </form>
   <section id="out"></section>`}
   ${navHtml()}
@@ -556,6 +565,14 @@ function onSubmit(e: Event) {
     render()
     return
   }
+  if (mode === 'invite' && invite) {
+    try {
+      const result = calculateSaju({ year: invite.y, month: invite.m, day: invite.d, hour: invite.hh, minute: invite.mm, gender: invite.g, unknownTime: invite.u, latitude: invite.la, longitude: invite.lo, timezone: invite.tz })
+      people.push({ label: invite.n || x.fav, placeName: '', result })
+      showResult(people, matchHtml(people))
+    } catch { err.textContent = x.errCalc }
+    return
+  }
   if (mode === 'match') {
     const b = readPerson('b', x.fav)
     if (typeof b === 'string') { err.textContent = b; return }
@@ -609,6 +626,7 @@ function matchHtml(people: Person[]): string {
   const mp = matchPool(lang)
   const [A, B] = people
   const m = matchReading(A.result, analyze(A.result), B.result, analyze(B.result), lang)
+  lastMatch = { people, m }
   const [lead, ...rest0] = m.cards
   const ac = astroMatchCard(natal(A.result.input as Parameters<typeof natal>[0]), natal(B.result.input as Parameters<typeof natal>[0]), lang)
   const rest = [...rest0, { kind: 'astro', title: ac.title, paras: ac.paras } as (typeof rest0)[number]]
@@ -620,7 +638,11 @@ function matchHtml(people: Person[]): string {
     <ul class="chips2">${m.chips.map((c) => `<li><small>${esc(c.k)}</small>${esc(c.v)}</li>`).join('')}</ul>
   </article>
   ${rest.map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}${c.list ? `<ul>${c.list.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}</article>`).join('')}
-  <p class="note">${esc(mp.ui.note)}</p>`
+  <p class="note">${esc(mp.ui.note)}</p>
+  <article class="card share"><h3>${esc(t().shT)}</h3>
+    <div class="row"><button class="go" type="button" id="shsend">${esc(t().shSend)}</button></div>
+    <div class="row"><button class="go ghost" type="button" id="shcard">${esc(t().shCard)}</button></div>
+    <p class="note">${esc(t().shPriv)}</p><p class="ok" id="shok" role="status"></p></article>`
 }
 
 function showResult(people: Person[], lead = '') {
@@ -656,7 +678,36 @@ function showResult(people: Person[], lead = '') {
   }
   document.getElementById('copy')!.onclick = copy
   out.querySelectorAll<HTMLAnchorElement>('.ais a').forEach((a) => a.addEventListener('click', copy))
+  bindShare()
   out.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function bindShare() {
+  const send = document.getElementById('shsend'), card = document.getElementById('shcard')
+  if (!send || !card || !lastMatch) return
+  const x = t(), ok = document.getElementById('shok')!
+  const { people, m } = lastMatch
+  send.onclick = async () => {
+    const a = people[0]
+    const url = makeInviteUrl(a.result.input as Parameters<typeof makeInviteUrl>[0], a.label === x.me ? '' : a.label)
+    const text = x.shText(m.score, m.headline)
+    try {
+      if (navigator.share) { await navigator.share({ title: x.title, text, url }); return }
+    } catch (e) { if ((e as Error).name === 'AbortError') return }
+    try { await navigator.clipboard.writeText(`${text}\n${url}`) } catch {
+      const ta = document.createElement('textarea'); ta.value = `${text}\n${url}`; document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove()
+    }
+    ok.textContent = x.shCopied
+  }
+  card.onclick = async () => {
+    try {
+      const blob = await makeCard({ score: m.score, headline: m.headline, axes: m.axes, brand: x.title, foot: 'feedbuddi.com' })
+      const file = new File([blob], 'feedbuddi-match.png', { type: 'image/png' })
+      if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: x.title }); return }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'feedbuddi-match.png'; document.body.append(a); a.click(); a.remove()
+      ok.textContent = x.shSaved
+    } catch (e) { if ((e as Error).name !== 'AbortError') ok.textContent = '' }
+  }
 }
 
 render()
