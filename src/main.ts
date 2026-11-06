@@ -32,6 +32,7 @@ const T = {
     today: '오늘',
     home: '홈',
     freeTitle: '무료 사주 맛보기',
+    selY: '연도', selM: '월', selD: '일', selH: '시', selMi: '분',
     shT: '친구와 나누기', again: '나도 다른 사람과 궁합 보기', shSend: '친구에게 궁합 보내기', shCard: '결과 카드 저장', shPriv: '링크에는 내 생년월일이 들어 있어요. 믿는 사람에게만 보내세요.', shCopied: '링크를 복사했어요. 친구에게 붙여 넣어 보내세요.', shSaved: '카드를 저장했어요.', shText: (sc: number, hl: string) => `여의가 본 우리 궁합은 ${sc}점, "${hl}"! 너랑도 궁합 볼래?`,
     invT: (n: string) => (n ? `${n}님이 궁합을 보내왔어요` : '친구가 궁합을 보내왔어요'), invD: '내 생년월일만 넣으면 둘의 궁합을 바로 볼 수 있어요. 가입은 필요 없어요.', invGo: '우리 궁합 보기',
     starTag: '해외 인기', starT: '해외에선 이렇게 봐요', starD: '서양 별자리로 보는 내 성격. 생일만 넣으면 태양·달·상승 별자리를 풀어 드려요.', starCta: '별자리 맛보기',
@@ -118,6 +119,7 @@ const T = {
     today: 'Today',
     home: 'Home',
     freeTitle: 'Free Saju taste',
+    selY: 'Year', selM: 'Month', selD: 'Day', selH: 'Hour', selMi: 'Min',
     shT: 'Share with a friend', again: 'Check my match with someone else', shSend: 'Send match to a friend', shCard: 'Save result card', shPriv: 'The link contains your birth info. Send it only to people you trust.', shCopied: 'Link copied. Paste it to your friend.', shSaved: 'Card saved.', shText: (sc: number, hl: string) => `Yeoui read our match at ${sc}/100 — "${hl}". Check yours with me!`,
     invT: (n: string) => (n ? `${n} sent you a match` : 'A friend sent you a match'), invD: 'Enter your birth date and see your match right away. No sign-up needed.', invGo: 'See our match',
     starTag: 'WORLD', starT: 'How the world reads itself', starD: 'Your personality by Western star signs — Sun, Moon and Rising in plain words.', starCta: 'Try star signs',
@@ -297,9 +299,9 @@ function homeHtml(): string {
   <section class="card freebox" aria-label="${esc(x.freeTitle)}">
     <div class="freehead"><div><h2>${esc(x.freeTitle)}</h2><p class="meta">${esc(x.freeSub)}</p></div><img class="fmascot" src="${art('dragon-cheer')}" alt="" width="92" height="92"></div>
     <form id="freeform" novalidate>
-      <label>${x.date}<input type="date" name="fdate" min="1900-01-01" max="2100-12-31" required></label>
+      ${dateField('fdate')}
       <div class="row">
-        <label class="grow">${x.time}<input type="time" name="ftime"></label>
+        ${timeField('ftime')}
         <label class="chk"><input type="checkbox" name="funk"> ${x.unknownTime}</label>
       </div>
       <div class="row">
@@ -357,6 +359,52 @@ function showFree() {
   document.getElementById('freeback')!.onclick = () => { mode = 'home'; render() }
 }
 
+/** 연·월·일 따로 고르는 칸. 값은 숨은 input(name)에 YYYY-MM-DD로 모은다. */
+function dateField(name: string): string {
+  const x = t()
+  const yNow = new Date().getFullYear()
+  const ys = Array.from({ length: yNow - 1919 }, (_, i) => yNow - i).map((v) => `<option value="${v}">${v}</option>`).join('')
+  const ms = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')
+  const ds = Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')
+  return `<div class="dsel" data-dt="date"><span class="lbl">${x.date}</span><div class="sels">
+    <select aria-label="${x.selY}" data-k="y"><option value="">${x.selY}</option>${ys}</select>
+    <select aria-label="${x.selM}" data-k="m"><option value="">${x.selM}</option>${ms}</select>
+    <select aria-label="${x.selD}" data-k="d"><option value="">${x.selD}</option>${ds}</select></div>
+    <input type="hidden" name="${name}"></div>`
+}
+/** 시·분 따로 고르는 칸(00~23시). 값은 숨은 input(name)에 HH:MM. */
+function timeField(name: string): string {
+  const x = t()
+  const hs = Array.from({ length: 24 }, (_, i) => `<option value="${i}">${String(i).padStart(2, '0')}</option>`).join('')
+  const mi = Array.from({ length: 60 }, (_, i) => `<option value="${i}">${String(i).padStart(2, '0')}</option>`).join('')
+  return `<div class="dsel grow" data-dt="time"><span class="lbl">${x.time}</span><div class="sels">
+    <select aria-label="${x.selH}" data-k="h"><option value="">${x.selH}</option>${hs}</select>
+    <select aria-label="${x.selMi}" data-k="mi">${mi}</select></div>
+    <input type="hidden" name="${name}"></div>`
+}
+/** 위 두 칸을 동작시킨다. 값이 바뀌면 숨은 input에 input 이벤트를 보낸다. */
+function bindDT(root: ParentNode) {
+  root.querySelectorAll<HTMLElement>('.dsel').forEach((box) => {
+    const hid = box.querySelector<HTMLInputElement>('input[type=hidden]')!
+    const sel = (k: string) => box.querySelector<HTMLSelectElement>(`select[data-k=${k}]`)!
+    const pad = (n: string | number) => String(n).padStart(2, '0')
+    const sync = () => {
+      if (box.dataset.dt === 'date') {
+        const dsel = sel('d'), y = +sel('y').value, m = +sel('m').value
+        const max = y && m ? new Date(y, m, 0).getDate() : 31
+        Array.from(dsel.options).forEach((o) => { if (o.value) o.hidden = o.disabled = +o.value > max })
+        if (+dsel.value > max) dsel.value = String(max)
+        hid.value = y && m && dsel.value ? `${y}-${pad(m)}-${pad(dsel.value)}` : ''
+      } else {
+        hid.value = sel('h').value ? `${pad(sel('h').value)}:${pad(sel('mi').value || 0)}` : ''
+      }
+      hid.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+    box.querySelectorAll('select').forEach((e) => e.addEventListener('change', sync))
+  })
+}
+const setDT = (root: ParentNode, dis: boolean) => root.querySelectorAll<HTMLSelectElement>('.dsel[data-dt=time] select').forEach((e) => (e.disabled = dis))
+
 /** 출생지 입력칸(홈 무료풀이·별자리용). 기본값은 서울. */
 function cityField(id: string): string {
   const x = t()
@@ -383,9 +431,9 @@ function starHtml(): string {
   return `<section class="card" aria-label="${esc(x.starPageT)}">
     <div class="freehead"><div><h2>${esc(x.starPageT)}</h2><p class="meta">${esc(x.starPageD)}</p></div><img class="fmascot" src="${art('dragon-orb')}" alt="" width="92" height="92"></div>
     <form id="starform" novalidate>
-      <label>${x.date}<input type="date" name="sdate" min="1900-01-01" max="2100-12-31" required></label>
+      ${dateField('sdate')}
       <div class="row">
-        <label class="grow">${x.time}<input type="time" name="stime"></label>
+        ${timeField('stime')}
         <label class="chk"><input type="checkbox" name="sunk" checked> ${x.unknownTime}</label>
       </div>
       ${cityField('s')}
@@ -468,9 +516,9 @@ function personForm(id: 'a' | 'b', label: string): string {
     <legend class="tag">${esc(label)}</legend>
     <label>${x.nm}<input type="text" name="nm" maxlength="12" autocomplete="off"></label>
     <p class="note nmhint">${x.nmHint}</p>
-    <label>${x.date}<input type="date" name="date" min="1900-01-01" max="2100-12-31" required></label>
+    ${dateField('date')}
     <div class="row">
-      <label class="grow">${x.time}<input type="time" name="time"></label>
+      ${timeField('time')}
       <label class="chk"><input type="checkbox" name="unk"> ${x.unknownTime}</label>
     </div>
     <div class="row">
@@ -532,7 +580,7 @@ function bind() {
       accN.textContent = `${v}%`; accBar.style.width = `${v}%`
       accTip.textContent = !hasTime ? x.accTimeTip : !hasPlace ? x.accPlaceTip : x.accFull
     }
-    unk.onchange = () => { time.disabled = unk.checked; updAcc() }
+    unk.onchange = () => { time.disabled = unk.checked; setDT(fs, unk.checked); updAcc() }
     date.oninput = updAcc; time.oninput = updAcc
     updAcc()
     input.oninput = () => {
@@ -545,7 +593,11 @@ function bind() {
     }
   })
   document.getElementById('form')?.addEventListener('submit', onSubmit)
-  bindCity('f'); bindCity('s')
+  bindDT(app); bindCity('f'); bindCity('s')
+  ;(['funk', 'sunk'] as const).forEach((n) => {
+    const c = document.querySelector<HTMLInputElement>(`input[name=${n}]`)
+    if (c) { const f = () => setDT(c.closest('form')!, c.checked); c.onchange = f; f() }
+  })
   document.getElementById('freeform')?.addEventListener('submit', onFreeSubmit)
   document.getElementById('starform')?.addEventListener('submit', onStarSubmit)
   if (mode === 'free') showFree()

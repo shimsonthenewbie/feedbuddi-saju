@@ -407,3 +407,12 @@ img.lockic{width:52px;height:52px;border:0;background:none;object-fit:contain;fi
 .share .go.ghost{background:transparent;color:var(--wine,#6a2623);border:2px solid var(--wine,#6a2623)}
 .share .ok{color:var(--wine,#6a2623);font-size:.9rem;min-height:1.2em;margin:6px 0 0}
 .promo .pimg{flex:none}
+
+/* 연·월·일 / 시·분 선택 */
+.dsel{display:block;margin-top:10px}
+.dsel .lbl{display:block;font-size:.95em}
+.dsel .sels{display:flex;gap:8px;margin-top:4px}
+.dsel select{flex:1;min-width:0;padding:12px 8px;border:1.5px solid var(--line);border-radius:16px;background:var(--card,var(--inset));color:var(--ink);font:inherit;font-size:16px;appearance:auto}
+.dsel select:first-child{flex:1.4}
+.dsel select:disabled{opacity:.45}
+.row .dsel.grow{flex:1;margin-top:0}
