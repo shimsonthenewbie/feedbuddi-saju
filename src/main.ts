@@ -13,11 +13,14 @@ import { composeDaily } from './i18n/daily'
 import { mountAsk } from './consult-ui'
 import { art } from './art'
 import { natal } from './astro'
+import { findFace, fileToCanvas } from './face/mesh'
+import { measure } from './face/measure'
+import { readFace } from './face/read'
 import { makeInviteUrl, readInvite, makeCard, type Invite } from './share'
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'face' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -32,6 +35,12 @@ const T = {
     today: '오늘',
     home: '홈',
     freeTitle: '무료 사주 맛보기',
+    faceName: '관상 (사진으로 보기)', faceT: '얼굴로 보는 관상', faceD: '정면 사진 한 장이면 돼요. 사진은 내 기기 안에서만 분석하고 서버로 보내지 않아요.',
+    faceTips: ['밝은 곳에서 정면으로', '머리카락은 이마가 보이게 넘기기', '안경·마스크·모자는 벗기', '무표정에 가깝게'],
+    faceCam: '카메라로 찍기', faceAlbum: '앨범에서 고르기', faceBusy: '여의가 얼굴을 살펴보는 중…',
+    faceNone: '얼굴을 찾지 못했어요. 밝은 곳에서 정면으로 다시 찍어 주세요.', faceMany: '얼굴이 여러 개 보여요. 한 사람만 나오게 찍어 주세요.',
+    faceSide: '얼굴이 옆으로 돌아가 있어요. 정면을 보고 다시 찍어 주세요.', faceTilt: '고개가 많이 기울었어요. 바르게 세우고 다시 찍어 주세요.', faceFail: '분석에 실패했어요. 잠시 뒤 다시 시도해 주세요.',
+    faceAgain: '다른 사진으로 다시 보기', faceToSaju: '사주도 같이 보기', faceKept: '사진은 저장되지 않아요. 이 화면을 닫으면 사라져요.',
     selY: '연도', selM: '월', selD: '일', selH: '시', selMi: '분',
     shT: '친구와 나누기', again: '나도 다른 사람과 궁합 보기', shSend: '친구에게 궁합 보내기', shCard: '결과 카드 저장', shPriv: '링크에는 내 생년월일이 들어 있어요. 믿는 사람에게만 보내세요.', shCopied: '링크를 복사했어요. 친구에게 붙여 넣어 보내세요.', shSaved: '카드를 저장했어요.', shText: (sc: number, hl: string) => `여의가 본 우리 궁합은 ${sc}점, "${hl}"! 너랑도 궁합 볼래?`,
     invT: (n: string) => (n ? `${n}님이 궁합을 보내왔어요` : '친구가 궁합을 보내왔어요'), invD: '내 생년월일만 넣으면 둘의 궁합을 바로 볼 수 있어요. 가입은 필요 없어요.', invGo: '우리 궁합 보기',
@@ -51,7 +60,7 @@ const T = {
     homeBeta: '베타 기간 무료',
     quick: [['today', '運', '오늘의 운세'], ['solo', '命', '내 사주'], ['ask', '問', '고민 상담'], ['match', '緣', '궁합'], ['shop', '籤', '풀이 목록']],
     newTitle: '새로 나온 운세',
-    newItems: [['NEW', '2027 신년운세', '정미년 한 해 흐름을 월별로', '12월 공개 예정', 'shop'], ['NEW', '두 사람의 궁합', '서로 끌리는 이유와 부딪히는 점', '베타 무료', 'match']],
+    newItems: [['NEW', '관상', '사진 한 장으로 얼굴 읽기', '베타 무료', 'face'], ['NEW', '2027 신년운세', '정미년 한 해 흐름을 월별로', '12월 공개 예정', 'shop'], ['NEW', '두 사람의 궁합', '서로 끌리는 이유와 부딪히는 점', '베타 무료', 'match']],
     hotTitle: '지금 많이 보는 운세',
     hotItems: [['오늘의 운세', '무료', 'today'], ['무료 사주 풀이', '무료', 'solo'], ['고민 상담 (시기 짚기)', '베타 무료', 'ask'], ['사주 궁합', '베타 무료', 'match'], ['올해 흐름 (월별)', '990원', 'shop'], ['재물·직업 풀이', '990원', 'shop'], ['종합 풀이 리포트', '9,900원', 'shop']],
     pieceTitle: '사주 한 조각',
@@ -119,6 +128,12 @@ const T = {
     today: 'Today',
     home: 'Home',
     freeTitle: 'Free Saju taste',
+    faceName: 'Face reading (photo)', faceT: 'Face reading', faceD: 'One front-facing photo is enough. It is analysed on your device only and never uploaded.',
+    faceTips: ['Bright light, facing the camera', 'Push hair off the forehead', 'No glasses, mask or hat', 'A neutral expression'],
+    faceCam: 'Take a photo', faceAlbum: 'Choose from album', faceBusy: 'Yeoui is looking at your face…',
+    faceNone: "Couldn't find a face. Try a front-facing photo in bright light.", faceMany: 'More than one face found. Please use a photo of one person.',
+    faceSide: 'Your face is turned. Please face the camera.', faceTilt: 'Your head is tilted. Please hold it upright.', faceFail: 'Analysis failed. Please try again shortly.',
+    faceAgain: 'Try another photo', faceToSaju: 'Also read my chart', faceKept: 'Your photo is not saved. It disappears when you leave this screen.',
     selY: 'Year', selM: 'Month', selD: 'Day', selH: 'Hour', selMi: 'Min',
     shT: 'Share with a friend', again: 'Check my match with someone else', shSend: 'Send match to a friend', shCard: 'Save result card', shPriv: 'The link contains your birth info. Send it only to people you trust.', shCopied: 'Link copied. Paste it to your friend.', shSaved: 'Card saved.', shText: (sc: number, hl: string) => `Yeoui read our match at ${sc}/100 — "${hl}". Check yours with me!`,
     invT: (n: string) => (n ? `${n} sent you a match` : 'A friend sent you a match'), invD: 'Enter your birth date and see your match right away. No sign-up needed.', invGo: 'See our match',
@@ -139,7 +154,7 @@ const T = {
     homeBeta: 'Free during beta',
     quick: [['today', '運', "Today's fortune"], ['solo', '命', 'My chart'], ['ask', '問', 'Ask'], ['match', '緣', 'Match'], ['shop', '籤', 'Readings']],
     newTitle: 'New readings',
-    newItems: [['NEW', '2027 New Year reading', 'The Ding-Wei year, month by month', 'Coming in December', 'shop'], ['NEW', 'Compatibility', 'Why you click — and where you clash', 'Free beta', 'match']],
+    newItems: [['NEW', 'Face reading', 'Read your face from one photo', 'Free beta', 'face'], ['NEW', '2027 New Year reading', 'The Ding-Wei year, month by month', 'Coming in December', 'shop'], ['NEW', 'Compatibility', 'Why you click — and where you clash', 'Free beta', 'match']],
     hotTitle: 'Popular now',
     hotItems: [["Today's fortune", 'Free', 'today'], ['Free chart reading', 'Free', 'solo'], ['Ask about your worry', 'Free beta', 'ask'], ['Compatibility', 'Free beta', 'match'], ['This year, month by month', '₩990', 'shop'], ['Money & career', '₩990', 'shop'], ['Full life report', '₩9,900', 'shop']],
     pieceTitle: 'A piece of Saju',
@@ -288,7 +303,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ...x.shopItems.slice(1).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['face', '相', x.faceName], ...x.shopItems.slice(1).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -426,6 +441,60 @@ function pickCity(f: HTMLFormElement, id: string): { lat: number; lon: number; t
   return { lat: c.lat, lon: c.lon, tz: tzlookup(c.lat, c.lon), name: formatCityName(c) }
 }
 
+function faceHtml(): string {
+  const x = t()
+  return `<section class="card" aria-label="${esc(x.faceT)}">
+    <div class="freehead"><div><h2>${esc(x.faceT)}</h2><p class="meta">${esc(x.faceD)}</p></div><img class="fmascot" src="${art('dragon-think')}" alt="" width="92" height="92"></div>
+    <ul class="tips">${x.faceTips.map((v: string) => `<li>${esc(v)}</li>`).join('')}</ul>
+    <div class="faceact">
+      <label class="go filebtn"><input type="file" id="facecam" accept="image/*" capture="user" hidden>${esc(x.faceCam)}</label>
+      <label class="go filebtn ghost"><input type="file" id="facealb" accept="image/*" hidden>${esc(x.faceAlbum)}</label>
+    </div>
+    <p class="note">${esc(x.faceKept)}</p>
+    <p class="err" id="faceerr" role="alert"></p>
+  </section>
+  <section id="faceout" aria-live="polite"></section>`
+}
+
+const FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109]
+
+async function onFacePick(file: File) {
+  const x = t()
+  const err = document.getElementById('faceerr')!, out = document.getElementById('faceout')!
+  err.textContent = ''
+  out.innerHTML = `<div class="card"><p class="meta">${esc(x.faceBusy)}</p></div>`
+  try {
+    const cv = await fileToCanvas(file)
+    const found = await findFace(cv)
+    if (found === 'none') { out.innerHTML = ''; err.textContent = x.faceNone; return }
+    if (found === 'many') { out.innerHTML = ''; err.textContent = x.faceMany; return }
+    const m = measure(found)
+    if (m.yaw > 0.14) { out.innerHTML = ''; err.textContent = x.faceSide; return }
+    if (Math.abs(m.roll) > 18) { out.innerHTML = ''; err.textContent = x.faceTilt; return }
+    // 사진 위에 얼굴선을 그린다(사진은 화면에만 쓰고 저장하지 않는다)
+    const g = cv.getContext('2d')!
+    g.strokeStyle = 'rgba(106,38,35,.85)'; g.lineWidth = Math.max(2, cv.width / 260); g.beginPath()
+    FACE_OVAL.forEach((i, k) => { const p = found.pts[i]; k ? g.lineTo(p.x * cv.width, p.y * cv.height) : g.moveTo(p.x * cv.width, p.y * cv.height) })
+    g.closePath(); g.stroke()
+    const r = readFace(m, lang)
+    const debug = /[?&]debug\b/.test(location.search)
+    out.innerHTML = `<article class="rcard lead faceres"><div class="fphoto"></div><h3>${esc(r.headline)}</h3><p>${esc(r.cards[0].paras[0])}</p>
+      <div class="chips2">${r.chips.map((c) => `<span>${esc(c)}</span>`).join('')}</div>
+      <div class="axes">${r.axes.map((a) => `<div class="ax"><span>${esc(a.label)}</span><i class="tr"><b style="width:${a.value}%"></b></i><em>${a.value}</em></div>`).join('')}</div></article>
+      ${r.cards.slice(1).map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}</article>`).join('')}
+      <p class="note">${esc(r.note)}</p>
+      ${debug ? `<pre class="dbg">${r.debug.map((d) => `${d.k}\t${d.v}\t${d.z}`).join('\n')}</pre>` : ''}
+      <article class="card"><div class="row"><button class="go" type="button" data-mode="solo">${esc(x.faceToSaju)}</button></div><div class="row"><label class="go filebtn ghost"><input type="file" id="faceagain" accept="image/*" hidden>${esc(x.faceAgain)}</label></div></article>`
+    cv.className = 'fcanvas'
+    out.querySelector('.fphoto')!.append(cv)
+    out.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
+    document.getElementById('faceagain')?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePick(f) })
+    out.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } catch {
+    out.innerHTML = ''; err.textContent = x.faceFail
+  }
+}
+
 function starHtml(): string {
   const x = t()
   return `<section class="card" aria-label="${esc(x.starPageT)}">
@@ -545,7 +614,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
@@ -593,6 +662,7 @@ function bind() {
     }
   })
   document.getElementById('form')?.addEventListener('submit', onSubmit)
+  ;['facecam', 'facealb'].forEach((id) => document.getElementById(id)?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePick(f) }))
   bindDT(app); bindCity('f'); bindCity('s')
   ;(['funk', 'sunk'] as const).forEach((n) => {
     const c = document.querySelector<HTMLInputElement>(`input[name=${n}]`)

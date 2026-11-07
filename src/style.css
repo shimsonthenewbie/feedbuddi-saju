@@ -416,3 +416,14 @@ img.lockic{width:52px;height:52px;border:0;background:none;object-fit:contain;fi
 .dsel select:first-child{flex:1.4}
 .dsel select:disabled{opacity:.45}
 .row .dsel.grow{flex:1;margin-top:0}
+
+/* 관상 */
+.tips{margin:8px 0 14px;padding-left:1.2em;line-height:1.7}
+.filebtn{display:flex;align-items:center;justify-content:center;cursor:pointer;text-align:center}
+.row .filebtn{flex:1}
+.filebtn.ghost{background:transparent;color:var(--wine,#6a2623);border:2px solid var(--wine,#6a2623)}
+.fphoto{display:flex;justify-content:center;margin-bottom:12px}
+.fcanvas{max-width:100%;max-height:340px;width:auto;height:auto;border-radius:18px}
+.dbg{font-size:12px;white-space:pre;overflow:auto;background:var(--inset);padding:10px;border-radius:10px}
+
+.faceact{display:flex;flex-direction:column;gap:10px;margin:6px 0}

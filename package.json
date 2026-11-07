@@ -1,1 +1,22 @@
-{"name":"feedbuddi-saju","private":true,"version":"0.1.0","type":"module","license":"AGPL-3.0-only","scripts":{"dev":"vite","build":"tsc --noEmit && vite build","preview":"vite preview"},"dependencies":{"@orrery/core":"^0.4.5","@photostructure/tz-lookup":"^11.7.0","astronomy-engine":"^2.1.19"},"devDependencies":{"typescript":"^7.0.2","vite":"^8.3.5"}}
+{
+  "name": "feedbuddi-saju",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "dev": "node scripts/copy-mediapipe.mjs && vite",
+    "build": "node scripts/copy-mediapipe.mjs && tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@orrery/core": "^0.4.5",
+    "@photostructure/tz-lookup": "^11.7.0",
+    "astronomy-engine": "^2.1.19"
+  },
+  "devDependencies": {
+    "@mediapipe/face_mesh": "^0.4.1633559619",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  }
+}
