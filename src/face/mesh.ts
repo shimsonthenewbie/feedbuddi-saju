@@ -22,7 +22,7 @@ function getMesh(): Promise<FM> {
   meshP = (async () => {
     if (!(globalThis as { FaceMesh?: unknown }).FaceMesh) await loadScript(base() + 'face_mesh.js')
     const FaceMesh = (globalThis as unknown as { FaceMesh: new (o: unknown) => FM }).FaceMesh
-    const m = new FaceMesh({ locateFile: (f: string) => base() + f })
+    const m = new FaceMesh({ locateFile: (f: string) => base() + f + (/\.(binarypb|data)$/.test(f) ? ((globalThis as { __MP_SUFFIX?: string }).__MP_SUFFIX ?? '') : '') })
     m.setOptions({ maxNumFaces: 2, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 })
     m.onResults((r: { multiFaceLandmarks?: Pt[][] }) => { pending?.(r) })
     await m.initialize()
