@@ -1,0 +1,34 @@
+# 시험용 주소(GitHub Pages) 배포. 사진·관상·사주 화면만 동작하고 /api(AI 풀이·질문권)는 없다.
+name: pages-preview
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.dep.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build
+        env:
+          BASE: /feedbuddi-saju/
+      - name: 검색에 잡히지 않게(시험용)
+        run: printf 'User-agent: *\nDisallow: /\n' > dist/robots.txt
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: dist }
+      - id: dep
+        uses: actions/deploy-pages@v4
