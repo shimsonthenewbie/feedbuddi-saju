@@ -17,7 +17,7 @@ import { findFace, fileToCanvas } from './face/mesh'
 import { measure } from './face/measure'
 import { readFace } from './face/read'
 import { yearLuck } from './myeongri/timing'
-import { composeYear } from './i18n/year'
+import { composePage } from './i18n/year'
 import { makeInviteUrl, readInvite, makeCard, type Invite } from './share'
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
@@ -298,6 +298,7 @@ function showToday() {
 
 
 let yearSel = 0
+let yearAll = false
 function showYear() {
   const x = t()
   const pr = loadProfile()!
@@ -305,22 +306,42 @@ function showYear() {
   const r = resultOf(pr)
   const a = analyze(r)
   const y0 = new Date().getFullYear()
-  const v = composeYear(yearLuck(r, a, y0 + yearSel, true), lang)
+  const v = composePage(r, a, y0 + yearSel, lang)
+  const step = (m: (typeof v.past.items)[number]) => `<article class="rcard ym k-${m.kind}${m.isNow ? ' now' : ''}"><div class="yh"><b>${esc(m.range)}</b><span class="yk">${esc(m.label)}</span></div>
+    <p>${esc(m.line)}</p>${m.areas.length ? `<div class="chips2">${m.areas.map((ar) => `<span>${esc(ar)}</span>`).join('')}</div>` : ''}</article>`
+  const sal = (s: (typeof v.care.incoming)[number]) => `<li class="sal ${s.caution ? 'c' : 'g'}"><b>${esc(s.name)}<small>${esc(s.hanja)}</small></b><span>${esc(s.text)}</span></li>`
   out.innerHTML = `
   <article class="card yr">
-    <div class="seg small ytabs"><label><input type="radio" name="ysel" value="0" ${yearSel === 0 ? 'checked' : ''}><span>${esc(x.yThis)}</span></label><label><input type="radio" name="ysel" value="1" ${yearSel === 1 ? 'checked' : ''}><span>${esc(x.yNext)}</span></label></div>
-    <h2>${esc(v.title)}</h2>
-    <p class="dbody">${esc(v.summary)}</p>
+    <h2>${esc(v.total.title)}</h2>
+    <p class="dbody"><b>${esc(v.total.summary)}</b></p>
+    ${v.total.reasons.length ? `<ul class="rs">${v.total.reasons.map((q) => `<li>${esc(q)}</li>`).join('')}</ul>` : ''}
+    <p class="dbody">${esc(v.total.months)}</p>
   </article>
-  ${v.months.map((m) => `<article class="rcard ym k-${m.kind}${m.isNow ? ' now' : ''}"><div class="yh"><b>${esc(m.range)}</b><span class="yk">${esc(m.label)}</span>${m.isNow ? `<i class="ynow">${esc(v.nowLabel)}</i>` : ''}</div>
+  <article class="card">
+    <h2>${esc(v.care.title)}</h2>
+    ${v.care.incoming.length ? `<h3>${esc(v.care.incomingT)}</h3><ul class="sals">${v.care.incoming.map(sal).join('')}</ul>` : ''}
+    ${v.care.natal.length ? `<h3>${esc(v.care.natalT)}</h3><ul class="sals">${v.care.natal.map(sal).join('')}</ul>` : ''}
+  </article>
+  <article class="card"><h2>${esc(v.past.title)}</h2><p class="meta">${esc(v.past.intro)}</p></article>
+  ${v.past.items.map(step).join('')}
+  <p class="note">${esc(v.past.note)}</p>
+  <article class="card"><h2>${esc(v.now.title)}</h2></article>
+  ${v.now.item ? step(v.now.item) : ''}
+  <article class="card"><h2>${esc(v.next.title)}</h2><p class="meta">${esc(v.next.intro)}</p></article>
+  ${v.next.items.map(step).join('')}
+  <article class="card yr">
+    <button class="go ghost" type="button" id="yall">${esc(yearAll ? v.btn.hide : v.btn.show)}</button>
+    ${yearAll ? `<div class="seg small ytabs"><label><input type="radio" name="ysel" value="0" ${yearSel === 0 ? 'checked' : ''}><span>${esc(x.yThis)}</span></label><label><input type="radio" name="ysel" value="1" ${yearSel === 1 ? 'checked' : ''}><span>${esc(x.yNext)}</span></label></div><h3>${esc(v.all.title)}</h3>` : ''}
+  </article>
+  ${yearAll ? v.all.months.map((m) => `<article class="rcard ym k-${m.kind}${m.isNow ? ' now' : ''}"><div class="yh"><b>${esc(m.range)}</b><span class="yk">${esc(m.label)}</span>${m.isNow ? `<i class="ynow">${esc(v.all.nowLabel)}</i>` : ''}</div>
     <p>${esc(m.head)}</p>
-    <div class="chips2">${m.areas.map((ar) => `<span>${esc(ar.label)}</span>`).join('')}</div>
-    <p class="dtip">✦ ${esc(m.tip)}</p></article>`).join('')}
+    ${m.areas.length ? `<div class="chips2">${m.areas.map((ar) => `<span>${esc(ar.label)}</span>`).join('')}</div>` : ''}
+    <p class="dtip">✦ ${esc(m.tip)}</p></article>`).join('') : ''}
   <p class="note">${esc(v.note)}</p>
   <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${x.change}</button></p>`
+  document.getElementById('yall')!.onclick = () => { yearAll = !yearAll; showYear() }
   out.querySelectorAll<HTMLInputElement>('input[name=ysel]').forEach((i) => (i.onchange = () => { yearSel = +i.value; showYear() }))
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
-  out.querySelector('.now')?.scrollIntoView({ block: 'center' })
 }
 
 function navHtml(): string {
