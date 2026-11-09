@@ -19,13 +19,14 @@ import { readFace } from './face/read'
 import { reportData, buildReportRequest, PARTS, type Part, type Tone } from './report-prompt'
 import { yearLuck } from './myeongri/timing'
 import { composePage } from './i18n/year'
+import { legalDoc, type LegalDoc } from './legal'
 import { pickCalc } from './myeongri/pick'
 import { composePick } from './i18n/pick'
 import { makeInviteUrl, readInvite, makeCard, type Invite } from './share'
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'pick' | 'report' | 'year' | 'face' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'legal' | 'pick' | 'report' | 'year' | 'face' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -42,6 +43,7 @@ const T = {
     freeTitle: '무료 사주 맛보기',
     faceName: '관상 (사진으로 보기)', faceT: '얼굴로 보는 관상', faceD: '정면 사진 한 장이면 돼요. 사진은 내 기기 안에서만 분석하고 서버로 보내지 않아요.',
     faceTips: ['밝은 곳에서 정면으로', '머리카락은 이마가 보이게 넘기기', '안경·마스크·모자는 벗기', '무표정에 가깝게'],
+    faceConsentT: '사진을 올리기 전에 확인해 주세요', faceC1: '사진은 이 기기 안에서만 분석하고, 서버로 보내거나 저장하지 않는다는 점을 확인했어요.', faceC2: '내 사진이거나, 사진 속 사람의 허락을 받은 사진이에요. (만 14세 미만은 보호자 동의가 필요해요)', faceC3: '관상은 재미로 보는 경향 풀이이고, 성격·능력을 단정하지 않는다는 점을 알아요.', faceOk: '동의하고 사진 고르기', faceNo: '취소', legalPrivacy: '개인정보 처리방침', legalTerms: '이용약관', legalBack: '돌아가기',
     faceCam: '카메라로 찍기', faceAlbum: '앨범에서 고르기', faceBusy: '여의가 얼굴을 살펴보는 중…',
     faceNone: '얼굴을 찾지 못했어요. 밝은 곳에서 정면으로 다시 찍어 주세요.', faceMany: '얼굴이 여러 개 보여요. 한 사람만 나오게 찍어 주세요.',
     faceSide: '얼굴이 옆으로 돌아가 있어요. 정면을 보고 다시 찍어 주세요.', faceTilt: '고개가 많이 기울었어요. 바르게 세우고 다시 찍어 주세요.', faceFail: '분석에 실패했어요. 잠시 뒤 다시 시도해 주세요.',
@@ -143,6 +145,7 @@ const T = {
     freeTitle: 'Free Saju taste',
     faceName: 'Face reading (photo)', faceT: 'Face reading', faceD: 'One front-facing photo is enough. It is analysed on your device only and never uploaded.',
     faceTips: ['Bright light, facing the camera', 'Push hair off the forehead', 'No glasses, mask or hat', 'A neutral expression'],
+    faceConsentT: 'Please confirm before uploading', faceC1: 'I understand the photo is analysed only on this device and is never uploaded or stored.', faceC2: 'It is my own photo, or the person in it has allowed me to use it. (Under 14 needs a guardian\'s consent.)', faceC3: 'I know face reading is a for-fun tendency reading and does not judge character or ability.', faceOk: 'Agree and choose photo', faceNo: 'Cancel', legalPrivacy: 'Privacy policy', legalTerms: 'Terms of use', legalBack: 'Back',
     faceCam: 'Take a photo', faceAlbum: 'Choose from album', faceBusy: 'Yeoui is looking at your face…',
     faceNone: "Couldn't find a face. Try a front-facing photo in bright light.", faceMany: 'More than one face found. Please use a photo of one person.',
     faceSide: 'Your face is turned. Please face the camera.', faceTilt: 'Your head is tilted. Please hold it upright.', faceFail: 'Analysis failed. Please try again shortly.',
@@ -645,16 +648,45 @@ function pickCity(f: HTMLFormElement, id: string): { lat: number; lon: number; t
   return { lat: c.lat, lon: c.lon, tz: tzlookup(c.lat, c.lon), name: formatCityName(c) }
 }
 
+let legalKind: LegalDoc = 'privacy'
+let legalFrom: Mode = 'home'
+function legalHtml(): string {
+  const x = t()
+  const d = legalDoc(legalKind, lang)
+  return `<article class="card legal"><h2>${esc(d.title)}</h2><p class="meta">${esc(d.date)}</p>${d.secs.map((c) => `<h3>${esc(c.h)}</h3>${c.p.map((q) => `<p>${esc(q)}</p>`).join('')}`).join('')}</article>
+  <button class="go ghost" type="button" data-mode="${legalFrom}">${esc(x.legalBack)}</button>`
+}
+/** 사진 올리기 전 동의창. 세 가지를 모두 체크해야 사진 고르기가 열린다. */
+function askFaceConsent(inputId: string) {
+  const x = t()
+  const wrap = document.createElement('div')
+  wrap.className = 'modal'
+  wrap.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(x.faceConsentT)}">
+    <h3>${esc(x.faceConsentT)}</h3>
+    ${[x.faceC1, x.faceC2, x.faceC3].map((c: string) => `<label class="chk"><input type="checkbox" class="fc"> ${esc(c)}</label>`).join('')}
+    <p class="note"><button type="button" class="linkbtn" data-legal="privacy">${esc(x.legalPrivacy)}</button> · <button type="button" class="linkbtn" data-legal="terms">${esc(x.legalTerms)}</button></p>
+    <button class="go" type="button" id="fcok" disabled>${esc(x.faceOk)}</button>
+    <button class="go ghost" type="button" id="fcno">${esc(x.faceNo)}</button></div>`
+  document.body.appendChild(wrap)
+  const ok = wrap.querySelector<HTMLButtonElement>('#fcok')!
+  const boxes = Array.from(wrap.querySelectorAll<HTMLInputElement>('.fc'))
+  boxes.forEach((b) => (b.onchange = () => { ok.disabled = !boxes.every((c) => c.checked) }))
+  wrap.querySelector<HTMLButtonElement>('#fcno')!.onclick = () => wrap.remove()
+  ok.onclick = () => { wrap.remove(); document.getElementById(inputId)?.click() }
+  wrap.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => (b.onclick = () => { legalKind = b.dataset.legal as LegalDoc; legalFrom = 'face'; wrap.remove(); mode = 'legal'; window.scrollTo(0, 0); render() }))
+}
+
 function faceHtml(): string {
   const x = t()
   return `<section class="card" aria-label="${esc(x.faceT)}">
     <div class="freehead"><div><h2>${esc(x.faceT)}</h2><p class="meta">${esc(x.faceD)}</p></div><img class="fmascot" src="${art('dragon-think')}" alt="" width="92" height="92"></div>
     <ul class="tips">${x.faceTips.map((v: string) => `<li>${esc(v)}</li>`).join('')}</ul>
     <div class="faceact">
-      <label class="go filebtn"><input type="file" id="facecam" accept="image/*" capture="user" hidden>${esc(x.faceCam)}</label>
-      <label class="go filebtn ghost"><input type="file" id="facealb" accept="image/*" hidden>${esc(x.faceAlbum)}</label>
+      <input type="file" id="facecam" accept="image/*" capture="user" hidden><input type="file" id="facealb" accept="image/*" hidden>
+      <button type="button" class="go filebtn" data-faceask="facecam">${esc(x.faceCam)}</button>
+      <button type="button" class="go filebtn ghost" data-faceask="facealb">${esc(x.faceAlbum)}</button>
     </div>
-    <p class="note">${esc(x.faceKept)}</p>
+    <p class="note">${esc(x.faceKept)} <button type="button" class="linkbtn" data-legal="privacy">${esc(x.legalPrivacy)}</button> · <button type="button" class="linkbtn" data-legal="terms">${esc(x.legalTerms)}</button></p>
     <p class="err" id="faceerr" role="alert"></p>
   </section>
   <section id="faceout" aria-live="polite"></section>`
@@ -817,7 +849,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
@@ -829,6 +861,7 @@ function render() {
   <footer>
     <p>${x.fun}</p>
     <p>${x.footer} <a href="https://github.com/rath/orrery" target="_blank" rel="noopener">orrery</a> · <a href="https://github.com/shimsonthenewbie/feedbuddi-saju" target="_blank" rel="noopener">${x.source}</a></p>
+    <p><button type="button" class="linkbtn" data-legal="privacy">${x.legalPrivacy}</button> · <button type="button" class="linkbtn" data-legal="terms">${x.legalTerms}</button></p>
   </footer>`
   bind()
 }
@@ -856,6 +889,8 @@ function bind() {
     updAcc()
     attachCity(input, (c) => { if (c) cityState[id] = c; placeTouched = true; updAcc() })
   })
+  app.querySelectorAll<HTMLElement>('[data-faceask]').forEach((b) => (b.onclick = () => askFaceConsent(b.dataset.faceask!)))
+  app.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => (b.onclick = () => { legalKind = b.dataset.legal as LegalDoc; legalFrom = mode === 'legal' ? legalFrom : mode; mode = 'legal'; window.scrollTo(0, 0); render() }))
   document.getElementById('form')?.addEventListener('submit', onSubmit)
   ;['facecam', 'facealb'].forEach((id) => document.getElementById(id)?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePick(f) }))
   bindDT(app); bindCity('f'); bindCity('s')
