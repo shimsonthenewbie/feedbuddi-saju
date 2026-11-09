@@ -61,7 +61,7 @@ export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
   const fetchCards = async (): Promise<Card[]> => {
     const a = analyze(r)
     const ev = date ? new Date(date + 'T12:00:00') : null
-    const calc = consultCalc(r, a, cat!, new Date(), 24, ev)
+    const calc = consultCalc(r, a, cat!, new Date(), 12, ev)
     let seed = 0
     for (const ch of q + date + cat) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0
     const draft = composeConsult(calc, a, lang, seed)

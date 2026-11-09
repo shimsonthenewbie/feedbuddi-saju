@@ -1,6 +1,6 @@
 /**
  * 상담용 시기 계산 (언어 무관)
- * 고민 카테고리별로 앞으로 24개월을 훑어 "좋은 달"과 "신중할 달"을 고르고, 그 근거(간지·십성·부딪힘)를 돌려준다.
+ * 고민 카테고리별로 앞으로 12개월을 훑어 "좋은 달"과 "신중할 달"을 고르고, 그 근거(간지·십성·부딪힘)를 돌려준다.
  * 문장은 src/i18n/consult/ 의 문구 풀(또는 AI)이 만든다.
  */
 import type { SajuResult } from '@orrery/core/types'
@@ -52,7 +52,7 @@ function catScore(r: SajuResult, L: Luck, cat: AskCat): number {
   }
 }
 
-export function consultCalc(r: SajuResult, a: Analysis, cat: AskCat, now = new Date(), months = 24, eventDate?: Date | null): ConsultCalc {
+export function consultCalc(r: SajuResult, a: Analysis, cat: AskCat, now = new Date(), months = 12, eventDate?: Date | null): ConsultCalc {
   const y0 = now.getFullYear()
   const yearGanzi: Record<number, string> = {}
   type Row = { L: Luck; s: number; year: number; month: number; date: Date }

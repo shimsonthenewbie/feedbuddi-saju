@@ -564,23 +564,59 @@ function bindDT(root: ParentNode) {
 }
 const setDT = (root: ParentNode, dis: boolean) => root.querySelectorAll<HTMLSelectElement>('.dsel[data-dt=time] select').forEach((e) => (e.disabled = dis))
 
+
+/** 도시 찾기: "광주 (광주광역시)"처럼 목록 표기 그대로 와도, 괄호 앞 이름만 써도 찾는다 */
+function findCity(typed: string): City | null {
+  const q = typed.trim()
+  if (!q) return null
+  const all = filterCities(q)
+  const exact = all.find((c) => formatCityName(c) === q)
+  if (exact) return exact
+  if (all.length) return all[0]
+  const base = q.replace(/\s*[(（].*$/, '').trim()
+  if (base && base !== q) {
+    const b = filterCities(base)
+    return b.find((c) => formatCityName(c) === q) ?? b[0] ?? null
+  }
+  return null
+}
+/** 입력칸 바로 아래에 뜨는 도시 후보 목록(브라우저 기본 목록 대신) */
+function attachCity(input: HTMLInputElement, onType?: (exact: City | null) => void) {
+  let ul = input.parentElement!.querySelector<HTMLUListElement>('.clist')
+  if (!ul) { ul = document.createElement('ul'); ul.className = 'clist'; ul.setAttribute('role', 'listbox'); ul.hidden = true; input.insertAdjacentElement('afterend', ul) }
+  const box = ul
+  const hide = () => { box.hidden = true }
+  const show = () => {
+    const q = input.value.trim()
+    const found = q ? filterCities(q).slice(0, 6) : []
+    box.innerHTML = found.map((c, i) => `<li role="option" data-i="${i}">${esc(formatCityName(c))}</li>`).join('')
+    box.hidden = !found.length
+    box.onpointerdown = (e) => {
+      const li = (e.target as HTMLElement).closest('li'); if (!li) return
+      e.preventDefault()
+      const c = found[Number(li.dataset.i)]
+      input.value = formatCityName(c); hide(); onType?.(c)
+    }
+  }
+  input.addEventListener('input', () => { show(); onType?.(findCity(input.value)) })
+  input.addEventListener('focus', () => { if (input.value.trim() && input.value !== formatCityName(SEOUL)) show() })
+  input.addEventListener('blur', () => setTimeout(hide, 120))
+}
+
 /** 출생지 입력칸(홈 무료풀이·별자리용). 기본값은 서울. */
 function cityField(id: string): string {
   const x = t()
-  return `<label>${x.place}<input type="text" name="${id}city" list="cities-${id}" placeholder="${x.placeHint}" autocomplete="off" value="${esc(formatCityName(SEOUL))}"></label><datalist id="cities-${id}"></datalist>`
+  return `<label>${x.place}<input type="text" name="${id}city" placeholder="${x.placeHint}" autocomplete="off" value="${esc(formatCityName(SEOUL))}"></label>`
 }
 function bindCity(id: string) {
   const input = document.querySelector<HTMLInputElement>(`input[name=${id}city]`)
-  const list = document.getElementById(`cities-${id}`)
-  if (!input || !list) return
-  input.oninput = () => { list.innerHTML = filterCities(input.value).map((c) => `<option value="${esc(formatCityName(c))}"></option>`).join('') }
+  if (input) attachCity(input)
 }
 /** 입력한 도시를 찾는다. 비어 있으면 서울, 못 찾으면 null */
 function pickCity(f: HTMLFormElement, id: string): { lat: number; lon: number; tz: string; name: string } | null {
   const typed = (f.elements.namedItem(`${id}city`) as HTMLInputElement).value.trim()
   if (!typed) return { lat: SEOUL.lat, lon: SEOUL.lon, tz: 'Asia/Seoul', name: formatCityName(SEOUL) }
-  const found = filterCities(typed)
-  const c = found.find((k) => formatCityName(k) === typed) ?? found[0]
+  const c = findCity(typed)
   if (!c) return null
   return { lat: c.lat, lon: c.lon, tz: tzlookup(c.lat, c.lon), name: formatCityName(c) }
 }
@@ -741,8 +777,7 @@ function personForm(id: 'a' | 'b', label: string): string {
         <label><input type="radio" name="g-${id}" value="M"><span>${x.male}</span></label>
       </div>
     </div>
-    <label>${x.place}<input type="text" name="city" list="cities-${id}" placeholder="${x.placeHint}" autocomplete="off" value="${esc(formatCityName(SEOUL))}"></label>
-    <datalist id="cities-${id}"></datalist>
+    <label>${x.place}<input type="text" name="city" placeholder="${x.placeHint}" autocomplete="off" value="${esc(formatCityName(SEOUL))}"></label>
     <div class="acc" aria-live="polite"><div class="accrow"><b>${x.acc}</b><span class="accn">60%</span></div><i class="tr"><b class="accbar"></b></i><p class="note acctip"></p></div>
   </fieldset>`
 }
@@ -780,7 +815,6 @@ function bind() {
   app.querySelectorAll<HTMLFieldSetElement>('fieldset.person').forEach((fs) => {
     const id = fs.dataset.p as 'a' | 'b'
     const input = fs.querySelector<HTMLInputElement>('input[name=city]')!
-    const list = fs.querySelector<HTMLDataListElement>('datalist')!
     const unk = fs.querySelector<HTMLInputElement>('input[name=unk]')!
     const time = fs.querySelector<HTMLInputElement>('input[name=time]')!
     const date = fs.querySelector<HTMLInputElement>('input[name=date]')!
@@ -796,14 +830,7 @@ function bind() {
     unk.onchange = () => { time.disabled = unk.checked; setDT(fs, unk.checked); updAcc() }
     date.oninput = updAcc; time.oninput = updAcc
     updAcc()
-    input.oninput = () => {
-      const found = filterCities(input.value)
-      list.innerHTML = found.map((c) => `<option value="${esc(formatCityName(c))}"></option>`).join('')
-      const exact = found.find((c) => formatCityName(c) === input.value)
-      if (exact) cityState[id] = exact
-      placeTouched = true
-      updAcc()
-    }
+    attachCity(input, (c) => { if (c) cityState[id] = c; placeTouched = true; updAcc() })
   })
   document.getElementById('form')?.addEventListener('submit', onSubmit)
   ;['facecam', 'facealb'].forEach((id) => document.getElementById(id)?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePick(f) }))
@@ -833,9 +860,9 @@ function readPerson(id: 'a' | 'b', label: string): Person | string {
   const [y, m, d] = date.split('-').map(Number)
   const [hh, mm] = unk ? [12, 0] : timeV.split(':').map(Number)
   const typed = fs.querySelector<HTMLInputElement>('input[name=city]')!.value
-  const found = typed.trim() ? filterCities(typed.trim()) : []
-  if (typed.trim() && !found.length) return x.errPlace
-  const city = found.find((c) => formatCityName(c) === typed) ?? found[0] ?? cityState[id]
+  const hit = findCity(typed)
+  if (typed.trim() && !hit) return x.errPlace
+  const city = hit ?? cityState[id]
   try {
     const tz = tzlookup(city.lat, city.lon)
     const result = calculateSaju({ year: y, month: m, day: d, hour: hh, minute: mm, gender, unknownTime: unk, latitude: city.lat, longitude: city.lon, timezone: tz })

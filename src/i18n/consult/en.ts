@@ -11,8 +11,8 @@ export const en: ConsultText = {
     etc: ['{when}: the flow is good', '{when}: a good time to try'],
   },
   answerBody: {
-    best: ['Within the next 24 months, this is the strongest stretch for you. Plan around it.', 'Your chart is well supported in this month. The more you prepare, the more it pays off.'],
-    flat: ['No sharp peak shows up in the next 24 months. The flow is fairly even, so steady building works best.'],
+    best: ['Within the next 12 months, this is the strongest stretch for you. Plan around it.', 'Your chart is well supported in this month. The more you prepare, the more it pays off.'],
+    flat: ['No sharp peak shows up in the next 12 months. The flow is fairly even, so steady building works best.'],
   },
   why: {
     lead: 'In the {ganzi} month,',

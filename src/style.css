@@ -450,3 +450,10 @@ img.lockic{width:52px;height:52px;border:0;background:none;object-fit:contain;fi
 .rp h4{margin:14px 0 4px}
 .rp p{line-height:1.75;margin:8px 0}
 .rp ul{padding-left:1.2em;line-height:1.7}
+
+/* 도시 후보 목록: 입력칸 바로 아래에 겹치지 않게 */
+label:has(> input[name$=city]){position:relative}
+.clist{position:absolute;left:0;right:0;top:100%;z-index:30;margin:4px 0 0;padding:4px;list-style:none;background:#fbf6ea;border:1px solid #d9cfae;border-radius:14px;box-shadow:0 10px 24px rgba(30,28,25,.18);max-height:240px;overflow:auto}
+.clist[hidden]{display:none}
+.clist li{padding:11px 12px;border-radius:10px;font-size:15px;cursor:pointer}
+.clist li:active,.clist li:hover{background:#efe6cf}
