@@ -5,7 +5,7 @@ export type Lang = 'ko' | 'en'
 type Lv = 0 | 1 | 2 // 낮음·보통·높음
 
 /** [평균, 표준편차]. 실제 얼굴로 테스트하며 조정할 값 */
-export const NORM: Record<keyof Omit<Metrics, 'yaw' | 'roll'>, [number, number]> = {
+export const NORM: Record<keyof Omit<Metrics, 'yaw' | 'roll' | 'yawDeg' | 'pitchDeg'>, [number, number]> = {
   ratio: [1.15, 0.07], jaw: [0.77, 0.03], upper: [0.24, 0.02], mid: [0.47, 0.025], lower: [0.29, 0.025],
   eyeW: [0.215, 0.012], eyeOpen: [0.26, 0.07], eyeTilt: [6, 3], eyeGap: [1.25, 0.12],
   browLen: [1.45, 0.1], browGap: [0.75, 0.15], browArch: [0.12, 0.03],

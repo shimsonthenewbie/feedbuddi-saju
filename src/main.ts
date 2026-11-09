@@ -18,6 +18,7 @@ import { measure } from './face/measure'
 import { readFace } from './face/read'
 import { animalOf } from './face/animal'
 import { makeOverlay, drawDots, drawGuide } from './face/draw'
+import { startRing } from './face/loader'
 import { wuxingOf } from './face/wuxing'
 import { momentsOf, EL_NAME, EL_BODY } from './face/moments'
 import { reportData, buildReportRequest, PARTS, type Part, type Tone } from './report-prompt'
@@ -54,7 +55,7 @@ const T = {
     faceConsentT: '사진을 올리기 전에 확인해 주세요', faceAll: '아래 내용에 모두 동의해요', faceSlow: '분석이 오래 걸려요. 인터넷 연결을 확인하고 다시 시도해 주세요.', faceC1: '사진은 이 기기 안에서만 분석하고, 서버로 보내거나 저장하지 않는다는 점을 확인했어요.', faceC2: '내 사진이거나, 사진 속 사람의 허락을 받은 사진이에요. (만 14세 미만은 보호자 동의가 필요해요)', faceC3: '관상은 재미로 보는 경향 풀이이고, 성격·능력을 단정하지 않는다는 점을 알아요.', faceOk: '동의하고 사진 고르기', faceNo: '취소', legalPrivacy: '개인정보 처리방침', legalTerms: '이용약관', legalBack: '돌아가기',
     faceCam: '카메라로 찍기', faceAlbum: '앨범에서 고르기', faceBusy: '여의가 얼굴을 살펴보는 중…',
     faceNone: '얼굴을 찾지 못했어요. 밝은 곳에서 정면으로 다시 찍어 주세요.', faceMany: '얼굴이 여러 개 보여요. 한 사람만 나오게 찍어 주세요.',
-    faceSide: '얼굴이 옆으로 돌아가 있어요. 정면을 보고 다시 찍어 주세요.', faceTilt: '고개가 많이 기울었어요. 바르게 세우고 다시 찍어 주세요.', faceFail: '분석에 실패했어요. 잠시 뒤 다시 시도해 주세요.',
+    faceSide: '얼굴이 옆으로 돌아가 있어요. 정면을 보고 다시 찍어 주세요.', faceTilt: '고개가 많이 기울었어요. 바르게 세우고 다시 찍어 주세요.', faceAngle: (yw: number, pt: number, rl: number) => `정면을 바라보는 사진을 올려 주세요. (얼굴이 좌우 ${yw}°, 상하 ${pt}°, 기울기 ${rl}° 만큼 벗어나 있어요)`, ringCaps: ['얼굴을 분석하고 있어요…', '인상 특징을 읽고 있어요…', '성향을 해석하고 있어요…', '리포트를 작성하고 있어요…'], faceFail: '분석에 실패했어요. 잠시 뒤 다시 시도해 주세요.',
     faceAgain: '다른 사진으로 다시 보기', faceToSaju: '사주도 같이 보기', faceKept: '사진은 저장되지 않아요. 이 화면을 닫으면 사라져요.',
     rpT: '종합 사주 리포트', rpD: '내 사주를 12단계로 깊게 풀어 쓰는 상담서예요. 타고난 구조부터 평생 흐름, 돈·직업·연애·결혼·건강·가족, 대운과 중요한 해까지 한 번에 받아요.',
     rpList: ['지금 상황 진단', '원국 핵심 구조', '평생 총운', '금전운', '직업운', '연애·결혼운', '건강·가족운', '대운·세운 해석', '현실 조언'],
@@ -159,7 +160,7 @@ const T = {
     faceConsentT: 'Please confirm before uploading', faceAll: 'I agree to all of the below', faceSlow: 'Analysis is taking too long. Check your connection and try again.', faceC1: 'I understand the photo is analysed only on this device and is never uploaded or stored.', faceC2: 'It is my own photo, or the person in it has allowed me to use it. (Under 14 needs a guardian\'s consent.)', faceC3: 'I know face reading is a for-fun tendency reading and does not judge character or ability.', faceOk: 'Agree and choose photo', faceNo: 'Cancel', legalPrivacy: 'Privacy policy', legalTerms: 'Terms of use', legalBack: 'Back',
     faceCam: 'Take a photo', faceAlbum: 'Choose from album', faceBusy: 'Yeoui is looking at your face…',
     faceNone: "Couldn't find a face. Try a front-facing photo in bright light.", faceMany: 'More than one face found. Please use a photo of one person.',
-    faceSide: 'Your face is turned. Please face the camera.', faceTilt: 'Your head is tilted. Please hold it upright.', faceFail: 'Analysis failed. Please try again shortly.',
+    faceSide: 'Your face is turned. Please face the camera.', faceTilt: 'Your head is tilted. Please hold it upright.', faceAngle: (yw: number, pt: number, rl: number) => `Please upload a front-facing photo. (Your face is off by ${yw}° left-right, ${pt}° up-down, ${rl}° tilt)`, ringCaps: ['Analyzing your face…', 'Reading your features…', 'Interpreting your traits…', 'Writing your report…'], faceFail: 'Analysis failed. Please try again shortly.',
     faceAgain: 'Try another photo', faceToSaju: 'Also read my chart', faceKept: 'Your photo is not saved. It disappears when you leave this screen.',
     rpT: 'Full Saju report', rpD: 'A 12-stage deep reading of your chart: structure, life flow, money, career, love, marriage, health, family, luck cycles and key years.',
     rpList: ['Current situation', 'Core structure', 'Life overview', 'Money', 'Career', 'Love & marriage', 'Health & family', 'Luck cycles & key years', 'Practical advice'],
@@ -754,15 +755,31 @@ async function onFacePick(file: File) {
   const x = t()
   const err = document.getElementById('faceerr')!, out = document.getElementById('faceout')!
   err.textContent = ''
-  out.innerHTML = `<div class="card"><p class="meta">${esc(x.faceBusy)}</p></div>`
+  out.innerHTML = '<article class="card scan"><div id="ringhost"></div></article>'
+  const tRing = performance.now()
+  const stopRing = startRing(document.getElementById('ringhost')!, [...x.ringCaps])
   try {
     const cv = await fileToCanvas(file)
     const found = await Promise.race([findFace(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
+    await new Promise((r) => setTimeout(r, Math.max(0, (/[?&]slow\b/.test(location.search) ? 12000 : 2600) - (performance.now() - tRing))))
+    stopRing()
     if (found === 'none') { out.innerHTML = ''; err.textContent = x.faceNone; return }
     if (found === 'many') { out.innerHTML = ''; err.textContent = x.faceMany; return }
     const m = measure(found)
-    if (m.yaw > 0.14) { out.innerHTML = ''; err.textContent = x.faceSide; return }
-    if (Math.abs(m.roll) > 18) { out.innerHTML = ''; err.textContent = x.faceTilt; return }
+    const yw = Math.round(m.yawDeg), pt = Math.round(m.pitchDeg), rl = Math.round(Math.abs(m.roll))
+    if (m.yaw > 0.14 || yw > 20 || pt > 18 || rl > 18) {
+      // 벗어난 정도를 알려주고, 인식된 얼굴 위치를 사진 위에 박스로 보여 준다
+      const xs = found.pts.map((p) => p.x), ys = found.pts.map((p) => p.y)
+      const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys)
+      cv.className = 'fcanvas'
+      const box = document.createElement('i'); box.className = 'fbox'
+      box.style.cssText = `left:${x0 * 100}%;top:${y0 * 100}%;width:${(x1 - x0) * 100}%;height:${(y1 - y0) * 100}%`
+      const w2 = document.createElement('div'); w2.className = 'fwrap'; w2.append(cv, box)
+      out.innerHTML = '<article class="card scan"><div class="fphoto"></div></article>'
+      out.querySelector('.fphoto')!.append(w2)
+      err.textContent = x.faceAngle(Math.max(yw, m.yaw > 0.14 && yw < 20 ? 21 : 0), pt, rl)
+      return
+    }
     // 대기 연출: 점을 하나씩 찍고, 구획선을 긋는다(사진은 화면에만 쓰고 저장하지 않는다)
     const ov = makeOverlay(cv)
     cv.className = 'fcanvas'
@@ -813,10 +830,12 @@ async function onFacePick(file: File) {
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'feedbuddi-face.png'; document.body.append(a); a.click(); a.remove()
         try { await navigator.clipboard.writeText(`${an.shareText}\n${url}`) } catch { /* 복사 불가 */ }
         ok.textContent = x.faceShared
-      } catch (e) { if ((e as Error).name !== 'AbortError') ok.textContent = '' }
+      } catch (e) {
+    if ((e as Error).name !== 'AbortError') ok.textContent = '' }
     }
     out.scrollIntoView({ behavior: 'smooth', block: 'start' })
   } catch (e) {
+    stopRing()
     console.error('face', e)
     out.innerHTML = ''; err.textContent = (e as Error).message === 'timeout' ? x.faceSlow : x.faceFail
   }

@@ -18,6 +18,8 @@ export interface Metrics {
   lip: number        // 입술 두께 / 입 너비
   yaw: number        // 얼굴 돌아간 정도(0이 정면)
   roll: number       // 고개 기울기(도)
+  yawDeg: number     // 좌우로 돌아간 각도(도, 절댓값)
+  pitchDeg: number   // 위아래로 숙이거나 든 각도(도, 절댓값)
 }
 
 export function measure(f: Found): Metrics {
@@ -45,6 +47,10 @@ export function measure(f: Found): Metrics {
   }
   const browLenA = (d(70, 107) + d(336, 300)) / 2
   const browGap = (d(105, 159) + d(334, 386)) / 2
+  const Z = f.pts.map((p) => p.z * f.w)
+  const deg = (r: number) => (r * 180) / Math.PI
+  const yawDeg = Math.abs(deg(Math.atan2(Z[454] - Z[234], P[454].x - P[234].x))) * 1.4 // z 깊이가 실제보다 작게 나와 보정
+  const pitchDeg = Math.abs(deg(Math.atan2(Z[152] - Z[10], P[152].y - P[10].y)) - 12) // 정면 얼굴도 이마가 살짝 앞이라 12°를 기준으로 본다
   const midX = (Q[234].x + Q[454].x) / 2
   return {
     ratio: H / W, jaw: dx(172, 397) / W,
@@ -53,6 +59,6 @@ export function measure(f: Found): Metrics {
     browLen: browLenA / eyeW, browGap: browGap / eyeW, browArch: (arch(browL) + arch(browR)) / 2,
     noseW: dx(129, 358) / dx(133, 362), noseLen: m / H,
     mouthW: dx(61, 291) / W, lip: d(0, 17) / dx(61, 291),
-    yaw: Math.abs(Q[1].x - midX) / W, roll,
+    yaw: Math.abs(Q[1].x - midX) / W, roll, yawDeg, pitchDeg,
   }
 }
