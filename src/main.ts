@@ -828,7 +828,7 @@ function render() {
   ${navHtml()}
   <footer>
     <p>${x.fun}</p>
-    <p>${x.footer} <a href="https://github.com/rath/orrery" target="_blank" rel="noopener">orrery</a></p>
+    <p>${x.footer} <a href="https://github.com/rath/orrery" target="_blank" rel="noopener">orrery</a> · <a href="https://github.com/shimsonthenewbie/feedbuddi-saju" target="_blank" rel="noopener">${x.source}</a></p>
   </footer>`
   bind()
 }
