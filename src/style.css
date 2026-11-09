@@ -444,3 +444,9 @@ img.lockic{width:52px;height:52px;border:0;background:none;object-fit:contain;fi
 .sal b small{font-weight:400;opacity:.6;margin-left:6px}
 .sal.c{border-left:4px solid #6a2623}
 .sal.g{border-left:4px solid #6b8a52}
+
+/* 종합 리포트 */
+.rp h3.rph{margin:18px 0 8px;font-size:1.15em}
+.rp h4{margin:14px 0 4px}
+.rp p{line-height:1.75;margin:8px 0}
+.rp ul{padding-left:1.2em;line-height:1.7}

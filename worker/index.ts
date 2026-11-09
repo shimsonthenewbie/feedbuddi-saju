@@ -5,6 +5,7 @@
  * 어떤 오류든 초안 카드로 되돌아가므로 화면은 항상 결과를 보여 줄 수 있다.
  */
 import { D1Store, MemoryStore, DAILY_CAP, type D1, type Store } from './tickets'
+import { buildReportRequest, type Part, type Tone } from '../src/report-prompt'
 
 interface Env {
   DB?: D1
@@ -89,11 +90,75 @@ async function rewrite(b: AskBody, env: Env): Promise<Card[] | null> {
   }
 }
 
+/** 종합 리포트: 4개 파트를 차례로 만들어 줄 단위(JSON)로 흘려 보낸다. 질문권 1장 = 리포트 1건. */
+async function geminiText(env: Env, system: string, user: string, ms: number): Promise<string | null> {
+  const model = env.GEMINI_MODEL || 'gemini-2.5-flash'
+  const ctl = new AbortController()
+  const timer = setTimeout(() => ctl.abort(), ms)
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST', signal: ctl.signal,
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY! },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: 'user', parts: [{ text: user }] }],
+        generationConfig: { temperature: 0.6, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } },
+      }),
+    })
+    if (!res.ok) return null
+    const data: any = await res.json()
+    const parts: any[] = data?.candidates?.[0]?.content?.parts ?? []
+    const text = parts.map((p) => (typeof p?.text === 'string' ? p.text : '')).join('').trim()
+    return text.length > 200 ? text : null
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timer)
+  }
+}
+/** 다음 파트가 같은 말을 되풀이하지 않도록 앞 파트의 소제목과 첫 문장만 추린다. */
+function digest(text: string): string {
+  const out: string[] = []
+  for (const block of text.split(/\n{2,}/)) {
+    const t = block.trim()
+    if (/^\d+\.\s/.test(t) || /^#{1,4}\s/.test(t)) out.push(t.split('\n')[0].slice(0, 80))
+    else if (out.length && out[out.length - 1].length < 260) out[out.length - 1] += ' — ' + t.slice(0, 120)
+  }
+  return out.join('\n').slice(0, 2500)
+}
+
+function reportStream(body: { data: string; tone: Tone }, env: Env, onFirstFail: () => Promise<void>): Response {
+  const enc = new TextEncoder()
+  const { readable, writable } = new TransformStream()
+  const w = writable.getWriter()
+  const send = (o: unknown) => w.write(enc.encode(JSON.stringify(o) + '\n'))
+  const run = (async () => {
+    let prev = ''
+    let okParts = 0
+    for (const part of [1, 2, 3, 4] as Part[]) {
+      const rq = buildReportRequest(body.data, part, { tone: body.tone, previousSummary: prev || undefined })
+      let text = await geminiText(env, rq.system, rq.user, 110_000)
+      if (!text) text = await geminiText(env, rq.system, rq.user, 110_000) // 한 번 더 시도
+      if (!text) {
+        if (okParts === 0) await onFirstFail()
+        await send({ part, error: 'ai_failed', refunded: okParts === 0 })
+        break
+      }
+      okParts++
+      prev = (prev ? prev + '\n' : '') + digest(text)
+      await send({ part, text })
+    }
+    await send({ done: true, parts: okParts })
+    await w.close()
+  })()
+  return Object.assign(new Response(readable, { headers: { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store' } }), { _run: run })
+}
+
 const mem = new MemoryStore()
 const storeOf = (env: Env): Store => (env.DB ? new D1Store(env.DB) : mem)
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<Response> {
     const url = new URL(req.url)
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(req)
     if (req.method !== 'POST') return json({ error: 'method' }, 405)
@@ -109,6 +174,23 @@ export default {
       if (!env.DEV_TICKET_SECRET || req.headers.get('x-dev-secret') !== env.DEV_TICKET_SECRET) return json({ error: 'forbidden' }, 403)
       const owner = (await req.json().catch(() => ({})) as any).owner
       return json({ ticket: await store.issue(typeof owner === 'string' && owner ? owner.slice(0, 64) : 'dev', now) })
+    }
+
+    if (url.pathname === '/api/report') {
+      let b: any
+      try { b = await req.json() } catch { return json({ error: 'json' }, 400) }
+      if (!b || typeof b.data !== 'string' || b.data.length < 200 || b.data.length > 60000) return json({ error: 'invalid' }, 400)
+      const tone: Tone = b.tone === 'warm' ? 'warm' : 'pro'
+      const auth = req.headers.get('authorization') ?? ''
+      const ticket = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+      if (!ticket) return json({ mode: 'engine', reason: 'no_ticket' })
+      if (!env.GEMINI_API_KEY) return json({ mode: 'engine', reason: 'no_ai' }) // 질문권을 쓰지 않고 돌려보낸다
+      const cap = Number(env.DAILY_CAP) > 0 ? Number(env.DAILY_CAP) : DAILY_CAP
+      const deny = await store.consume(ticket, now, cap)
+      if (deny) return json({ mode: 'engine', reason: deny })
+      const res = reportStream({ data: b.data, tone }, env, () => store.release(ticket, now)) as Response & { _run: Promise<void> }
+      if (ctx) ctx.waitUntil(res._run)
+      return res
     }
 
     if (url.pathname !== '/api/ask') return json({ error: 'not_found' }, 404)
