@@ -55,3 +55,34 @@ export async function makeCard(c: CardData): Promise<Blob> {
   g.textAlign = 'center'; g.fillStyle = '#5f5a4d'; g.font = `30px ${sans}`; g.fillText(c.foot, W / 2, H - 70)
   return await new Promise<Blob>((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error('blob'))), 'image/png'))
 }
+
+export interface FaceCardData { emoji: string; animal: string; title: string; tags: string[]; axes: { label: string; value: number }[]; brand: string; foot: string; mate: string }
+/** 관상 결과 카드(사진은 넣지 않는다 — 얼굴 사진이 공유 이미지에 남지 않게) */
+export async function makeFaceCard(c: FaceCardData): Promise<Blob> {
+  const W = 1080, H = 1350
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H
+  const g = cv.getContext('2d')!
+  const serif = '"Jua","Noto Serif KR",serif', sans = '"Gowun Dodum","Noto Sans KR",sans-serif'
+  try { await document.fonts.ready } catch { /* 기본 글꼴 */ }
+  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#f6efdc'); bg.addColorStop(1, '#e8dcc0')
+  g.fillStyle = bg; g.fillRect(0, 0, W, H)
+  g.strokeStyle = '#6a2623'; g.lineWidth = 6; g.strokeRect(36, 36, W - 72, H - 72)
+  g.textAlign = 'center'; g.fillStyle = '#6a2623'; g.font = `60px ${serif}`; g.fillText(c.brand, W / 2, 130)
+  g.font = '300px "Apple Color Emoji","Noto Color Emoji","Segoe UI Emoji",sans-serif'; g.fillStyle = '#1b1a17'; g.fillText(c.emoji, W / 2, 460)
+  g.fillStyle = '#6a2623'; g.font = `130px ${serif}`; g.fillText(c.animal, W / 2, 620)
+  g.fillStyle = '#1b1a17'; g.font = `54px ${serif}`
+  const words = c.title.split(' '); let line = '', y = 710
+  for (const w of words) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > W - 200 && line) { g.fillText(line, W / 2, y); line = w; y += 70 } else line = t }
+  g.fillText(line, W / 2, y)
+  g.font = `38px ${sans}`; g.fillStyle = '#5f5a4d'; g.fillText(c.tags.map((t) => '#' + t).join('  '), W / 2, y + 80)
+  c.axes.forEach((a, i) => {
+    const yy = 960 + i * 62, x0 = 170, bw = 420
+    g.textAlign = 'left'; g.fillStyle = '#1b1a17'; g.font = `32px ${sans}`; g.fillText(a.label, x0, yy)
+    g.fillStyle = '#e7dcc1'; g.fillRect(x0 + 200, yy - 26, bw, 22)
+    g.fillStyle = '#6a2623'; g.fillRect(x0 + 200, yy - 26, (bw * a.value) / 100, 22)
+    g.fillStyle = '#5f5a4d'; g.fillText(String(a.value), x0 + 200 + bw + 20, yy - 4)
+  })
+  g.textAlign = 'center'; g.fillStyle = '#1b1a17'; g.font = `34px ${sans}`; g.fillText(c.mate, W / 2, 1240)
+  g.fillStyle = '#5f5a4d'; g.font = `30px ${sans}`; g.fillText(c.foot, W / 2, H - 70)
+  return await new Promise<Blob>((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error('blob'))), 'image/png'))
+}

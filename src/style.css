@@ -470,3 +470,13 @@ label:has(> input[name$=city]){position:relative}
 .modal .go:disabled{opacity:.4}
 .legal h3{margin:18px 0 6px;font-size:16px}
 .legal p{font-size:15px;line-height:1.65;margin:0 0 6px}
+
+/* 동물상 카드 */
+.card.animal{text-align:center}
+.animal .aemoji{font-size:88px;line-height:1.1;margin-top:4px}
+.animal h2{font-size:30px;margin:4px 0 2px;color:var(--wine,#6a2623)}
+.animal .atitle{font-weight:700;font-size:18px;margin:0 0 8px}
+.animal .chips2{justify-content:center}
+.animal p{text-align:left}
+.animal .amate{text-align:center;color:#5f5a4d;font-size:15px}
+.animal .chips2{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:6px 0 10px}

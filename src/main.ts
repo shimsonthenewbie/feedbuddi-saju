@@ -16,13 +16,14 @@ import { natal } from './astro'
 import { findFace, fileToCanvas } from './face/mesh'
 import { measure } from './face/measure'
 import { readFace } from './face/read'
+import { animalOf } from './face/animal'
 import { reportData, buildReportRequest, PARTS, type Part, type Tone } from './report-prompt'
 import { yearLuck } from './myeongri/timing'
 import { composePage } from './i18n/year'
 import { legalDoc, type LegalDoc } from './legal'
 import { pickCalc } from './myeongri/pick'
 import { composePick } from './i18n/pick'
-import { makeInviteUrl, readInvite, makeCard, type Invite } from './share'
+import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from './share'
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
@@ -43,6 +44,7 @@ const T = {
     freeTitle: '무료 사주 맛보기',
     faceName: '관상 (사진으로 보기)', faceT: '얼굴로 보는 관상', faceD: '정면 사진 한 장이면 돼요. 사진은 내 기기 안에서만 분석하고 서버로 보내지 않아요.',
     faceTips: ['밝은 곳에서 정면으로', '머리카락은 이마가 보이게 넘기기', '안경·마스크·모자는 벗기', '무표정에 가깝게'],
+    faceShare: '내 관상 카드 공유하기', faceShared: '카드 이미지를 저장했어요. 친구에게 보내 보세요.',
     faceConsentT: '사진을 올리기 전에 확인해 주세요', faceC1: '사진은 이 기기 안에서만 분석하고, 서버로 보내거나 저장하지 않는다는 점을 확인했어요.', faceC2: '내 사진이거나, 사진 속 사람의 허락을 받은 사진이에요. (만 14세 미만은 보호자 동의가 필요해요)', faceC3: '관상은 재미로 보는 경향 풀이이고, 성격·능력을 단정하지 않는다는 점을 알아요.', faceOk: '동의하고 사진 고르기', faceNo: '취소', legalPrivacy: '개인정보 처리방침', legalTerms: '이용약관', legalBack: '돌아가기',
     faceCam: '카메라로 찍기', faceAlbum: '앨범에서 고르기', faceBusy: '여의가 얼굴을 살펴보는 중…',
     faceNone: '얼굴을 찾지 못했어요. 밝은 곳에서 정면으로 다시 찍어 주세요.', faceMany: '얼굴이 여러 개 보여요. 한 사람만 나오게 찍어 주세요.',
@@ -145,6 +147,7 @@ const T = {
     freeTitle: 'Free Saju taste',
     faceName: 'Face reading (photo)', faceT: 'Face reading', faceD: 'One front-facing photo is enough. It is analysed on your device only and never uploaded.',
     faceTips: ['Bright light, facing the camera', 'Push hair off the forehead', 'No glasses, mask or hat', 'A neutral expression'],
+    faceShare: 'Share my face card', faceShared: 'Card image saved. Send it to a friend.',
     faceConsentT: 'Please confirm before uploading', faceC1: 'I understand the photo is analysed only on this device and is never uploaded or stored.', faceC2: 'It is my own photo, or the person in it has allowed me to use it. (Under 14 needs a guardian\'s consent.)', faceC3: 'I know face reading is a for-fun tendency reading and does not judge character or ability.', faceOk: 'Agree and choose photo', faceNo: 'Cancel', legalPrivacy: 'Privacy policy', legalTerms: 'Terms of use', legalBack: 'Back',
     faceCam: 'Take a photo', faceAlbum: 'Choose from album', faceBusy: 'Yeoui is looking at your face…',
     faceNone: "Couldn't find a face. Try a front-facing photo in bright light.", faceMany: 'More than one face found. Please use a photo of one person.',
@@ -713,18 +716,36 @@ async function onFacePick(file: File) {
     FACE_OVAL.forEach((i, k) => { const p = found.pts[i]; k ? g.lineTo(p.x * cv.width, p.y * cv.height) : g.moveTo(p.x * cv.width, p.y * cv.height) })
     g.closePath(); g.stroke()
     const r = readFace(m, lang)
+    const an = animalOf(m, r.axes, lang)
     const debug = /[?&]debug\b/.test(location.search)
-    out.innerHTML = `<article class="rcard lead faceres"><div class="fphoto"></div><h3>${esc(r.headline)}</h3><p>${esc(r.cards[0].paras[0])}</p>
+    out.innerHTML = `<article class="card animal"><div class="aemoji" aria-hidden="true">${an.emoji}</div><h2>${esc(an.name)}${lang === 'ko' ? '상' : ' face'}</h2><p class="atitle">${esc(an.title)}</p>
+      <div class="chips2">${an.tags.map((c) => `<span>#${esc(c)}</span>`).join('')}</div>
+      <p>${esc(an.body)}</p><p>${esc(an.fortuneBody)}</p>
+      <p class="amate">${esc(an.mate.label)} ${an.mate.emoji} ${esc(an.mate.name)}</p>
+      <div class="row"><button class="go" type="button" id="fshare">${esc(x.faceShare)}</button></div><p class="ok" id="fshok" role="status"></p></article>
+      <article class="rcard lead faceres"><div class="fphoto"></div><h3>${esc(r.headline)}</h3><p>${esc(r.cards[0].paras[0])}</p>
       <div class="chips2">${r.chips.map((c) => `<span>${esc(c)}</span>`).join('')}</div>
       <div class="axes">${r.axes.map((a) => `<div class="ax"><span>${esc(a.label)}</span><i class="tr"><b style="width:${a.value}%"></b></i><em>${a.value}</em></div>`).join('')}</div></article>
       ${r.cards.slice(1).map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}</article>`).join('')}
       <p class="note">${esc(r.note)}</p>
       ${debug ? `<pre class="dbg">${r.debug.map((d) => `${d.k}\t${d.v}\t${d.z}`).join('\n')}</pre>` : ''}
-      <article class="card"><div class="row"><button class="go" type="button" data-mode="solo">${esc(x.faceToSaju)}</button></div><div class="row"><label class="go filebtn ghost"><input type="file" id="faceagain" accept="image/*" hidden>${esc(x.faceAgain)}</label></div></article>`
+      <article class="card"><div class="row"><button class="go" type="button" data-mode="solo">${esc(x.faceToSaju)}</button></div><div class="row"><button class="go filebtn ghost" type="button" data-faceask="facealb">${esc(x.faceAgain)}</button></div></article>`
     cv.className = 'fcanvas'
     out.querySelector('.fphoto')!.append(cv)
     out.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
-    document.getElementById('faceagain')?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePick(f) })
+    out.querySelectorAll<HTMLElement>('[data-faceask]').forEach((b) => (b.onclick = () => askFaceConsent(b.dataset.faceask!)))
+    document.getElementById('fshare')!.onclick = async () => {
+      const ok = document.getElementById('fshok')!
+      const url = location.origin + location.pathname + '#face'
+      try {
+        const blob = await makeFaceCard({ emoji: an.emoji, animal: an.name + (lang === 'ko' ? '상' : ' face'), title: an.title, tags: an.tags, axes: r.axes, brand: x.title, foot: 'feedbuddi.com', mate: `${an.mate.label} ${an.mate.emoji} ${an.mate.name}` })
+        const file = new File([blob], 'feedbuddi-face.png', { type: 'image/png' })
+        if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: x.title, text: `${an.shareText}\n${url}` }); return }
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'feedbuddi-face.png'; document.body.append(a); a.click(); a.remove()
+        try { await navigator.clipboard.writeText(`${an.shareText}\n${url}`) } catch { /* 복사 불가 */ }
+        ok.textContent = x.faceShared
+      } catch (e) { if ((e as Error).name !== 'AbortError') ok.textContent = '' }
+    }
     out.scrollIntoView({ behavior: 'smooth', block: 'start' })
   } catch {
     out.innerHTML = ''; err.textContent = x.faceFail
@@ -807,6 +828,7 @@ let lang: Lang = (navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'
 let mode: Mode = 'home'
 let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
+else if (location.hash === '#face') mode = 'face'
 let lastMatch: { people: Person[]; m: ReturnType<typeof matchReading> } | null = null
 let dayOffset = 0
 let readLang: Lang = lang
