@@ -45,7 +45,7 @@ const T = {
     faceName: '관상 (사진으로 보기)', faceT: '얼굴로 보는 관상', faceD: '정면 사진 한 장이면 돼요. 사진은 내 기기 안에서만 분석하고 서버로 보내지 않아요.',
     faceTips: ['밝은 곳에서 정면으로', '머리카락은 이마가 보이게 넘기기', '안경·마스크·모자는 벗기', '무표정에 가깝게'],
     faceShare: '내 관상 카드 공유하기', faceShared: '카드 이미지를 저장했어요. 친구에게 보내 보세요.',
-    faceConsentT: '사진을 올리기 전에 확인해 주세요', faceC1: '사진은 이 기기 안에서만 분석하고, 서버로 보내거나 저장하지 않는다는 점을 확인했어요.', faceC2: '내 사진이거나, 사진 속 사람의 허락을 받은 사진이에요. (만 14세 미만은 보호자 동의가 필요해요)', faceC3: '관상은 재미로 보는 경향 풀이이고, 성격·능력을 단정하지 않는다는 점을 알아요.', faceOk: '동의하고 사진 고르기', faceNo: '취소', legalPrivacy: '개인정보 처리방침', legalTerms: '이용약관', legalBack: '돌아가기',
+    faceConsentT: '사진을 올리기 전에 확인해 주세요', faceAll: '아래 내용에 모두 동의해요', faceSlow: '분석이 오래 걸려요. 인터넷 연결을 확인하고 다시 시도해 주세요.', faceC1: '사진은 이 기기 안에서만 분석하고, 서버로 보내거나 저장하지 않는다는 점을 확인했어요.', faceC2: '내 사진이거나, 사진 속 사람의 허락을 받은 사진이에요. (만 14세 미만은 보호자 동의가 필요해요)', faceC3: '관상은 재미로 보는 경향 풀이이고, 성격·능력을 단정하지 않는다는 점을 알아요.', faceOk: '동의하고 사진 고르기', faceNo: '취소', legalPrivacy: '개인정보 처리방침', legalTerms: '이용약관', legalBack: '돌아가기',
     faceCam: '카메라로 찍기', faceAlbum: '앨범에서 고르기', faceBusy: '여의가 얼굴을 살펴보는 중…',
     faceNone: '얼굴을 찾지 못했어요. 밝은 곳에서 정면으로 다시 찍어 주세요.', faceMany: '얼굴이 여러 개 보여요. 한 사람만 나오게 찍어 주세요.',
     faceSide: '얼굴이 옆으로 돌아가 있어요. 정면을 보고 다시 찍어 주세요.', faceTilt: '고개가 많이 기울었어요. 바르게 세우고 다시 찍어 주세요.', faceFail: '분석에 실패했어요. 잠시 뒤 다시 시도해 주세요.',
@@ -148,7 +148,7 @@ const T = {
     faceName: 'Face reading (photo)', faceT: 'Face reading', faceD: 'One front-facing photo is enough. It is analysed on your device only and never uploaded.',
     faceTips: ['Bright light, facing the camera', 'Push hair off the forehead', 'No glasses, mask or hat', 'A neutral expression'],
     faceShare: 'Share my face card', faceShared: 'Card image saved. Send it to a friend.',
-    faceConsentT: 'Please confirm before uploading', faceC1: 'I understand the photo is analysed only on this device and is never uploaded or stored.', faceC2: 'It is my own photo, or the person in it has allowed me to use it. (Under 14 needs a guardian\'s consent.)', faceC3: 'I know face reading is a for-fun tendency reading and does not judge character or ability.', faceOk: 'Agree and choose photo', faceNo: 'Cancel', legalPrivacy: 'Privacy policy', legalTerms: 'Terms of use', legalBack: 'Back',
+    faceConsentT: 'Please confirm before uploading', faceAll: 'I agree to all of the below', faceSlow: 'Analysis is taking too long. Check your connection and try again.', faceC1: 'I understand the photo is analysed only on this device and is never uploaded or stored.', faceC2: 'It is my own photo, or the person in it has allowed me to use it. (Under 14 needs a guardian\'s consent.)', faceC3: 'I know face reading is a for-fun tendency reading and does not judge character or ability.', faceOk: 'Agree and choose photo', faceNo: 'Cancel', legalPrivacy: 'Privacy policy', legalTerms: 'Terms of use', legalBack: 'Back',
     faceCam: 'Take a photo', faceAlbum: 'Choose from album', faceBusy: 'Yeoui is looking at your face…',
     faceNone: "Couldn't find a face. Try a front-facing photo in bright light.", faceMany: 'More than one face found. Please use a photo of one person.',
     faceSide: 'Your face is turned. Please face the camera.', faceTilt: 'Your head is tilted. Please hold it upright.', faceFail: 'Analysis failed. Please try again shortly.',
@@ -665,15 +665,21 @@ function askFaceConsent(inputId: string) {
   const wrap = document.createElement('div')
   wrap.className = 'modal'
   wrap.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(x.faceConsentT)}">
+    <div class="sbody">
     <h3>${esc(x.faceConsentT)}</h3>
+    <label class="chk all"><input type="checkbox" id="fcall"> <b>${esc(x.faceAll)}</b></label>
     ${[x.faceC1, x.faceC2, x.faceC3].map((c: string) => `<label class="chk"><input type="checkbox" class="fc"> ${esc(c)}</label>`).join('')}
     <p class="note"><button type="button" class="linkbtn" data-legal="privacy">${esc(x.legalPrivacy)}</button> · <button type="button" class="linkbtn" data-legal="terms">${esc(x.legalTerms)}</button></p>
-    <button class="go" type="button" id="fcok" disabled>${esc(x.faceOk)}</button>
-    <button class="go ghost" type="button" id="fcno">${esc(x.faceNo)}</button></div>`
+    </div>
+    <div class="sact"><button class="go" type="button" id="fcok" disabled>${esc(x.faceOk)}</button>
+    <button class="go ghost" type="button" id="fcno">${esc(x.faceNo)}</button></div></div>`
   document.body.appendChild(wrap)
   const ok = wrap.querySelector<HTMLButtonElement>('#fcok')!
   const boxes = Array.from(wrap.querySelectorAll<HTMLInputElement>('.fc'))
-  boxes.forEach((b) => (b.onchange = () => { ok.disabled = !boxes.every((c) => c.checked) }))
+  const all = wrap.querySelector<HTMLInputElement>('#fcall')!
+  const sync = () => { ok.disabled = !boxes.every((c) => c.checked); all.checked = boxes.every((c) => c.checked) }
+  boxes.forEach((b) => (b.onchange = sync))
+  all.onchange = () => { boxes.forEach((b) => (b.checked = all.checked)); sync() }
   wrap.querySelector<HTMLButtonElement>('#fcno')!.onclick = () => wrap.remove()
   ok.onclick = () => { wrap.remove(); document.getElementById(inputId)?.click() }
   wrap.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => (b.onclick = () => { legalKind = b.dataset.legal as LegalDoc; legalFrom = 'face'; wrap.remove(); mode = 'legal'; window.scrollTo(0, 0); render() }))
@@ -704,7 +710,7 @@ async function onFacePick(file: File) {
   out.innerHTML = `<div class="card"><p class="meta">${esc(x.faceBusy)}</p></div>`
   try {
     const cv = await fileToCanvas(file)
-    const found = await findFace(cv)
+    const found = await Promise.race([findFace(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
     if (found === 'none') { out.innerHTML = ''; err.textContent = x.faceNone; return }
     if (found === 'many') { out.innerHTML = ''; err.textContent = x.faceMany; return }
     const m = measure(found)
@@ -747,8 +753,9 @@ async function onFacePick(file: File) {
       } catch (e) { if ((e as Error).name !== 'AbortError') ok.textContent = '' }
     }
     out.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  } catch {
-    out.innerHTML = ''; err.textContent = x.faceFail
+  } catch (e) {
+    console.error('face', e)
+    out.innerHTML = ''; err.textContent = (e as Error).message === 'timeout' ? x.faceSlow : x.faceFail
   }
 }
 

@@ -463,7 +463,11 @@ label:has(> input[name$=city]){position:relative}
 
 /* 사진 동의창 · 약관 화면 */
 .modal{position:fixed;inset:0;z-index:100;background:rgba(30,28,25,.55);display:flex;align-items:flex-end;justify-content:center}
-.modal .sheet{width:100%;max-width:520px;max-height:92vh;overflow:auto;background:#fbf6ea;border-radius:22px 22px 0 0;padding:20px 18px 24px;display:flex;flex-direction:column;gap:12px}
+.modal .sheet{width:100%;max-width:520px;max-height:100dvh;max-height:calc(100dvh - 8px);background:#fbf6ea;border-radius:22px 22px 0 0;display:flex;flex-direction:column;overflow:hidden}
+.modal .sbody{overflow:auto;padding:18px 18px 8px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
+.modal .sact{padding:10px 18px calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px;border-top:1px solid #e3d8bb;background:#fbf6ea}
+.modal .sact .go{padding-top:12px;padding-bottom:12px}
+.modal .chk.all{padding-bottom:6px;border-bottom:1px dashed #d9cfae}
 .modal .sheet h3{margin:0 0 2px;font-size:18px}
 .modal .chk{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.5}
 .modal .chk input{margin-top:4px;width:20px;height:20px;flex:none}

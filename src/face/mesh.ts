@@ -46,11 +46,19 @@ export async function findFace(src: HTMLCanvasElement): Promise<Found | 'none' |
 
 /** 사진 파일을 줄여서 캔버스에 그린다(사진 방향 자동 보정, 긴 변 최대 960px). */
 export async function fileToCanvas(file: File, max = 960): Promise<HTMLCanvasElement> {
-  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' })
-  const s = Math.min(1, max / Math.max(bmp.width, bmp.height))
+  let bmp: ImageBitmap | HTMLImageElement
+  try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }) } catch {
+    // 일부 폰 브라우저는 옵션을 못 읽는다 → 이미지 태그로 읽는다(방향은 브라우저가 보정)
+    const url = URL.createObjectURL(file)
+    try {
+      bmp = await new Promise<HTMLImageElement>((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('img')); im.src = url })
+    } finally { setTimeout(() => URL.revokeObjectURL(url), 5000) }
+  }
+  const bw = 'naturalWidth' in bmp ? bmp.naturalWidth : bmp.width, bh = 'naturalHeight' in bmp ? bmp.naturalHeight : bmp.height
+  const s = Math.min(1, max / Math.max(bw, bh))
   const c = document.createElement('canvas')
-  c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s)
+  c.width = Math.round(bw * s); c.height = Math.round(bh * s)
   c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
-  bmp.close?.()
+  if ('close' in bmp) bmp.close()
   return c
 }
