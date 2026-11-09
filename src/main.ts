@@ -17,6 +17,9 @@ import { findFace, fileToCanvas } from './face/mesh'
 import { measure } from './face/measure'
 import { readFace } from './face/read'
 import { animalOf } from './face/animal'
+import { makeOverlay, drawDots, drawGuide } from './face/draw'
+import { wuxingOf } from './face/wuxing'
+import { momentsOf, EL_NAME, EL_BODY } from './face/moments'
 import { reportData, buildReportRequest, PARTS, type Part, type Tone } from './report-prompt'
 import { yearLuck } from './myeongri/timing'
 import { composePage } from './i18n/year'
@@ -45,6 +48,8 @@ const T = {
     freeTitle: '무료 사주 맛보기',
     faceName: '관상 (사진으로 보기)', faceT: '얼굴로 보는 관상', faceD: '정면 사진 한 장이면 돼요. 사진은 내 기기 안에서만 분석하고 서버로 보내지 않아요.',
     faceTips: ['밝은 곳에서 정면으로', '머리카락은 이마가 보이게 넘기기', '안경·마스크·모자는 벗기', '무표정에 가깝게'],
+    scan1: '얼굴에서 점을 하나씩 찾는 중', scan2: '눈 사이를 재어 기준을 잡는 중', scan3: '다섯 기운의 비율을 읽는 중', guideLabels: ['이마 상단', '눈썹 사이', '코 아래', '턱끝'],
+    wuTitle: '오행 얼굴형', wuMix: (e: string) => `${e}의 성향이 함께 섞여 있어요. 한 가지 색으로만 설명되지 않는 얼굴이에요.`,
     faceShare: '내 관상 카드 공유하기', faceShared: '카드 이미지를 저장했어요. 친구에게 보내 보세요.',
     faceConsentT: '사진을 올리기 전에 확인해 주세요', faceAll: '아래 내용에 모두 동의해요', faceSlow: '분석이 오래 걸려요. 인터넷 연결을 확인하고 다시 시도해 주세요.', faceC1: '사진은 이 기기 안에서만 분석하고, 서버로 보내거나 저장하지 않는다는 점을 확인했어요.', faceC2: '내 사진이거나, 사진 속 사람의 허락을 받은 사진이에요. (만 14세 미만은 보호자 동의가 필요해요)', faceC3: '관상은 재미로 보는 경향 풀이이고, 성격·능력을 단정하지 않는다는 점을 알아요.', faceOk: '동의하고 사진 고르기', faceNo: '취소', legalPrivacy: '개인정보 처리방침', legalTerms: '이용약관', legalBack: '돌아가기',
     faceCam: '카메라로 찍기', faceAlbum: '앨범에서 고르기', faceBusy: '여의가 얼굴을 살펴보는 중…',
@@ -148,6 +153,8 @@ const T = {
     freeTitle: 'Free Saju taste',
     faceName: 'Face reading (photo)', faceT: 'Face reading', faceD: 'One front-facing photo is enough. It is analysed on your device only and never uploaded.',
     faceTips: ['Bright light, facing the camera', 'Push hair off the forehead', 'No glasses, mask or hat', 'A neutral expression'],
+    scan1: 'Finding points on your face one by one', scan2: 'Measuring between the eyes to set the baseline', scan3: 'Reading the balance of five elements', guideLabels: ['Top of forehead', 'Between brows', 'Under nose', 'Chin tip'],
+    wuTitle: 'Five-element face type', wuMix: (e: string) => `Traits of ${e} are mixed in. Not a face one colour can explain.`,
     faceShare: 'Share my face card', faceShared: 'Card image saved. Send it to a friend.',
     faceConsentT: 'Please confirm before uploading', faceAll: 'I agree to all of the below', faceSlow: 'Analysis is taking too long. Check your connection and try again.', faceC1: 'I understand the photo is analysed only on this device and is never uploaded or stored.', faceC2: 'It is my own photo, or the person in it has allowed me to use it. (Under 14 needs a guardian\'s consent.)', faceC3: 'I know face reading is a for-fun tendency reading and does not judge character or ability.', faceOk: 'Agree and choose photo', faceNo: 'Cancel', legalPrivacy: 'Privacy policy', legalTerms: 'Terms of use', legalBack: 'Back',
     faceCam: 'Take a photo', faceAlbum: 'Choose from album', faceBusy: 'Yeoui is looking at your face…',
@@ -756,28 +763,41 @@ async function onFacePick(file: File) {
     const m = measure(found)
     if (m.yaw > 0.14) { out.innerHTML = ''; err.textContent = x.faceSide; return }
     if (Math.abs(m.roll) > 18) { out.innerHTML = ''; err.textContent = x.faceTilt; return }
-    // 사진 위에 얼굴선을 그린다(사진은 화면에만 쓰고 저장하지 않는다)
-    const g = cv.getContext('2d')!
-    g.strokeStyle = 'rgba(106,38,35,.85)'; g.lineWidth = Math.max(2, cv.width / 260); g.beginPath()
-    FACE_OVAL.forEach((i, k) => { const p = found.pts[i]; k ? g.lineTo(p.x * cv.width, p.y * cv.height) : g.moveTo(p.x * cv.width, p.y * cv.height) })
-    g.closePath(); g.stroke()
+    // 대기 연출: 점을 하나씩 찍고, 구획선을 긋는다(사진은 화면에만 쓰고 저장하지 않는다)
+    const ov = makeOverlay(cv)
+    cv.className = 'fcanvas'
+    const wrapEl = document.createElement('div'); wrapEl.className = 'fwrap'; wrapEl.append(cv, ov)
+    out.innerHTML = `<article class="card scan"><div class="fphoto"></div><p class="scancap" id="scancap" role="status"></p><i class="scanbar"><b id="scanbar"></b></i></article>`
+    out.querySelector('.fphoto')!.append(wrapEl)
+    out.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const cap = (txt: string, pct: number) => { document.getElementById('scancap')!.textContent = txt; (document.getElementById('scanbar') as HTMLElement).style.width = pct + '%' }
+    cap(x.scan1, 15); await drawDots(ov, found)
+    cap(x.scan2, 55); await drawGuide(ov, found, [...x.guideLabels])
+    cap(x.scan3, 90); await new Promise((r) => setTimeout(r, 500))
     const r = readFace(m, lang)
     const an = animalOf(m, r.axes, lang)
     const debug = /[?&]debug\b/.test(location.search)
+    const wu = wuxingOf(m), wn = EL_NAME[lang] ?? EL_NAME.en
+    const mom = momentsOf(m, r.axes, lang)
+    const wuHtml = `<article class="rcard wux"><h3>${esc(x.wuTitle)}</h3><div class="wtop"><span class="wbadge">${esc(wn[wu[0].el][0])}</span><div><b>${wu[0].pct}%</b><em>${esc(wn[wu[0].el][1])}</em></div></div>
+      <p>${esc((EL_BODY[lang] ?? EL_BODY.en)[wu[0].el])}</p><p class="meta">${esc(x.wuMix(wn[wu[1].el][0]))}</p>
+      <div class="wbars">${wu.map((w) => `<div><span>${esc(wn[w.el][0])}</span><i class="tr"><b style="width:${Math.min(100, w.pct * 2)}%"></b></i><em>${w.pct}%</em></div>`).join('')}</div></article>`
+    const momHtml = `<article class="rcard mom"><h3>${esc(mom.title)}</h3><p class="meta">${esc(mom.intro)}</p>${mom.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}</article>`
     out.innerHTML = `<article class="card animal"><div class="aemoji" aria-hidden="true">${an.emoji}</div><h2>${esc(an.name)}${lang === 'ko' ? '상' : ' face'}</h2><p class="atitle">${esc(an.title)}</p>
       <div class="chips2">${an.tags.map((c) => `<span>#${esc(c)}</span>`).join('')}</div>
       <p>${esc(an.body)}</p><p>${esc(an.fortuneBody)}</p>
       <p class="amate">${esc(an.mate.label)} ${an.mate.emoji} ${esc(an.mate.name)}</p>
       <div class="row"><button class="go" type="button" id="fshare">${esc(x.faceShare)}</button></div><p class="ok" id="fshok" role="status"></p></article>
+      ${wuHtml}
       <article class="rcard lead faceres"><div class="fphoto"></div><h3>${esc(r.headline)}</h3><p>${esc(r.cards[0].paras[0])}</p>
       <div class="chips2">${r.chips.map((c) => `<span>${esc(c)}</span>`).join('')}</div>
       <div class="axes">${r.axes.map((a) => `<div class="ax"><span>${esc(a.label)}</span><i class="tr"><b style="width:${a.value}%"></b></i><em>${a.value}</em></div>`).join('')}</div></article>
       ${r.cards.slice(1).map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}</article>`).join('')}
+      ${momHtml}
       <p class="note">${esc(r.note)}</p>
       ${debug ? `<pre class="dbg">${r.debug.map((d) => `${d.k}\t${d.v}\t${d.z}`).join('\n')}</pre>` : ''}
       <article class="card"><div class="row"><button class="go" type="button" data-mode="solo">${esc(x.faceToSaju)}</button></div><div class="row"><button class="go filebtn ghost" type="button" data-faceask="facealb">${esc(x.faceAgain)}</button></div></article>`
-    cv.className = 'fcanvas'
-    out.querySelector('.fphoto')!.append(cv)
+    out.querySelector('.fphoto')!.append(wrapEl)
     out.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
     out.querySelectorAll<HTMLElement>('[data-faceask]').forEach((b) => (b.onclick = () => askFaceConsent(b.dataset.faceask!)))
     document.getElementById('fshare')!.onclick = async () => {

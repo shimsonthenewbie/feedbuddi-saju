@@ -485,3 +485,20 @@ label:has(> input[name$=city]){position:relative}
 .animal .amate{text-align:center;color:#5f5a4d;font-size:15px}
 .animal .chips2{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:6px 0 10px}
 .exbefore{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}.exbefore>div{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;font-size:14px}.exbefore em{font-style:normal;color:#5f5a4d;text-align:right}.exbefore .stars{font-size:13px}
+
+/* 관상: 대기 연출 · 겹침 그림 · 오행 · 순간 */
+.fwrap{position:relative;display:inline-block;max-width:100%;line-height:0}
+.fwrap .fcanvas{display:block}
+.fwrap .fover{position:absolute;inset:0;width:100%;height:100%;border-radius:18px;pointer-events:none}
+.scan{text-align:center}
+.scancap{font-weight:700;margin:8px 0 10px}
+.scanbar{display:block;height:4px;background:#e3d8bb;border-radius:4px;overflow:hidden;max-width:240px;margin:0 auto}
+.scanbar b{display:block;height:100%;width:0;background:#6a2623;transition:width .6s ease}
+.wux .wtop{display:flex;gap:14px;align-items:center;margin:4px 0 8px}
+.wux .wbadge{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:16px;background:#6a2623;color:#fff;font-size:22px;font-weight:700;flex:none}
+.wux .wtop b{font-size:28px;display:block}.wux .wtop em{font-style:normal;color:#5f5a4d}
+.wbars{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.wbars>div{display:grid;grid-template-columns:44px 1fr 52px;gap:8px;align-items:center;font-size:14px}
+.wbars em{font-style:normal;text-align:right;color:#5f5a4d}
+.mom .mrow{display:grid;grid-template-columns:84px 1fr;gap:10px;padding:9px 0;border-top:1px solid #e3d8bb;font-size:15px;line-height:1.55}
+.mom .mrow b{color:#6a2623}
