@@ -16,7 +16,7 @@ export const ganziKo = (g: string) => STEM_KO[STEMS.indexOf(g[0])] + BRANCH_KO[B
 const pick = <T>(a: T[], seed: number) => a[seed % a.length]
 const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? ''))
 
-export interface Card { kind: 'answer' | 'why' | 'you' | 'timeline' | 'event' | 'do' | 'care' | 'close'; title: string; paras: string[]; list?: string[] }
+export interface Card { kind: 'now' | 'answer' | 'why' | 'you' | 'timeline' | 'event' | 'do' | 'care' | 'close'; title: string; paras: string[]; list?: string[] }
 
 function whenOf(w: Win, lang: string): string {
   if (lang === 'ko') return `${w.year}년 ${w.month}월`
@@ -30,6 +30,25 @@ export function composeConsult(c: ConsultCalc, a: Analysis, lang: string, seed: 
   const KO_KIND: Record<string, string> = { 충: '정면으로 부딪히는', 형: '마찰이 생기는', 해: '엇갈리는', 파: '살짝 어긋나는' }
   const kindLabel = (k: string) => (lang === 'ko' ? KO_KIND[k.slice(0, 1)] ?? k : k.startsWith('충') ? 'a clash' : k.startsWith('형') ? 'friction' : 'a mismatch')
 
+  if (c.now) {
+    const n = c.now
+    const lv = (w: Win): 'good' | 'mid' | 'weak' => (w.tier === 'best' || w.score >= 1.5 ? 'good' : w.tier === 'care' || w.score <= -1.5 ? 'weak' : 'mid')
+    const L = lv(n)
+    const paras = [pick(t.now.state[L], seed)]
+    const grp = n.groups.find((g) => t.now.moneyNow[g])
+    if (c.cat === 'money' && grp) paras.push(t.now.moneyNow[grp])
+    else if (c.cat !== 'money') paras.push(t.now.catNow[c.cat])
+    if (n.hitKinds.some((k) => /^(충|형)/.test(k))) paras.push(t.now.clash)
+    else if (n.hitKinds.some((k) => /^(원진|귀문)/.test(k))) paras.push(t.now.mind)
+    if (c.next.length) {
+      const avg = c.next.reduce((s, w) => s + w.score, 0) / c.next.length
+      paras.push(avg - n.score > 0.8 ? t.now.trend.up : avg - n.score < -0.8 ? t.now.trend.down : t.now.trend.flat)
+    }
+    cards.push({
+      kind: 'now', title: t.now.title, paras,
+      list: c.next.map((w) => `${fill(t.timeline.month, { year: w.year, month: w.month })} · ${t.now.tag[lv(w)]}`),
+    })
+  }
   if (main) {
     cards.push({ kind: 'answer', title: fill(pick(t.headline[c.cat], seed), { when: whenOf(main, lang) }), paras: [pick(t.answerBody.best, seed)] })
     const g = main.ganzi

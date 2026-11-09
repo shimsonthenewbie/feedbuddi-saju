@@ -5,7 +5,7 @@ import { ASK_CATS, consultCalc, type AskCat } from './myeongri/consult'
 import { composeConsult, consultPool } from './i18n/consult'
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
-const ICON: Record<string, string> = { answer: '✦', why: '據', you: '我', timeline: '時', event: '日', do: '行', care: '慎', close: '語' }
+const ICON: Record<string, string> = { now: '今', answer: '✦', why: '據', you: '我', timeline: '時', event: '日', do: '行', care: '慎', close: '語' }
 
 const ticket = () => { try { return localStorage.getItem('fb-saju-ticket') || '' } catch { return '' } }
 

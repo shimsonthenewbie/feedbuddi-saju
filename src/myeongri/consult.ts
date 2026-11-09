@@ -30,6 +30,9 @@ export interface ConsultCalc {
   care: Win[]
   /** 사용자가 적은 날짜가 속한 달 */
   event: Win | null
+  /** 이번 달과 그 뒤 3개월 */
+  now: Win | null
+  next: Win[]
   yearGanzi: Record<number, string>
 }
 
@@ -86,5 +89,8 @@ export function consultCalc(r: SajuResult, a: Analysis, cat: AskCat, now = new D
     const hit = rows.filter((x) => x.date <= eventDate).pop()
     if (hit) event = timeline.find((w) => w.from === hit.L.from) ?? toWin(hit)
   }
-  return { cat, timeline, best, care, event, yearGanzi }
+  const ni = timeline.findIndex((w) => w.year === now.getFullYear() && w.month === now.getMonth() + 1)
+  const nowW = ni >= 0 ? timeline[ni] : null
+  const next = ni >= 0 ? timeline.slice(ni + 1, ni + 4) : []
+  return { cat, timeline, best, care, event, now: nowW, next, yearGanzi }
 }

@@ -47,6 +47,33 @@ export const en: ConsultText = {
     family: ['In careful months, do not drag out sensitive topics.', 'Give it time instead of forcing a conclusion.'],
     etc: ['In careful months, make fewer big decisions and tidy up.', 'If you do not rush, it passes fine.'],
   },
+  now: {
+    title: 'Where things stand now',
+    state: {
+      good: ['This month your chart is well supported. A good time to move on what you planned.'],
+      mid: ['This month is neither strong nor weak. Keep to your usual pace.'],
+      weak: ['This month your chart is under-supported, so pushing hard costs more energy. Protect rather than expand.'],
+    },
+    trend: { up: 'The next 3 months improve step by step.', down: 'The next 3 months fade step by step. Leave yourself some slack.', flat: 'The next 3 months stay about the same.' },
+    tag: { good: 'Good', mid: 'Even', weak: 'Careful' },
+    nextTitle: 'Next 3 months',
+    moneyNow: {
+      비겁: 'Peers and rivals are strong this month, so money leaks easily. Postpone lending, guarantees and joint investments.',
+      재성: 'Money and opportunity energy comes in. Move only as planned rather than betting big.',
+      식상: 'Ideas and activity pick up, so you will try more income ideas. Test new ones small.',
+      관성: 'Responsibility and pressure grow. Do not rush big investment decisions.',
+      인성: 'Support and tidying energy arrives. Good for study and review; aggressive investing can wait.',
+    },
+    mind: 'This month tends to bring unease and sensitivity. Re-check hurried calls (doubling down, all-in moves, impulse buys) a day later.',
+    clash: 'This month clashes with your chart, so plans may wobble. Delay big decisions and big spending by a beat.',
+    catNow: {
+      love: 'In relationships, watch the timing of what you say and when you reach out.',
+      work: 'At work, finishing what you hold beats expanding.',
+      health: 'For your body, clear accumulated tiredness first.',
+      family: 'With family and people, listening first loosens the flow.',
+      etc: 'Decide big things after you see the next 3 months.',
+    },
+  },
   closing: ['The flow is only a direction. The more you prepare, the more a good period gives.', 'Knowing the good times helps you gather strength; knowing the quiet times keeps you steady.'],
   tips: { title: 'While you wait · a piece of Saju', items: ['A chart has four pillars: the year, month, day and hour of birth. Each has a heaven and an earth character, making eight characters in all.', 'The five elements are Wood, Fire, Earth, Metal and Water. Having a lot or none of one is not bad; how you use it shapes your temperament.', 'The Day Master is the heaven character of your birth day, and it stands for "you".', 'Luck cycles change about every 10 years, with smaller yearly and monthly flows inside them.', 'Good periods differ from person to person, because each chart meets incoming energy in its own way.'] },
   ui: {

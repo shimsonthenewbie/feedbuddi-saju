@@ -11,6 +11,8 @@ export interface ConsultText {
   event: { title: string; best: string; mid: string; care: string }
   doIt: Record<AskCat, string[]>
   careIt: Record<AskCat, string[]>
+  /** 지금 흐름 카드 */
+  now: { title: string; state: { good: string[]; mid: string[]; weak: string[] }; trend: { up: string; down: string; flat: string }; tag: Record<'good' | 'mid' | 'weak', string>; nextTitle: string; moneyNow: Record<string, string>; clash: string; mind: string; catNow: Record<string, string> }
   closing: string[]
   tips: { title: string; items: string[] }
   ui: Record<string, string>
