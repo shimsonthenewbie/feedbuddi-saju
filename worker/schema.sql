@@ -9,3 +9,13 @@ CREATE TABLE IF NOT EXISTS tickets (
 );
 CREATE INDEX IF NOT EXISTS tickets_owner_used ON tickets(owner, used_at);
 CREATE TABLE IF NOT EXISTS budget (day TEXT PRIMARY KEY, n INTEGER NOT NULL);
+
+-- 주인이 직접 지급한 질문권 기록(누가·얼마·왜). 지급은 모두 여기 남긴다.
+CREATE TABLE IF NOT EXISTS grants (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  at INTEGER NOT NULL,
+  owner TEXT NOT NULL,
+  count INTEGER NOT NULL,
+  kind TEXT NOT NULL,            -- compensation | event | test
+  reason TEXT NOT NULL
+);

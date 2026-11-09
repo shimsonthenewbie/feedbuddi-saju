@@ -136,7 +136,7 @@ export interface PageView {
   note: string
 }
 
-export function composePage(r: SajuResult, a: Analysis, year: number, lang: Lang, now = new Date()): PageView {
+export function composePage(r: SajuResult, a: Analysis, year: number, lang: Lang, now = new Date(), headYear = now.getFullYear()): PageView {
   const U = UI[lang], T = P[lang], S = SAL[lang]
   const y0 = now.getFullYear()
   const ylThis = yearLuck(r, a, y0, true)
@@ -157,7 +157,8 @@ export function composePage(r: SajuResult, a: Analysis, year: number, lang: Lang
 
   const rs: string[] = []
   const R = REASON[lang]
-  const hs = ylThis.hits
+  const ylHead = headYear === y0 ? ylThis : yearLuck(r, a, headYear, true)
+  const hs = ylHead.hits
   if (hs.some((h) => h.kind.startsWith('충') && h.palace === '년주')) rs.push(R.yearClash)
   if (hs.some((h) => h.kind.startsWith('충') && h.palace === '월주')) rs.push(R.workClash)
   if (hs.some((h) => h.kind.startsWith('충') && h.palace === '일주')) rs.push(R.homeClash)
@@ -166,12 +167,12 @@ export function composePage(r: SajuResult, a: Analysis, year: number, lang: Lang
   const reasons = rs.slice(0, 3)
 
   const toSal = (k: SalKey): SalView => { const [name, hanja, c, text] = S[k]; return { name, hanja, text, caution: !!c } }
-  const incoming = yearSals(r, y0).map(toSal)
+  const incoming = yearSals(r, headYear).map(toSal)
   const natal = natalSals(r).map(toSal)
   const all = composeYear(ylSel, lang, now)
-  const thisView = year === y0 ? all : composeYear(ylThis, lang, now)
+  const thisView = year === headYear ? all : composeYear(ylHead, lang, now)
   return {
-    total: { title: U.totalT(y0), tone: ylThis.tone, reasons, summary: TONE[lang][ylThis.tone], months: thisView.summary },
+    total: { title: U.totalT(headYear), tone: ylHead.tone, reasons, summary: TONE[lang][ylHead.tone], months: thisView.summary },
     care: { title: U.careT, none: U.careNone, incomingT: U.incoming, incoming, natalT: U.natal, natal },
     past: { title: U.pastT, intro: U.pastIntro, items: past, note: U.pastNote },
     now: { title: U.nowT, item: nowItem },

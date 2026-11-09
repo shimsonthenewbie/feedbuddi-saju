@@ -11,6 +11,8 @@ interface Env {
   DB?: D1
   /** 테스트 전용. 운영에서는 설정하지 않는다. */
   DEV_TICKET_SECRET?: string
+  /** 주인 전용 관리 경로(질문권 지급)용 비밀값. Cloudflare Secret으로만 넣는다. */
+  ADMIN_TOKEN?: string
   DAILY_CAP?: string
   ASSETS: { fetch(req: Request): Promise<Response> }
   GEMINI_API_KEY?: string
@@ -154,6 +156,13 @@ function reportStream(body: { data: string; tone: Tone }, env: Env, onFirstFail:
   return Object.assign(new Response(readable, { headers: { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store' } }), { _run: run })
 }
 
+const MAX_GRANT = 20
+const memGrants: { at: number; owner: string; count: number; kind: string; reason: string }[] = []
+function timingSafeEq(a: string, b: string): boolean {
+  let d = a.length ^ b.length
+  for (let i = 0; i < Math.max(a.length, b.length); i++) d |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0)
+  return d === 0
+}
 const mem = new MemoryStore()
 const storeOf = (env: Env): Store => (env.DB ? new D1Store(env.DB) : mem)
 
@@ -174,6 +183,22 @@ export default {
       if (!env.DEV_TICKET_SECRET || req.headers.get('x-dev-secret') !== env.DEV_TICKET_SECRET) return json({ error: 'forbidden' }, 403)
       const owner = (await req.json().catch(() => ({})) as any).owner
       return json({ ticket: await store.issue(typeof owner === 'string' && owner ? owner.slice(0, 64) : 'dev', now) })
+    }
+
+    // 주인 전용: 질문권 지급(보상·이벤트). 비밀값이 맞을 때만 열리고, 모든 지급은 기록에 남는다.
+    if (url.pathname === '/api/admin/grant') {
+      const given = req.headers.get('x-admin-token') ?? ''
+      if (!env.ADMIN_TOKEN || env.ADMIN_TOKEN.length < 16 || !timingSafeEq(given, env.ADMIN_TOKEN)) return json({ error: 'forbidden' }, 403)
+      const b: any = await req.json().catch(() => null)
+      const owner = typeof b?.owner === 'string' ? b.owner.trim().slice(0, 64) : ''
+      const count = Number(b?.count), reason = typeof b?.reason === 'string' ? b.reason.trim().slice(0, 200) : ''
+      const kind = ['compensation', 'event', 'test'].includes(b?.kind) ? b.kind : ''
+      if (!owner || !Number.isInteger(count) || count < 1 || count > MAX_GRANT || !reason || !kind) return json({ error: 'invalid', max: MAX_GRANT }, 400)
+      const tickets: string[] = []
+      for (let i = 0; i < count; i++) tickets.push(await store.issue(owner, now))
+      if (env.DB) await env.DB.prepare('INSERT INTO grants (at,owner,count,kind,reason) VALUES (?,?,?,?,?)').bind(now, owner, count, kind, reason).run()
+      else memGrants.push({ at: now, owner, count, kind, reason })
+      return json({ ok: true, owner, count, kind, tickets })
     }
 
     if (url.pathname === '/api/report') {

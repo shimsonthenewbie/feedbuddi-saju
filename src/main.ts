@@ -34,7 +34,7 @@ import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from '
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -86,7 +86,7 @@ const T = {
     pickName: '나와 잘 맞는 사주', examName: '시험 날 사주 (수능)',
     quick: [['today', '運', '오늘의 운세'], ['solo', '命', '내 사주'], ['ask', '問', '고민 상담'], ['match', '緣', '궁합'], ['shop', '籤', '풀이 목록']],
     newTitle: '새로 나온 운세',
-    newItems: [['NEW', '관상', '사진 한 장으로 얼굴 읽기', '베타 무료', 'face'], ['NEW', '2027 신년운세', '정미년 한 해 흐름을 월별로', '12월 공개 예정', 'shop'], ['NEW', '두 사람의 궁합', '서로 끌리는 이유와 부딪히는 점', '베타 무료', 'match']],
+    newItems: [['NEW', '관상', '사진 한 장으로 얼굴 읽기', '베타 무료', 'face'], ['NEW', '2027 신년운세', '정미년 한 해 흐름을 월별로', '베타 무료', 'newyear'], ['NEW', '두 사람의 궁합', '서로 끌리는 이유와 부딪히는 점', '베타 무료', 'match']],
     hotTitle: '지금 많이 보는 운세',
     hotItems: [['시험 날 사주 (수능 D-3)', '베타 무료', 'exam'], ['오늘의 운세', '무료', 'today'], ['무료 사주 풀이', '무료', 'solo'], ['고민 상담 (시기 짚기)', '베타 무료', 'ask'], ['사주 궁합', '베타 무료', 'match'], ['올해 흐름 (월별)', '베타 무료', 'year'], ['재물·직업 풀이', '990원', 'shop'], ['종합 풀이 리포트', '9,900원', 'report']],
     pieceTitle: '사주 한 조각',
@@ -192,7 +192,7 @@ const T = {
     pickName: 'Who suits me', examName: 'Exam-day reading',
     quick: [['today', '運', "Today's fortune"], ['solo', '命', 'My chart'], ['ask', '問', 'Ask'], ['match', '緣', 'Match'], ['shop', '籤', 'Readings']],
     newTitle: 'New readings',
-    newItems: [['NEW', 'Face reading', 'Read your face from one photo', 'Free beta', 'face'], ['NEW', '2027 New Year reading', 'The Ding-Wei year, month by month', 'Coming in December', 'shop'], ['NEW', 'Compatibility', 'Why you click — and where you clash', 'Free beta', 'match']],
+    newItems: [['NEW', 'Face reading', 'Read your face from one photo', 'Free beta', 'face'], ['NEW', '2027 New Year reading', 'The Ding-Wei year, month by month', 'Free beta', 'newyear'], ['NEW', 'Compatibility', 'Why you click — and where you clash', 'Free beta', 'match']],
     hotTitle: 'Popular now',
     hotItems: [['Exam-day reading (CSAT)', 'Free beta', 'exam'], ["Today's fortune", 'Free', 'today'], ['Free chart reading', 'Free', 'solo'], ['Ask about your worry', 'Free beta', 'ask'], ['Compatibility', 'Free beta', 'match'], ['This year, month by month', 'Free beta', 'year'], ['Money & career', '₩990', 'shop'], ['Full life report', '₩9,900', 'report']],
     pieceTitle: 'A piece of Saju',
@@ -413,6 +413,7 @@ function showReport() {
 
 let yearSel = 0
 let yearAll = false
+let newYearMode = false
 function showYear() {
   const x = t()
   const pr = loadProfile()!
@@ -420,7 +421,9 @@ function showYear() {
   const r = resultOf(pr)
   const a = analyze(r)
   const y0 = new Date().getFullYear()
-  const v = composePage(r, a, y0 + yearSel, lang)
+  const nyr = newYearMode && yearSel === 1
+  const v = composePage(r, a, y0 + yearSel, lang, new Date(), nyr ? y0 + 1 : y0)
+  if (nyr) { v.care.title = lang === 'ko' ? `${y0 + 1}년 조심할 것` : `What to watch in ${y0 + 1}`; v.care.incomingT = lang === 'ko' ? `${y0 + 1}년에 들어오는 살` : `Stars coming in ${y0 + 1}` }
   const step = (m: (typeof v.past.items)[number]) => `<article class="rcard ym k-${m.kind}${m.isNow ? ' now' : ''}"><div class="yh"><b>${esc(m.range)}</b><span class="yk">${esc(m.label)}</span></div>
     <p>${esc(m.line)}</p>${m.areas.length ? `<div class="chips2">${m.areas.map((ar) => `<span>${esc(ar)}</span>`).join('')}</div>` : ''}</article>`
   const sal = (s: (typeof v.care.incoming)[number]) => `<li class="sal ${s.caution ? 'c' : 'g'}"><b>${esc(s.name)}<small>${esc(s.hanja)}</small></b><span>${esc(s.text)}</span></li>`
@@ -436,13 +439,13 @@ function showYear() {
     ${v.care.incoming.length ? `<h3>${esc(v.care.incomingT)}</h3><ul class="sals">${v.care.incoming.map(sal).join('')}</ul>` : ''}
     ${v.care.natal.length ? `<h3>${esc(v.care.natalT)}</h3><ul class="sals">${v.care.natal.map(sal).join('')}</ul>` : ''}
   </article>
-  <article class="card"><h2>${esc(v.past.title)}</h2><p class="meta">${esc(v.past.intro)}</p></article>
+  ${nyr ? '' : `<article class="card"><h2>${esc(v.past.title)}</h2><p class="meta">${esc(v.past.intro)}</p></article>
   ${v.past.items.map(step).join('')}
   <p class="note">${esc(v.past.note)}</p>
   <article class="card"><h2>${esc(v.now.title)}</h2></article>
   ${v.now.item ? step(v.now.item) : ''}
   <article class="card"><h2>${esc(v.next.title)}</h2><p class="meta">${esc(v.next.intro)}</p></article>
-  ${v.next.items.map(step).join('')}
+  ${v.next.items.map(step).join('')}`}
   <article class="card yr">
     <button class="go ghost" type="button" id="yall">${esc(yearAll ? v.btn.hide : v.btn.show)}</button>
     ${yearAll ? `<div class="seg small ytabs"><label><input type="radio" name="ysel" value="0" ${yearSel === 0 ? 'checked' : ''}><span>${esc(x.yThis)}</span></label><label><input type="radio" name="ysel" value="1" ${yearSel === 1 ? 'checked' : ''}><span>${esc(x.yNext)}</span></label></div><h3>${esc(v.all.title)}</h3>` : ''}
@@ -1064,6 +1067,7 @@ function personForm(id: 'a' | 'b', label: string): string {
 }
 
 function render() {
+  if (mode === 'newyear') { mode = 'year'; yearSel = Math.max(0, Math.min(1, 2027 - new Date().getFullYear())); yearAll = true; newYearMode = true } else if (mode !== 'year') newYearMode = false
   const x = t()
   document.documentElement.lang = lang
   document.title = x.title
