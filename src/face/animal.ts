@@ -64,7 +64,7 @@ const EVI = {
 }
 const EMOJI: Record<AnimalKey, string> = { dog: '🐶', cat: '🐱', dino: '🦖', snake: '🐍', fox: '🦊', rabbit: '🐰', turtle: '🐢', deer: '🦌', bear: '🐻', tiger: '🐯', frog: '🐸', hamster: '🐹', horse: '🐴', mouse: '🐭', fish: '🐟' }
 /** 서로 잘 어울리는 짝(재미) */
-const MATE: Record<AnimalKey, AnimalKey> = { dog: 'cat', cat: 'dog', fox: 'bear', bear: 'fox', rabbit: 'tiger', tiger: 'rabbit', deer: 'horse', horse: 'deer', snake: 'turtle', turtle: 'snake', dino: 'hamster', hamster: 'dino', frog: 'fish', fish: 'frog', mouse: 'dog' }
+export const MATE: Record<AnimalKey, AnimalKey> = { dog: 'cat', cat: 'dog', fox: 'bear', bear: 'fox', rabbit: 'tiger', tiger: 'rabbit', deer: 'horse', horse: 'deer', snake: 'turtle', turtle: 'snake', dino: 'hamster', hamster: 'dino', frog: 'fish', fish: 'frog', mouse: 'dog' }
 
 const NAME_KO: Record<AnimalKey, string> = { dog: '강아지', cat: '고양이', dino: '공룡', snake: '뱀', fox: '여우', rabbit: '토끼', turtle: '거북이', deer: '사슴', bear: '곰', tiger: '호랑이', frog: '개구리', hamster: '햄스터', horse: '말', mouse: '생쥐', fish: '물고기' }
 const NAME_EN: Record<AnimalKey, string> = { dog: 'Puppy', cat: 'Cat', dino: 'Dinosaur', snake: 'Snake', fox: 'Fox', rabbit: 'Rabbit', turtle: 'Turtle', deer: 'Deer', bear: 'Bear', tiger: 'Tiger', frog: 'Frog', hamster: 'Hamster', horse: 'Horse', mouse: 'Mouse', fish: 'Fish' }

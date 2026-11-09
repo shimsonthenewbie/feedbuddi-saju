@@ -19,6 +19,8 @@ import { readFace } from './face/read'
 import { animalOf } from './face/animal'
 import { makeOverlay, drawDots, drawGuide } from './face/draw'
 import { wuxingOf } from './face/wuxing'
+import { pairOf, type Side } from './face/pair'
+import { comboOf } from './face/combo'
 import { momentsOf, EL_NAME, EL_BODY } from './face/moments'
 import { reportData, buildReportRequest, PARTS, type Part, type Tone } from './report-prompt'
 import { yearLuck } from './myeongri/timing'
@@ -761,7 +763,7 @@ function faceHtml(): string {
     <div class="freehead"><div><h2>${esc(x.faceT)}</h2><p class="meta">${esc(x.faceD)}</p></div><img class="fmascot" src="${art('dragon-think')}" alt="" width="92" height="92"></div>
     <ul class="tips">${x.faceTips.map((v: string) => `<li>${esc(v)}</li>`).join('')}</ul>
     <div class="faceact">
-      <input type="file" id="facecam" accept="image/*" capture="user" hidden><input type="file" id="facealb" accept="image/*" hidden>
+      <input type="file" id="facecam" accept="image/*" capture="user" hidden><input type="file" id="facealb" accept="image/*" hidden><input type="file" id="facepair" accept="image/*" hidden>
       <button type="button" class="go filebtn" data-faceask="facecam">${esc(x.faceCam)}</button>
       <button type="button" class="go filebtn ghost" data-faceask="facealb">${esc(x.faceAlbum)}</button>
     </div>
@@ -772,6 +774,34 @@ function faceHtml(): string {
 }
 
 const FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109]
+
+let lastFace: Side | null = null
+async function onFacePair(file: File) {
+  const x = t(); const box = document.getElementById('pairout'); const err = document.getElementById('faceerr')!
+  if (!box || !lastFace) return
+  err.textContent = ''; box.innerHTML = `<article class="card"><p class="meta">${esc(x.faceBusy)}</p></article>`
+  try {
+    const cv = await fileToCanvas(file)
+    const found = await Promise.race([findFace(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
+    if (found === 'none') { box.innerHTML = ''; err.textContent = x.faceNone; return }
+    if (found === 'many') { box.innerHTML = ''; err.textContent = x.faceMany; return }
+    const m = measure(found)
+    if (m.yaw > 0.14 || m.yawDeg > 20 || m.pitchDeg > 18 || Math.abs(m.roll) > 18) { box.innerHTML = ''; err.textContent = x.faceAngle(Math.round(m.yawDeg), Math.round(m.pitchDeg), Math.round(Math.abs(m.roll))); return }
+    const r = readFace(m, lang), an = animalOf(m, r.axes, lang), wu = wuxingOf(m), wn = EL_NAME[lang] ?? EL_NAME.en
+    const other: Side = { key: an.key, emoji: an.emoji, name: an.name, tags: an.tags, el: wu[0].el, elName: wn[wu[0].el][0] }
+    const pr = pairOf(lastFace, other, lang)
+    box.innerHTML = `<article class="card animal pair"><div class="aemoji" aria-hidden="true">${lastFace.emoji} × ${other.emoji}</div><h2>${esc(lastFace.name)}${lang === 'ko' ? '상' : ''} × ${esc(other.name)}${lang === 'ko' ? '상' : ''}</h2>
+      <p class="atitle">${pr.score}${lang === 'ko' ? '점' : ''} · ${esc(pr.head)}</p>
+      ${pr.lines.map((l) => `<p>${esc(l)}</p>`).join('')}
+      <div class="row"><button class="go" type="button" id="pshare">${lang === 'ko' ? '궁합 결과 공유하기' : 'Share match'}</button></div><p class="ok" id="pshok" role="status"></p>
+      <p class="meta">${lang === 'ko' ? '재미로 보는 궁합이에요. 사진은 저장되지 않아요.' : 'For fun only. Photos are not saved.'}</p></article>`
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    document.getElementById('pshare')!.onclick = async () => {
+      const txt = `${pr.shareText}\n${location.origin}${location.pathname}#face`
+      try { if (navigator.share) await navigator.share({ text: txt }); else { await navigator.clipboard.writeText(txt); document.getElementById('pshok')!.textContent = x.faceShared } } catch { /* 취소 */ }
+    }
+  } catch (e) { box.innerHTML = ''; err.textContent = (e as Error).message === 'timeout' ? x.faceSlow : x.faceFail }
+}
 
 async function onFacePick(file: File) {
   const x = t()
@@ -824,10 +854,14 @@ async function onFacePick(file: File) {
     const an = animalOf(m, r.axes, lang)
     const debug = /[?&]debug\b/.test(location.search)
     const wu = wuxingOf(m), wn = EL_NAME[lang] ?? EL_NAME.en
+    lastFace = { key: an.key, emoji: an.emoji, name: an.name, tags: an.tags, el: wu[0].el, elName: wn[wu[0].el][0] }
     const mom = momentsOf(m, r.axes, lang)
     const wuHtml = `<article class="rcard wux"><h3>${esc(x.wuTitle)}</h3><div class="wtop"><span class="wbadge">${esc(wn[wu[0].el][0])}</span><div><b>${wu[0].pct}%</b><em>${esc(wn[wu[0].el][1])}</em></div></div>
       <p>${esc((EL_BODY[lang] ?? EL_BODY.en)[wu[0].el])}</p><p class="meta">${esc(x.wuMix(wn[wu[1].el][0]))}</p>
       <div class="wbars">${wu.map((w) => `<div><span>${esc(wn[w.el][0])}</span><i class="tr"><b style="width:${Math.min(100, w.pct * 2)}%"></b></i><em>${w.pct}%</em></div>`).join('')}</div></article>`
+    const pr0 = loadProfile()
+    let comboHtml = ''
+    if (pr0) { try { const cb = comboOf(wu[0].el, analyze(resultOf(pr0)), lang); comboHtml = `<article class="rcard combo"><h3>${esc(cb.title)}</h3>${cb.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}<p class="meta">${esc(cb.note)}</p></article>` } catch { /* 사주 계산 실패 시 생략 */ } }
     const momHtml = `<article class="rcard mom"><h3>${esc(mom.title)}</h3><p class="meta">${esc(mom.intro)}</p>${mom.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}</article>`
     out.innerHTML = `<article class="card animal"><div class="aemoji" aria-hidden="true">${an.emoji}</div><h2>${esc(an.name)}${lang === 'ko' ? '상' : ' face'}</h2><p class="atitle">${esc(an.title)}</p>
       <div class="chips2">${an.tags.map((c) => `<span>#${esc(c)}</span>`).join('')}</div>
@@ -845,7 +879,9 @@ async function onFacePick(file: File) {
       ${momHtml}
       <p class="note">${esc(r.note)}</p>
       ${debug ? `<pre class="dbg">${r.debug.map((d) => `${d.k}\t${d.v}\t${d.z}`).join('\n')}</pre>` : ''}
-      <article class="card"><div class="row"><button class="go" type="button" data-mode="solo">${esc(x.faceToSaju)}</button></div><div class="row"><button class="go filebtn ghost" type="button" data-faceask="facealb">${esc(x.faceAgain)}</button></div></article>`
+      ${comboHtml}
+      <article class="card"><h3>${lang === 'ko' ? '친구와 관상 궁합' : 'Face match with a friend'}</h3><p class="meta">${lang === 'ko' ? '친구 사진 한 장만 더 고르면 둘의 동물 궁합을 보여 줘요.' : 'Pick one more photo to see how your animals match.'}</p><div class="row"><button class="go" type="button" data-faceask="facepair">${lang === 'ko' ? '친구 사진 고르기' : 'Choose friend photo'}</button></div></article><section id="pairout" aria-live="polite"></section>
+      <article class="card"><div class="row">${comboHtml ? '' : `<button class="go" type="button" data-mode="solo">${esc(x.faceToSaju)}</button>`}</div><div class="row"><button class="go filebtn ghost" type="button" data-faceask="facealb">${esc(x.faceAgain)}</button></div></article>`
     out.querySelector('.fphoto')!.append(wrapEl)
     out.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
     out.querySelectorAll<HTMLElement>('[data-faceask]').forEach((b) => (b.onclick = () => askFaceConsent(b.dataset.faceask!)))
@@ -1033,6 +1069,7 @@ function bind() {
   app.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => (b.onclick = () => { legalKind = b.dataset.legal as LegalDoc; legalFrom = mode === 'legal' ? legalFrom : mode; mode = 'legal'; window.scrollTo(0, 0); render() }))
   document.getElementById('form')?.addEventListener('submit', onSubmit)
   ;['facecam', 'facealb'].forEach((id) => document.getElementById(id)?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePick(f) }))
+  document.getElementById('facepair')?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePair(f); (e.target as HTMLInputElement).value = '' })
   bindDT(app); bindCity('f'); bindCity('s')
   ;(['funk', 'sunk'] as const).forEach((n) => {
     const c = document.querySelector<HTMLInputElement>(`input[name=${n}]`)
