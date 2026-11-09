@@ -707,6 +707,29 @@ function legalHtml(): string {
   <button class="go ghost" type="button" data-mode="${legalFrom}">${esc(x.legalBack)}</button>`
 }
 /** 사진 올리기 전 동의창. 세 가지를 모두 체크해야 사진 고르기가 열린다. */
+/** 컴퓨터에서는 파일 선택창 대신 실제 카메라를 켜서 찍는다(안 되면 파일 선택으로 되돌린다) */
+async function openCamera(fallbackId: string) {
+  let stream: MediaStream
+  try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 } }, audio: false }) }
+  catch { document.getElementById(fallbackId)?.click(); return }
+  const ko = lang === 'ko'
+  const wrap = document.createElement('div'); wrap.className = 'modal'
+  wrap.innerHTML = `<div class="sheet camsheet" role="dialog" aria-modal="true"><div class="camview"><video autoplay playsinline muted></video><i class="camguide" aria-hidden="true"></i></div>
+    <p class="meta">${ko ? '얼굴이 원 안에 오게, 정면으로 보고 찍어 주세요.' : 'Face the camera and keep your face inside the oval.'}</p>
+    <div class="sact"><button class="go" type="button" id="camshot">${ko ? '찍기' : 'Take photo'}</button><button class="go ghost" type="button" id="camx">${ko ? '닫기' : 'Close'}</button></div></div>`
+  document.body.appendChild(wrap)
+  const v = wrap.querySelector('video')!; v.srcObject = stream
+  const close = () => { stream.getTracks().forEach((tr) => tr.stop()); wrap.remove() }
+  wrap.querySelector<HTMLButtonElement>('#camx')!.onclick = close
+  wrap.querySelector<HTMLButtonElement>('#camshot')!.onclick = () => {
+    if (!v.videoWidth) return
+    const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight
+    c.getContext('2d')!.drawImage(v, 0, 0)
+    close()
+    c.toBlob((b) => { if (b) void onFacePick(new File([b], 'cam.jpg', { type: 'image/jpeg' })) }, 'image/jpeg', 0.92)
+  }
+}
+
 function askFaceConsent(inputId: string) {
   const x = t()
   const wrap = document.createElement('div')
@@ -728,7 +751,7 @@ function askFaceConsent(inputId: string) {
   boxes.forEach((b) => (b.onchange = sync))
   all.onchange = () => { boxes.forEach((b) => (b.checked = all.checked)); sync() }
   wrap.querySelector<HTMLButtonElement>('#fcno')!.onclick = () => wrap.remove()
-  ok.onclick = () => { wrap.remove(); document.getElementById(inputId)?.click() }
+  ok.onclick = () => { wrap.remove(); if (inputId === 'facecam' && !matchMedia('(pointer:coarse)').matches && navigator.mediaDevices) void openCamera(inputId); else document.getElementById(inputId)?.click() }
   wrap.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => (b.onclick = () => { legalKind = b.dataset.legal as LegalDoc; legalFrom = 'face'; wrap.remove(); mode = 'legal'; window.scrollTo(0, 0); render() }))
 }
 
@@ -810,7 +833,7 @@ async function onFacePick(file: File) {
       <div class="chips2">${an.tags.map((c) => `<span>#${esc(c)}</span>`).join('')}</div>
       <p>${esc(an.look)}</p>
       ${an.evidence.length ? `<p class="aevi"><b>${esc(an.similarT)}</b> ${an.evidence.map((e) => esc(e)).join(' · ')}</p>` : ''}
-      ${an.mixed ? `<p class="meta">${esc(an.mixed)}</p>` : ''}
+      <div class="amix">${an.mix.map((a) => `<div><span>${a.emoji} ${esc(a.name)}</span><i class="tr"><b style="width:${a.pct}%"></b></i><em>${a.pct}%</em></div>`).join('')}</div>
       <p>${esc(an.body)}</p><p>${esc(an.fortuneBody)}</p>
       <p class="amate">${esc(an.mate.label)} ${an.mate.emoji} ${esc(an.mate.name)}</p>
       <div class="row"><button class="go" type="button" id="fshare">${esc(x.faceShare)}</button></div><p class="ok" id="fshok" role="status"></p></article>

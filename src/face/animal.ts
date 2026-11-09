@@ -15,7 +15,7 @@ const PROTO: Record<AnimalKey, Partial<Record<K, number>>> = {
   cat: { eyeTilt: 1.2, eyeGap: -0.5, ratio: 0.3, mouthW: -0.4, jaw: -0.3, noseW: -0.3 },
   dino: { jaw: 1, mouthW: 0.9, mid: 0.6, browArch: -0.5, noseLen: 0.5, noseW: 0.4 },
   snake: { eyeOpen: -1.1, eyeTilt: 0.7, ratio: 0.6, jaw: -0.6, lip: -0.6 },
-  fox: { eyeTilt: 1, ratio: 0.6, jaw: -0.9, mouthW: -0.5, noseLen: 0.3 },
+  fox: { eyeTilt: 1, ratio: 0.6, jaw: -0.9, mouthW: -0.5, noseLen: 0.3, lower: 0.5, eyeW: -0.3 },
   rabbit: { eyeW: 0.8, eyeOpen: 0.6, ratio: -0.4, mouthW: -0.8, jaw: -0.4 },
   turtle: { eyeOpen: 1, mouthW: 1, eyeW: 0.4, lip: 0.3, ratio: -0.3 },
   deer: { eyeW: 1, ratio: 0.8, eyeTilt: -0.4, jaw: -0.7, browArch: 0.4 },
@@ -24,7 +24,7 @@ const PROTO: Record<AnimalKey, Partial<Record<K, number>>> = {
   frog: { eyeW: 1, eyeOpen: 0.8, eyeGap: 0.8, mouthW: 0.7 },
   hamster: { ratio: -1, mouthW: -0.6, eyeW: 0.5, eyeOpen: 0.5, jaw: 0.3 },
   horse: { ratio: 1, mid: 0.8, noseLen: 0.7, jaw: 0.4 },
-  mouse: { eyeW: -0.6, mouthW: -0.8, noseW: -0.6, eyeGap: -0.6, ratio: 0.2 },
+  mouse: { eyeW: -0.45, mouthW: -0.8, noseW: -0.6, eyeGap: -0.6, ratio: 0.2 },
   fish: { eyeOpen: 0.9, eyeGap: 0.8, eyeW: 0.4, mouthW: -0.2, lip: 0.5, ratio: -0.3 },
 }
 /** 동물마다 '이 특징은 꼭 있어야' 하는 조건. 하나라도 안 맞으면 후보에서 뺀다(기준값이 조금 어긋나도 한 동물로 쏠리지 않게). */
@@ -184,6 +184,7 @@ const T = {
 
 export interface AnimalOut {
   key: AnimalKey; emoji: string; name: string; tags: string[]; body: string; look: string; similarT: string; evidence: string[]; mixed: string | null
+  mix: { emoji: string; name: string; pct: number }[]
   fortune: string; fortuneBody: string; title: string; mate: { emoji: string; name: string; label: string }; shareText: string
 }
 
@@ -216,9 +217,13 @@ export function animalOf(m: Metrics, axes: { value: number }[], lang: 'ko' | 'en
     const top = Math.max(drive, sense, social, care)
     f = top === drive ? 'lead' : top === social ? 'friend' : top === sense ? 'art' : 'care'
   }
+  // 닮은 정도: 상위 셋을 점수 차이에 따라 100%로 나눈다
+  const top3 = pool.slice(0, 3), ex = top3.map((r) => Math.exp((r.s - top3[0].s) / 0.6)), sum = ex.reduce((a, b) => a + b, 0)
+  let pcts = ex.map((e) => Math.round((e / sum) * 100)); pcts[0] += 100 - pcts.reduce((a, b) => a + b, 0)
+  const mix = top3.map((r, i) => ({ emoji: EMOJI[r.k], name: L.name[r.k], pct: pcts[i] }))
   const mk = MATE[best]
   return {
-    key: best, emoji: EMOJI[best], name: L.name[best], tags: [...L.tags[best]], body: L.body[best], look: L.look[best], similarT: L.similar, evidence: ev, mixed: second ? L.mixed(L.name[second]) : null,
+    key: best, emoji: EMOJI[best], name: L.name[best], tags: [...L.tags[best]], body: L.body[best], look: L.look[best], similarT: L.similar, evidence: ev, mix, mixed: second ? L.mixed(L.name[second]) : null,
     fortune: L.fortune[f], fortuneBody: L.fortuneBody[f], title: L.title(year, L.fortune[f]),
     mate: { emoji: EMOJI[mk], name: L.name[mk], label: L.mate }, shareText: L.share(L.name[best], L.fortune[f]),
   }
