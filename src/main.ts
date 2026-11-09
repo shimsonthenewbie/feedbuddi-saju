@@ -19,6 +19,7 @@ import { readFace } from './face/read'
 import { animalOf } from './face/animal'
 import { makeOverlay, drawDots, drawGuide } from './face/draw'
 import { wuxingOf } from './face/wuxing'
+import { findHand, measureHand, readHand, handNote, handMixTitle } from './hand/hand'
 import { pairOf, type Side } from './face/pair'
 import { comboOf } from './face/combo'
 import { momentsOf, EL_NAME, EL_BODY } from './face/moments'
@@ -33,7 +34,7 @@ import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from '
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'face' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -526,7 +527,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -754,7 +755,54 @@ function askFaceConsent(inputId: string) {
   all.onchange = () => { boxes.forEach((b) => (b.checked = all.checked)); sync() }
   wrap.querySelector<HTMLButtonElement>('#fcno')!.onclick = () => wrap.remove()
   ok.onclick = () => { wrap.remove(); if (inputId === 'facecam' && !matchMedia('(pointer:coarse)').matches && navigator.mediaDevices) void openCamera(inputId); else document.getElementById(inputId)?.click() }
-  wrap.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => (b.onclick = () => { legalKind = b.dataset.legal as LegalDoc; legalFrom = 'face'; wrap.remove(); mode = 'legal'; window.scrollTo(0, 0); render() }))
+  wrap.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => (b.onclick = () => { legalKind = b.dataset.legal as LegalDoc; legalFrom = mode === 'hand' ? 'hand' : 'face'; wrap.remove(); mode = 'legal'; window.scrollTo(0, 0); render() }))
+}
+
+function handHtml(): string {
+  const x = t(), ko = lang === 'ko'
+  return `<section class="card" aria-label="hand">
+    <div class="freehead"><div><h2>${ko ? '손 모양으로 보는 관상' : 'Hand-shape reading'}</h2><p class="meta">${ko ? '손바닥이 보이게 손가락을 활짝 펴고 한 장만 찍어 주세요. 사진은 내 기기 안에서만 분석해요.' : 'Spread your fingers with the palm facing the camera. One photo, analysed on your device only.'}</p></div><img class="fmascot" src="${art('dragon-think')}" alt="" width="92" height="92"></div>
+    <ul class="tips">${(ko ? ['밝은 곳에서 손바닥이 정면으로', '손가락은 활짝 펴고 붙이지 않기', '한 손만, 배경은 단순하게'] : ['Bright light, palm facing the camera', 'Spread your fingers apart', 'One hand, plain background']).map((v) => `<li>${esc(v)}</li>`).join('')}</ul>
+    <div class="faceact"><input type="file" id="handalb" accept="image/*" hidden>
+      <button type="button" class="go filebtn" data-faceask="handalb">${ko ? '손 사진 고르기' : 'Choose hand photo'}</button></div>
+    <p class="note">${esc(x.faceKept)} <button type="button" class="linkbtn" data-legal="privacy">${esc(x.legalPrivacy)}</button> · <button type="button" class="linkbtn" data-legal="terms">${esc(x.legalTerms)}</button></p>
+    <p class="err" id="faceerr" role="alert"></p>
+  </section>
+  <section id="faceout" aria-live="polite"></section>`
+}
+
+async function onHandPick(file: File) {
+  const x = t(), ko = lang === 'ko'
+  const err = document.getElementById('faceerr')!, out = document.getElementById('faceout')!
+  err.textContent = ''
+  out.innerHTML = `<article class="card scan"><div class="fphoto"></div><p class="scancap" id="scancap" role="status"></p></article>`
+  const t0 = performance.now()
+  try {
+    const cv = await fileToCanvas(file)
+    const ov = makeOverlay(cv); cv.className = 'fcanvas'
+    const wrapEl = document.createElement('div'); wrapEl.className = 'fwrap scanning'
+    const beam = document.createElement('i'); beam.className = 'beam'; const brk = document.createElement('i'); brk.className = 'brackets'
+    wrapEl.append(cv, ov, brk, beam); out.querySelector('.fphoto')!.append(wrapEl)
+    document.getElementById('scancap')!.textContent = ko ? '손 모양을 읽고 있어요…' : 'Reading your hand…'
+    const found = await Promise.race([findHand(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
+    await new Promise((r) => setTimeout(r, Math.max(0, 2200 - (performance.now() - t0))))
+    if (found === 'none') { out.innerHTML = ''; err.textContent = ko ? '손을 찾지 못했어요. 밝은 곳에서 손바닥이 보이게 손가락을 펴고 다시 찍어 주세요.' : 'No hand found. Spread your fingers, palm facing the camera, in good light.'; return }
+    if (found === 'many') { out.innerHTML = ''; err.textContent = ko ? '손이 둘 이상 보여요. 한 손만 나오게 찍어 주세요.' : 'More than one hand. Please show one hand only.'; return }
+    const g = ov.getContext('2d')!; g.fillStyle = 'rgba(190,255,225,.95)'
+    for (const p of found.pts) { g.beginPath(); g.arc(p.x * ov.width, p.y * ov.height, Math.max(3, ov.width / 130), 0, 7); g.fill() }
+    wrapEl.classList.remove('scanning')
+    await new Promise((r) => setTimeout(r, 700))
+    const m = measureHand(found), r = readHand(m, lang)
+    const dbg = /[?&]debug\b/.test(location.search)
+    out.innerHTML = `<article class="card animal"><div class="aemoji" aria-hidden="true">🖐️</div><h2>${esc(r.elName)}</h2><p class="atitle">${esc(r.head)}</p><p>${esc(r.body)}</p>
+      <h3>${esc(handMixTitle(lang))}</h3><div class="amix">${r.mix.map((a) => `<div><span>${esc(a.name)}</span><i class="tr"><b style="width:${a.pct}%"></b></i><em>${a.pct}%</em></div>`).join('')}</div></article>
+      ${r.cards.map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3><p>${esc(c.body)}</p></article>`).join('')}
+      ${dbg ? `<pre class="dbg">${Object.entries(m).map(([k, v]) => `${k}\t${(v as number).toFixed(3)}`).join('\n')}</pre>` : ''}
+      <p class="note">${esc(handNote(lang))}</p>
+      <article class="card"><div class="row"><button class="go filebtn ghost" type="button" data-faceask="handalb">${ko ? '다른 손으로 다시 보기' : 'Try another photo'}</button></div></article>`
+    out.querySelectorAll<HTMLElement>('[data-faceask]').forEach((b) => (b.onclick = () => askFaceConsent(b.dataset.faceask!)))
+    out.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } catch (e) { console.error('hand', e); out.innerHTML = ''; err.textContent = (e as Error).message === 'timeout' ? x.faceSlow : x.faceFail }
 }
 
 function faceHtml(): string {
@@ -983,6 +1031,7 @@ let mode: Mode = 'home'
 let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
 else if (location.hash === '#face') mode = 'face'
+else if (location.hash === '#hand') mode = 'hand'
 let lastMatch: { people: Person[]; m: ReturnType<typeof matchReading> } | null = null
 let dayOffset = 0
 let readLang: Lang = lang
@@ -1025,7 +1074,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
@@ -1068,6 +1117,7 @@ function bind() {
   app.querySelectorAll<HTMLElement>('[data-faceask]').forEach((b) => (b.onclick = () => askFaceConsent(b.dataset.faceask!)))
   app.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => (b.onclick = () => { legalKind = b.dataset.legal as LegalDoc; legalFrom = mode === 'legal' ? legalFrom : mode; mode = 'legal'; window.scrollTo(0, 0); render() }))
   document.getElementById('form')?.addEventListener('submit', onSubmit)
+  document.getElementById('handalb')?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onHandPick(f) })
   ;['facecam', 'facealb'].forEach((id) => document.getElementById(id)?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePick(f) }))
   document.getElementById('facepair')?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePair(f); (e.target as HTMLInputElement).value = '' })
   bindDT(app); bindCity('f'); bindCity('s')

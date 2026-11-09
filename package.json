@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mediapipe/hands": "^0.4.1675469240",
     "@orrery/core": "^0.4.5",
     "@photostructure/tz-lookup": "^11.7.0",
     "astronomy-engine": "^2.1.19"
