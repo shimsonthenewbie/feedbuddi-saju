@@ -16,11 +16,13 @@ import { natal } from './astro'
 import { findFace, fileToCanvas } from './face/mesh'
 import { measure } from './face/measure'
 import { readFace } from './face/read'
+import { yearLuck } from './myeongri/timing'
+import { composeYear } from './i18n/year'
 import { makeInviteUrl, readInvite, makeCard, type Invite } from './share'
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'face' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'year' | 'face' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -41,6 +43,7 @@ const T = {
     faceNone: '얼굴을 찾지 못했어요. 밝은 곳에서 정면으로 다시 찍어 주세요.', faceMany: '얼굴이 여러 개 보여요. 한 사람만 나오게 찍어 주세요.',
     faceSide: '얼굴이 옆으로 돌아가 있어요. 정면을 보고 다시 찍어 주세요.', faceTilt: '고개가 많이 기울었어요. 바르게 세우고 다시 찍어 주세요.', faceFail: '분석에 실패했어요. 잠시 뒤 다시 시도해 주세요.',
     faceAgain: '다른 사진으로 다시 보기', faceToSaju: '사주도 같이 보기', faceKept: '사진은 저장되지 않아요. 이 화면을 닫으면 사라져요.',
+    yThis: '올해', yNext: '내년',
     selY: '연도', selM: '월', selD: '일', selH: '시', selMi: '분',
     shT: '친구와 나누기', again: '나도 다른 사람과 궁합 보기', shSend: '친구에게 궁합 보내기', shCard: '결과 카드 저장', shPriv: '링크에는 내 생년월일이 들어 있어요. 믿는 사람에게만 보내세요.', shCopied: '링크를 복사했어요. 친구에게 붙여 넣어 보내세요.', shSaved: '카드를 저장했어요.', shText: (sc: number, hl: string) => `여의가 본 우리 궁합은 ${sc}점, "${hl}"! 너랑도 궁합 볼래?`,
     invT: (n: string) => (n ? `${n}님이 궁합을 보내왔어요` : '친구가 궁합을 보내왔어요'), invD: '내 생년월일만 넣으면 둘의 궁합을 바로 볼 수 있어요. 가입은 필요 없어요.', invGo: '우리 궁합 보기',
@@ -62,7 +65,7 @@ const T = {
     newTitle: '새로 나온 운세',
     newItems: [['NEW', '관상', '사진 한 장으로 얼굴 읽기', '베타 무료', 'face'], ['NEW', '2027 신년운세', '정미년 한 해 흐름을 월별로', '12월 공개 예정', 'shop'], ['NEW', '두 사람의 궁합', '서로 끌리는 이유와 부딪히는 점', '베타 무료', 'match']],
     hotTitle: '지금 많이 보는 운세',
-    hotItems: [['오늘의 운세', '무료', 'today'], ['무료 사주 풀이', '무료', 'solo'], ['고민 상담 (시기 짚기)', '베타 무료', 'ask'], ['사주 궁합', '베타 무료', 'match'], ['올해 흐름 (월별)', '990원', 'shop'], ['재물·직업 풀이', '990원', 'shop'], ['종합 풀이 리포트', '9,900원', 'shop']],
+    hotItems: [['오늘의 운세', '무료', 'today'], ['무료 사주 풀이', '무료', 'solo'], ['고민 상담 (시기 짚기)', '베타 무료', 'ask'], ['사주 궁합', '베타 무료', 'match'], ['올해 흐름 (월별)', '베타 무료', 'year'], ['재물·직업 풀이', '990원', 'shop'], ['종합 풀이 리포트', '9,900원', 'shop']],
     pieceTitle: '사주 한 조각',
     pieces: ['오행은 목·화·토·금·수예요. 하나가 많거나 없다고 나쁜 게 아니라 그 기운을 어떻게 쓰는지가 성향을 만들어요.', '일간은 태어난 날의 하늘 글자로, 사주에서 "나"를 뜻해요.', '대운은 약 10년 단위로 바뀌는 큰 흐름이에요.'],
     ask: '상담',
@@ -114,7 +117,7 @@ const T = {
     shopNote: '가격과 구성은 아직 정해지지 않았어요. 지금은 둘러보기만 가능해요.',
     shopItems: [
       ['運', '오늘의 운세', '매일 확인하는 하루 흐름', '무료'],
-      ['歲', '올해 흐름', '월별로 보는 올해의 기회와 쉬어갈 때', '990원'],
+      ['歲', '올해 흐름', '월별로 보는 올해의 기회와 쉬어갈 때', '베타 무료'],
       ['緣', '연애·궁합', '나의 인연 스타일과 시기', '990원'],
       ['財', '재물·직업', '어울리는 일의 형태와 돈의 흐름', '990원'],
       ['健', '건강·컨디션', '타고난 체질 경향과 생활 팁', '990원'],
@@ -134,6 +137,7 @@ const T = {
     faceNone: "Couldn't find a face. Try a front-facing photo in bright light.", faceMany: 'More than one face found. Please use a photo of one person.',
     faceSide: 'Your face is turned. Please face the camera.', faceTilt: 'Your head is tilted. Please hold it upright.', faceFail: 'Analysis failed. Please try again shortly.',
     faceAgain: 'Try another photo', faceToSaju: 'Also read my chart', faceKept: 'Your photo is not saved. It disappears when you leave this screen.',
+    yThis: 'This year', yNext: 'Next year',
     selY: 'Year', selM: 'Month', selD: 'Day', selH: 'Hour', selMi: 'Min',
     shT: 'Share with a friend', again: 'Check my match with someone else', shSend: 'Send match to a friend', shCard: 'Save result card', shPriv: 'The link contains your birth info. Send it only to people you trust.', shCopied: 'Link copied. Paste it to your friend.', shSaved: 'Card saved.', shText: (sc: number, hl: string) => `Yeoui read our match at ${sc}/100 — "${hl}". Check yours with me!`,
     invT: (n: string) => (n ? `${n} sent you a match` : 'A friend sent you a match'), invD: 'Enter your birth date and see your match right away. No sign-up needed.', invGo: 'See our match',
@@ -156,7 +160,7 @@ const T = {
     newTitle: 'New readings',
     newItems: [['NEW', 'Face reading', 'Read your face from one photo', 'Free beta', 'face'], ['NEW', '2027 New Year reading', 'The Ding-Wei year, month by month', 'Coming in December', 'shop'], ['NEW', 'Compatibility', 'Why you click — and where you clash', 'Free beta', 'match']],
     hotTitle: 'Popular now',
-    hotItems: [["Today's fortune", 'Free', 'today'], ['Free chart reading', 'Free', 'solo'], ['Ask about your worry', 'Free beta', 'ask'], ['Compatibility', 'Free beta', 'match'], ['This year, month by month', '₩990', 'shop'], ['Money & career', '₩990', 'shop'], ['Full life report', '₩9,900', 'shop']],
+    hotItems: [["Today's fortune", 'Free', 'today'], ['Free chart reading', 'Free', 'solo'], ['Ask about your worry', 'Free beta', 'ask'], ['Compatibility', 'Free beta', 'match'], ['This year, month by month', 'Free beta', 'year'], ['Money & career', '₩990', 'shop'], ['Full life report', '₩9,900', 'shop']],
     pieceTitle: 'A piece of Saju',
     pieces: ['The five elements are Wood, Fire, Earth, Metal and Water. Having a lot or none is not bad; how you use it shapes you.', 'The Day Master is the heaven character of your birth day. It stands for "you".', 'Luck cycles change about every ten years.'],
     ask: 'Ask',
@@ -208,7 +212,7 @@ const T = {
     shopNote: 'Prices and contents are not final. For now you can only browse.',
     shopItems: [
       ['運', "Today's fortune", 'Your daily flow, every day', 'Free'],
-      ['歲', 'This year', 'Month-by-month openings and rest periods', '₩990'],
+      ['歲', 'This year', 'Month-by-month openings and rest periods', 'Free beta'],
       ['緣', 'Love & compatibility', 'Your relationship style and timing', '₩990'],
       ['財', 'Money & career', 'Work styles that fit you and money flow', '₩990'],
       ['健', 'Health & energy', 'Natural tendencies and lifestyle tips', '₩990'],
@@ -293,6 +297,32 @@ function showToday() {
 
 
 
+let yearSel = 0
+function showYear() {
+  const x = t()
+  const pr = loadProfile()!
+  const out = document.getElementById('out')!
+  const r = resultOf(pr)
+  const a = analyze(r)
+  const y0 = new Date().getFullYear()
+  const v = composeYear(yearLuck(r, a, y0 + yearSel, true), lang)
+  out.innerHTML = `
+  <article class="card yr">
+    <div class="seg small ytabs"><label><input type="radio" name="ysel" value="0" ${yearSel === 0 ? 'checked' : ''}><span>${esc(x.yThis)}</span></label><label><input type="radio" name="ysel" value="1" ${yearSel === 1 ? 'checked' : ''}><span>${esc(x.yNext)}</span></label></div>
+    <h2>${esc(v.title)}</h2>
+    <p class="dbody">${esc(v.summary)}</p>
+  </article>
+  ${v.months.map((m) => `<article class="rcard ym k-${m.kind}${m.isNow ? ' now' : ''}"><div class="yh"><b>${esc(m.range)}</b><span class="yk">${esc(m.label)}</span>${m.isNow ? `<i class="ynow">${esc(v.nowLabel)}</i>` : ''}</div>
+    <p>${esc(m.head)}</p>
+    <div class="chips2">${m.areas.map((ar) => `<span>${esc(ar.label)}</span>`).join('')}</div>
+    <p class="dtip">✦ ${esc(m.tip)}</p></article>`).join('')}
+  <p class="note">${esc(v.note)}</p>
+  <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${x.change}</button></p>`
+  out.querySelectorAll<HTMLInputElement>('input[name=ysel]').forEach((i) => (i.onchange = () => { yearSel = +i.value; showYear() }))
+  document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
+  out.querySelector('.now')?.scrollIntoView({ block: 'center' })
+}
+
 function navHtml(): string {
   const x = t()
   const items: [Mode, string, string][] = [['home', '家', x.home], ['today', '運', x.today], ['ask', '問', x.ask], ['solo', '命', x.solo], ['shop', '籤', x.shop]]
@@ -303,7 +333,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['face', '相', x.faceName], ...x.shopItems.slice(1).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['face', '相', x.faceName], ...x.shopItems.slice(2).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -614,12 +644,12 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
-    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
+    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
   </form>
   <section id="out"></section>`}
   ${navHtml()}
@@ -672,6 +702,7 @@ function bind() {
   document.getElementById('starform')?.addEventListener('submit', onStarSubmit)
   if (mode === 'free') showFree()
   if (mode === 'today' && loadProfile()) showToday()
+  if (mode === 'year' && loadProfile()) showYear()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
 
@@ -709,7 +740,7 @@ function onSubmit(e: Event) {
   const a = readPerson('a', x.me)
   if (typeof a === 'string') { err.textContent = a; return }
   people.push(a)
-  if (mode === 'today' || mode === 'ask') {
+  if (mode === 'today' || mode === 'ask' || mode === 'year') {
     saveProfile(a)
     dayOffset = 0
     render()

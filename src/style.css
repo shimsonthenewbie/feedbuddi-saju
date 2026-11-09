@@ -427,3 +427,14 @@ img.lockic{width:52px;height:52px;border:0;background:none;object-fit:contain;fi
 .dbg{font-size:12px;white-space:pre;overflow:auto;background:var(--inset);padding:10px;border-radius:10px}
 
 .faceact{display:flex;flex-direction:column;gap:10px;margin:6px 0}
+
+/* 올해 달별 흐름 */
+.ytabs{margin-bottom:10px}
+.ym .yh{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
+.ym .yh b{font-size:1.15em}
+.ym .yk{font-size:.92em;padding:2px 10px;border-radius:999px;background:var(--inset);color:var(--ink)}
+.ym.k-event .yk{background:#6a2623;color:#fff}
+.ym.k-mind .yk,.ym.k-work .yk{background:#e9cfc9;color:#5a1d1a}
+.ym.k-chance .yk{background:#d9e6cf;color:#2f4a22}
+.ym.now{outline:2.5px solid #6a2623}
+.ym .ynow{margin-left:auto;font-style:normal;font-size:.8em;background:#6a2623;color:#fff;border-radius:999px;padding:2px 9px}

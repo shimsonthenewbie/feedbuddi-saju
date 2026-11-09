@@ -77,7 +77,13 @@ export interface Luck {
   notes: string[]
   /** 월운일 때 시작 날짜 */
   from?: string
+  /** 이 시기의 성격: 사건이 터지기 쉬움 / 마음이 예민 / 일·책임 압박 / 기회 / 차분 */
+  kind: LuckKind
+  /** 흔들리거나 힘이 실리는 영역(중요한 순, 최대 3개) */
+  areas: AreaKey[]
 }
+export type LuckKind = 'event' | 'mind' | 'work' | 'chance' | 'calm'
+export type AreaKey = 'love' | 'self' | 'work' | 'home' | 'plan' | 'big' | 'money' | 'body' | 'legal' | 'study' | 'start'
 export interface YearLuck extends Luck {
   year: number
   daewoon: { ganzi: string; ageFrom: number; startYear: number; turning: boolean } | null
@@ -243,7 +249,45 @@ function buildLuck(
   // 이성 인연 별 (남성=재성, 여성=관성)
   const loveGroup = r.input.gender === 'M' ? '재성' : '관성'
   if (g1 === loveGroup || g2 === loveGroup) notes.push(`${loveGroup}이 들어와 이성·배우자 인연의 주제가 활성화됨`)
-  return { label, ganzi, stemRole, branchRole, stemSipsin: stemSip, branchSipsin: branchSip, score, tone: toneOf(score), hits, domains, notes }
+  const { kind, areas } = classify(hits, score, [g1, g2])
+  return { label, ganzi, stemRole, branchRole, stemSipsin: stemSip, branchSipsin: branchSip, score, tone: toneOf(score), hits, domains, notes, kind, areas }
+}
+
+const NATAL = ['년주', '월주', '일주', '시주']
+/** 시기의 성격과 영역을 정한다. 사건이 터지는지(충·복음이 월주·일주에 닿음), 마음이 흔들리는지(해·파·원진·귀문·형), 일 압박인지를 가른다. */
+function classify(hits: Hit[], score: number, groups: string[]): { kind: LuckKind; areas: AreaKey[] } {
+  const has = (k: string, pal: string[]) => hits.some((h) => h.kind.startsWith(k) && pal.includes(h.palace))
+  const MJ = ['월주', '일주']
+  const event = has('충', MJ) || has('복음', MJ) || has('천극지충', MJ)
+  const negNatal = hits.filter((h) => NATAL.includes(h.palace) && h.effect < 0).reduce((sum, h) => sum + h.effect, 0)
+  let kind: LuckKind
+  if (event) kind = 'event'
+  else if (score < 1 && negNatal <= -0.2) kind = 'mind'
+  else if (score <= -1) kind = 'work'
+  else if (score >= 1) kind = 'chance'
+  else kind = 'calm'
+
+  const out: AreaKey[] = []
+  const add = (a: AreaKey) => { if (!out.includes(a)) out.push(a) }
+  if (kind === 'chance') {
+    for (const g of groups) add(g === '식상' ? 'start' : g === '관성' ? 'work' : g === '재성' ? 'money' : g === '인성' ? 'study' : 'self')
+    return { kind, areas: out.slice(0, 3) }
+  }
+  const bad = hits.filter((h) => h.effect < 0 || h.kind.startsWith('복음') || h.kind.startsWith('천극'))
+  const rank = (h: Hit) => (h.palace === '일주' ? 0 : h.palace === '월주' ? 1 : h.palace === '시주' ? 2 : h.palace === '년주' ? 3 : 4)
+  for (const h of [...bad].sort((x, y) => rank(x) - rank(y))) {
+    if (out.length >= 2) break
+    if (h.palace === '일주') add(h.target.endsWith('간') ? 'self' : 'love')
+    else if (h.palace === '월주') add('work')
+    else if (h.palace === '년주') add('home')
+    else if (h.palace === '시주') add('plan')
+    else add('big')
+  }
+  // 형(刑)은 옛 풀이에서 다침·송사·문서 문제와 연결해 본다
+  if (hits.some((h) => h.kind.startsWith('형') && h.pair.split('↔')[0] !== h.pair.split('↔')[1])) { add('legal'); add('body') }
+  if (score < 0 && groups.some((g) => g === '비겁' || g === '재성')) add('money')
+  if (score < 0 && groups.includes('관성')) add('work')
+  return { kind, areas: out.slice(0, 4) }
 }
 
 /* ───────── 공개 API ───────── */
