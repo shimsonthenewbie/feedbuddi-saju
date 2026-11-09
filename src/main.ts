@@ -18,7 +18,6 @@ import { measure } from './face/measure'
 import { readFace } from './face/read'
 import { animalOf } from './face/animal'
 import { makeOverlay, drawDots, drawGuide } from './face/draw'
-import { startRing } from './face/loader'
 import { wuxingOf } from './face/wuxing'
 import { momentsOf, EL_NAME, EL_BODY } from './face/moments'
 import { reportData, buildReportRequest, PARTS, type Part, type Tone } from './report-prompt'
@@ -755,14 +754,27 @@ async function onFacePick(file: File) {
   const x = t()
   const err = document.getElementById('faceerr')!, out = document.getElementById('faceout')!
   err.textContent = ''
-  out.innerHTML = '<article class="card scan"><div id="ringhost"></div></article>'
-  const tRing = performance.now()
-  const stopRing = startRing(document.getElementById('ringhost')!, [...x.ringCaps])
+  out.innerHTML = `<article class="card scan"><div class="fphoto"></div><p class="scancap" id="scancap" role="status"></p><i class="scanbar"><b id="scanbar"></b></i></article>`
+  const tScan = performance.now()
+  let capTimer = 0
+  const stopScan = () => clearInterval(capTimer)
   try {
     const cv = await fileToCanvas(file)
+    // 사진 위로 스캔 빛줄기가 오르내린다(사진은 화면에만 쓰고 저장하지 않는다)
+    const ov = makeOverlay(cv)
+    cv.className = 'fcanvas'
+    const wrapEl = document.createElement('div'); wrapEl.className = 'fwrap scanning'
+    const beam = document.createElement('i'); beam.className = 'beam'
+    const brk = document.createElement('i'); brk.className = 'brackets'
+    wrapEl.append(cv, ov, brk, beam)
+    out.querySelector('.fphoto')!.append(wrapEl)
+    out.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    const caps = [...x.ringCaps]; let ci = 0
+    const setCap = () => { document.getElementById('scancap')!.textContent = caps[ci++ % caps.length]; (document.getElementById('scanbar') as HTMLElement).style.width = Math.min(40, ci * 12) + '%' }
+    setCap(); capTimer = window.setInterval(setCap, 1300)
     const found = await Promise.race([findFace(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
-    await new Promise((r) => setTimeout(r, Math.max(0, (/[?&]slow\b/.test(location.search) ? 12000 : 2600) - (performance.now() - tRing))))
-    stopRing()
+    await new Promise((r) => setTimeout(r, Math.max(0, (/[?&]slow\b/.test(location.search) ? 12000 : 2600) - (performance.now() - tScan))))
+    stopScan()
     if (found === 'none') { out.innerHTML = ''; err.textContent = x.faceNone; return }
     if (found === 'many') { out.innerHTML = ''; err.textContent = x.faceMany; return }
     const m = measure(found)
@@ -780,13 +792,7 @@ async function onFacePick(file: File) {
       err.textContent = x.faceAngle(Math.max(yw, m.yaw > 0.14 && yw < 20 ? 21 : 0), pt, rl)
       return
     }
-    // 대기 연출: 점을 하나씩 찍고, 구획선을 긋는다(사진은 화면에만 쓰고 저장하지 않는다)
-    const ov = makeOverlay(cv)
-    cv.className = 'fcanvas'
-    const wrapEl = document.createElement('div'); wrapEl.className = 'fwrap'; wrapEl.append(cv, ov)
-    out.innerHTML = `<article class="card scan"><div class="fphoto"></div><p class="scancap" id="scancap" role="status"></p><i class="scanbar"><b id="scanbar"></b></i></article>`
-    out.querySelector('.fphoto')!.append(wrapEl)
-    out.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    wrapEl.classList.remove('scanning')
     const cap = (txt: string, pct: number) => { document.getElementById('scancap')!.textContent = txt; (document.getElementById('scanbar') as HTMLElement).style.width = pct + '%' }
     cap(x.scan1, 15); await drawDots(ov, found)
     cap(x.scan2, 55); await drawGuide(ov, found, [...x.guideLabels])
@@ -835,7 +841,7 @@ async function onFacePick(file: File) {
     }
     out.scrollIntoView({ behavior: 'smooth', block: 'start' })
   } catch (e) {
-    stopRing()
+    stopScan()
     console.error('face', e)
     out.innerHTML = ''; err.textContent = (e as Error).message === 'timeout' ? x.faceSlow : x.faceFail
   }
