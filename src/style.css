@@ -458,3 +458,5 @@ label:has(> input[name$=city]){position:relative}
 .clist li{padding:11px 12px;border-radius:10px;font-size:15px;cursor:pointer}
 .clist li:active,.clist li:hover{background:#efe6cf}
 .note.warn{border-left:3px solid #6a2623;padding-left:10px;color:#4a1b19}
+.rcard.pk.best{border-left:3px solid #6a2623}
+.rcard.pk.care{border-left:3px solid #a89a76}
