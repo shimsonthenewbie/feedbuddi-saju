@@ -484,3 +484,4 @@ label:has(> input[name$=city]){position:relative}
 .animal p{text-align:left}
 .animal .amate{text-align:center;color:#5f5a4d;font-size:15px}
 .animal .chips2{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:6px 0 10px}
+.exbefore{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}.exbefore>div{display:grid;grid-template-columns:auto auto 1fr;gap:10px;align-items:center;font-size:14px}.exbefore em{font-style:normal;color:#5f5a4d;text-align:right}.exbefore .stars{font-size:13px}

@@ -21,13 +21,14 @@ import { reportData, buildReportRequest, PARTS, type Part, type Tone } from './r
 import { yearLuck } from './myeongri/timing'
 import { composePage } from './i18n/year'
 import { legalDoc, type LegalDoc } from './legal'
+import { composeExam, examText, EXAM_DATE } from './i18n/exam'
 import { pickCalc } from './myeongri/pick'
 import { composePick } from './i18n/pick'
 import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from './share'
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'legal' | 'pick' | 'report' | 'year' | 'face' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'face' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -74,12 +75,12 @@ const T = {
     homeBannerD: '고민을 적으면 좋은 시기까지 짚어 드려요',
     homeBannerB: '질문하기',
     homeBeta: '베타 기간 무료',
-    pickName: '나와 잘 맞는 사주',
+    pickName: '나와 잘 맞는 사주', examName: '시험 날 사주 (수능)',
     quick: [['today', '運', '오늘의 운세'], ['solo', '命', '내 사주'], ['ask', '問', '고민 상담'], ['match', '緣', '궁합'], ['shop', '籤', '풀이 목록']],
     newTitle: '새로 나온 운세',
     newItems: [['NEW', '관상', '사진 한 장으로 얼굴 읽기', '베타 무료', 'face'], ['NEW', '2027 신년운세', '정미년 한 해 흐름을 월별로', '12월 공개 예정', 'shop'], ['NEW', '두 사람의 궁합', '서로 끌리는 이유와 부딪히는 점', '베타 무료', 'match']],
     hotTitle: '지금 많이 보는 운세',
-    hotItems: [['오늘의 운세', '무료', 'today'], ['무료 사주 풀이', '무료', 'solo'], ['고민 상담 (시기 짚기)', '베타 무료', 'ask'], ['사주 궁합', '베타 무료', 'match'], ['올해 흐름 (월별)', '베타 무료', 'year'], ['재물·직업 풀이', '990원', 'shop'], ['종합 풀이 리포트', '9,900원', 'report']],
+    hotItems: [['시험 날 사주 (수능 D-3)', '베타 무료', 'exam'], ['오늘의 운세', '무료', 'today'], ['무료 사주 풀이', '무료', 'solo'], ['고민 상담 (시기 짚기)', '베타 무료', 'ask'], ['사주 궁합', '베타 무료', 'match'], ['올해 흐름 (월별)', '베타 무료', 'year'], ['재물·직업 풀이', '990원', 'shop'], ['종합 풀이 리포트', '9,900원', 'report']],
     pieceTitle: '사주 한 조각',
     pieces: ['오행은 목·화·토·금·수예요. 하나가 많거나 없다고 나쁜 게 아니라 그 기운을 어떻게 쓰는지가 성향을 만들어요.', '일간은 태어난 날의 하늘 글자로, 사주에서 "나"를 뜻해요.', '대운은 약 10년 단위로 바뀌는 큰 흐름이에요.'],
     ask: '상담',
@@ -178,12 +179,12 @@ const T = {
     homeBannerD: 'Write your worry and get the timing pointed out',
     homeBannerB: 'Ask now',
     homeBeta: 'Free during beta',
-    pickName: 'Who suits me',
+    pickName: 'Who suits me', examName: 'Exam-day reading',
     quick: [['today', '運', "Today's fortune"], ['solo', '命', 'My chart'], ['ask', '問', 'Ask'], ['match', '緣', 'Match'], ['shop', '籤', 'Readings']],
     newTitle: 'New readings',
     newItems: [['NEW', 'Face reading', 'Read your face from one photo', 'Free beta', 'face'], ['NEW', '2027 New Year reading', 'The Ding-Wei year, month by month', 'Coming in December', 'shop'], ['NEW', 'Compatibility', 'Why you click — and where you clash', 'Free beta', 'match']],
     hotTitle: 'Popular now',
-    hotItems: [["Today's fortune", 'Free', 'today'], ['Free chart reading', 'Free', 'solo'], ['Ask about your worry', 'Free beta', 'ask'], ['Compatibility', 'Free beta', 'match'], ['This year, month by month', 'Free beta', 'year'], ['Money & career', '₩990', 'shop'], ['Full life report', '₩9,900', 'report']],
+    hotItems: [['Exam-day reading (CSAT)', 'Free beta', 'exam'], ["Today's fortune", 'Free', 'today'], ['Free chart reading', 'Free', 'solo'], ['Ask about your worry', 'Free beta', 'ask'], ['Compatibility', 'Free beta', 'match'], ['This year, month by month', 'Free beta', 'year'], ['Money & career', '₩990', 'shop'], ['Full life report', '₩9,900', 'report']],
     pieceTitle: 'A piece of Saju',
     pieces: ['The five elements are Wood, Fire, Earth, Metal and Water. Having a lot or none is not bad; how you use it shapes you.', 'The Day Master is the heaven character of your birth day. It stands for "you".', 'Luck cycles change about every ten years.'],
     ask: 'Ask',
@@ -447,6 +448,45 @@ function showYear() {
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
 }
 
+let examDate = (() => { const t0 = new Date(); const iso = `${t0.getFullYear()}-${String(t0.getMonth() + 1).padStart(2, '0')}-${String(t0.getDate()).padStart(2, '0')}`; return iso <= EXAM_DATE ? EXAM_DATE : iso })()
+function showExam() {
+  const x = t()
+  const pr = loadProfile()!
+  const out = document.getElementById('out')!
+  const r = resultOf(pr)
+  const a = analyze(r)
+  const [ey, em, ed] = examDate.split('-').map(Number)
+  const day = new Date(ey, em - 1, ed)
+  const t0 = new Date(); const today = new Date(t0.getFullYear(), t0.getMonth(), t0.getDate())
+  const dday = Math.round((day.getTime() - today.getTime()) / 86400000)
+  const f = dailyFortune(r, a, day)
+  const bef = [3, 2, 1].map((n) => dailyFortune(r, a, new Date(ey, em - 1, ed - n)))
+  const v = composeExam(f, bef, dday, lang)
+  const dfmt = (s: string) => { const [yy, mm, dd] = s.split('-').map(Number); return new Date(yy, mm - 1, dd).toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US', { month: 'long', day: 'numeric', weekday: 'short' }) }
+  out.innerHTML = `
+  <article class="card daily">
+    <div class="dnav"><div class="dtitle"><b>${esc(v.title)}</b><span>${esc(v.dday)}</span></div></div>
+    <label class="field"><span>${esc(v.pickDate)}</span><input type="date" id="exdate" value="${esc(examDate)}"></label>
+    <p class="meta">${esc(dfmt(examDate))}${examDate === EXAM_DATE ? ' · ' + esc(v.examName) : ''}</p>
+    <div class="hero"><div class="stars" role="img" aria-label="${v.stars}/5">${starRow(v.stars)}</div><div class="slabel">${esc(v.label)}</div></div>
+    <h2 class="dh">${esc(v.headline)}</h2>
+    <p class="dbody">${esc(v.body)}</p>
+    <p class="dbody">${esc(v.tierLine)}</p>
+    ${v.event ? `<p class="devent">${esc(v.event)}</p>` : ''}
+    <h3>${esc(v.beforeT)}</h3>
+    <div class="exbefore">${v.before.map((b) => `<div><b>${esc(dfmt(b.date))}</b><span class="stars">${starRow(b.stars)}</span><em>${esc(b.line)}</em></div>`).join('')}</div>
+    <h3>${esc(v.luckyT)}</h3>
+    <div class="lucky">${v.lucky.map((i) => `<div><span>${esc(i.label)}</span><b>${esc(i.value)}</b></div>`).join('')}</div>
+    <p class="meta">${esc(v.luckyNote)}</p>
+    <h3>${esc(v.checkT)}</h3>
+    <ul class="tips">${v.check.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>
+    <p class="note">${esc(v.note)}</p>
+  </article>
+  <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${x.change}</button></p>`
+  document.getElementById('exdate')!.onchange = (e) => { const val = (e.target as HTMLInputElement).value; if (val) { examDate = val; showExam() } }
+  document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
+}
+
 function showPick() {
   const x = t()
   const pr = loadProfile()!
@@ -477,7 +517,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -878,12 +918,12 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
-    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
+    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
   </form>
   <section id="out"></section>`}
   ${navHtml()}
@@ -934,6 +974,7 @@ function bind() {
   if (mode === 'year' && loadProfile()) showYear()
   if (mode === 'report' && loadProfile()) showReport()
   if (mode === 'pick' && loadProfile()) showPick()
+  if (mode === 'exam' && loadProfile()) showExam()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
 
@@ -971,7 +1012,7 @@ function onSubmit(e: Event) {
   const a = readPerson('a', x.me)
   if (typeof a === 'string') { err.textContent = a; return }
   people.push(a)
-  if (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick') {
+  if (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam') {
     saveProfile(a)
     dayOffset = 0
     render()
