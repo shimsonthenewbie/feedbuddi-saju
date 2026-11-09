@@ -785,6 +785,9 @@ async function onFacePick(file: File) {
     const momHtml = `<article class="rcard mom"><h3>${esc(mom.title)}</h3><p class="meta">${esc(mom.intro)}</p>${mom.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}</article>`
     out.innerHTML = `<article class="card animal"><div class="aemoji" aria-hidden="true">${an.emoji}</div><h2>${esc(an.name)}${lang === 'ko' ? '상' : ' face'}</h2><p class="atitle">${esc(an.title)}</p>
       <div class="chips2">${an.tags.map((c) => `<span>#${esc(c)}</span>`).join('')}</div>
+      <p>${esc(an.look)}</p>
+      ${an.evidence.length ? `<p class="aevi"><b>${esc(an.similarT)}</b> ${an.evidence.map((e) => esc(e)).join(' · ')}</p>` : ''}
+      ${an.mixed ? `<p class="meta">${esc(an.mixed)}</p>` : ''}
       <p>${esc(an.body)}</p><p>${esc(an.fortuneBody)}</p>
       <p class="amate">${esc(an.mate.label)} ${an.mate.emoji} ${esc(an.mate.name)}</p>
       <div class="row"><button class="go" type="button" id="fshare">${esc(x.faceShare)}</button></div><p class="ok" id="fshok" role="status"></p></article>

@@ -502,3 +502,4 @@ label:has(> input[name$=city]){position:relative}
 .wbars em{font-style:normal;text-align:right;color:#5f5a4d}
 .mom .mrow{display:grid;grid-template-columns:84px 1fr;gap:10px;padding:9px 0;border-top:1px solid #e3d8bb;font-size:15px;line-height:1.55}
 .mom .mrow b{color:#6a2623}
+.animal .aevi{background:#efe6cf;border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.6}.animal .aevi b{color:#6a2623;margin-right:4px}

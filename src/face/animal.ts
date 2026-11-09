@@ -20,6 +20,36 @@ const PROTO: Record<AnimalKey, Partial<Record<K, number>>> = {
   badger: { eyeW: -1, noseLen: 0.6, ratio: 0.3, eyeOpen: -0.6, browLen: 0.3 },
   otter: { ratio: -0.5, eyeW: 0.3, eyeGap: 0.6, mouthW: 0.5, lip: 0.5, noseW: 0.3 },
 }
+/** 동물마다 '이 특징은 꼭 있어야' 하는 조건. 하나라도 안 맞으면 후보에서 뺀다(기준값이 조금 어긋나도 한 동물로 쏠리지 않게). */
+type Gate = [K, '>=' | '<=', number]
+const GATE: Record<AnimalKey, Gate[]> = {
+  dog: [['eyeTilt', '<=', 0.3], ['eyeW', '>=', -0.2]],
+  cat: [['eyeTilt', '>=', 0.5]],
+  fox: [['eyeTilt', '>=', 0.6], ['mouthW', '<=', 0.3]],
+  rabbit: [['eyeW', '>=', 0.2], ['mouthW', '<=', 0.2]],
+  bear: [['ratio', '<=', 0.2], ['jaw', '>=', -0.3]],
+  deer: [['ratio', '>=', 0.2], ['eyeW', '>=', 0.2]],
+  tiger: [['jaw', '>=', 0.4], ['eyeTilt', '>=', 0.2]],
+  badger: [['eyeW', '<=', -0.5], ['noseLen', '>=', 0]],
+  otter: [['ratio', '<=', 0.3], ['mouthW', '>=', -0.2]],
+}
+/** 근거 문장: [키, 방향] → 문장 */
+const EVI = {
+  ko: {
+    'eyeTilt+': '눈꼬리가 위로 올라가 있어요', 'eyeTilt-': '눈꼬리가 살짝 내려가 순해 보여요', 'ratio+': '얼굴이 갸름하고 길어요', 'ratio-': '얼굴이 둥글고 짧은 편이에요',
+    'jaw+': '턱선이 단단하고 또렷해요', 'jaw-': '턱선이 갸름해요', 'eyeW+': '눈이 시원하게 커요', 'eyeW-': '눈이 작고 단정해요', 'mouthW+': '입이 시원하게 커요',
+    'mouthW-': '입이 작고 단정해요', 'lip+': '입술이 도톰해요', 'lip-': '입술이 얇아요', 'noseW+': '코가 풍성해요', 'noseW-': '코가 단정해요', 'noseLen+': '코 구간이 길어요',
+    'eyeGap-': '두 눈이 가까워요', 'eyeGap+': '두 눈 사이가 넓어요', 'browArch-': '눈썹이 곧고 평평해요', 'browArch+': '눈썹이 둥글게 굽어 있어요', 'eyeOpen+': '눈이 동그랗게 열려 있어요',
+    'eyeOpen-': '눈매가 길고 가늘어요', 'browLen+': '눈썹이 길게 뻗어 있어요', 'browGap+': '눈썹과 눈 사이가 넉넉해요',
+  } as Record<string, string>,
+  en: {
+    'eyeTilt+': 'Upturned eye corners', 'eyeTilt-': 'Slightly downturned, gentle eyes', 'ratio+': 'A slim, long face', 'ratio-': 'A round, short face',
+    'jaw+': 'A firm, defined jaw', 'jaw-': 'A slender jaw', 'eyeW+': 'Big open eyes', 'eyeW-': 'Small, neat eyes', 'mouthW+': 'A wide mouth',
+    'mouthW-': 'A small, tidy mouth', 'lip+': 'Full lips', 'lip-': 'Thin lips', 'noseW+': 'A fuller nose', 'noseW-': 'A neat nose', 'noseLen+': 'A long nose zone',
+    'eyeGap-': 'Eyes set close', 'eyeGap+': 'Eyes set wide', 'browArch-': 'Straight, flat brows', 'browArch+': 'Rounded brows', 'eyeOpen+': 'Round, open eyes',
+    'eyeOpen-': 'Long, narrow eyes', 'browLen+': 'Long brows', 'browGap+': 'A roomy brow-to-eye gap',
+  } as Record<string, string>,
+}
 const EMOJI: Record<AnimalKey, string> = { dog: '🐶', cat: '🐱', fox: '🦊', rabbit: '🐰', bear: '🐻', deer: '🦌', tiger: '🐯', badger: '🦡', otter: '🦦' }
 /** 서로 잘 어울리는 짝(재미) */
 const MATE: Record<AnimalKey, AnimalKey> = { dog: 'cat', cat: 'dog', fox: 'bear', bear: 'fox', rabbit: 'tiger', tiger: 'rabbit', deer: 'otter', otter: 'deer', badger: 'badger' }
@@ -42,6 +72,18 @@ const T = {
       badger: '작고 깊은 눈에 곧은 코 선이 집중력을 말해줘요. 겉으로 드러내지 않고도 꾸준히 실속을 챙기는 타입이에요.',
       otter: '넉넉한 눈 간격과 시원한 입매가 밝고 장난기 있는 인상을 줘요. 어디서든 분위기를 살리는 힘이 있어요.',
     },
+    look: {
+      dog: '둥글고 부드러운 윤곽에 눈이 맑고 눈꼬리가 순해요. 처음 보는 사람도 편하게 느끼는 인상이에요.',
+      cat: '눈꼬리가 올라가고 얼굴선이 또렷해요. 눈매에서 도도하고 영리한 느낌이 나요.',
+      fox: '갸름한 얼굴선에 눈꼬리가 올라가고 입이 작아요. 날렵하고 영리해 보이는 인상이에요.',
+      rabbit: '눈이 크고 맑으며 입이 작고 단정해요. 순하고 귀여운 인상이에요.',
+      bear: '얼굴이 둥글고 단단해요. 눈이 작고 코가 풍성해서 푸근하고 듬직한 인상이에요.',
+      deer: '얼굴이 길고 선이 부드러우며 눈이 커요. 맑고 단아한 인상이에요.',
+      tiger: '턱선이 단단하고 눈꼬리가 올라가 있어요. 또렷하고 힘 있는 인상이에요.',
+      badger: '눈이 작고 깊으며 코 선이 곧아요. 차분하고 집중력 있어 보이는 인상이에요.',
+      otter: '얼굴이 둥글고 입이 시원하게 커요. 밝고 장난기 있는 인상이에요.',
+    },
+    similar: '이런 점이 닮았어요', mixed: (a: string) => `${a}의 느낌도 조금 섞여 있어요.`,
     fortune: { lead: '왕이 될 상', care: '대기만성 상', friend: '사랑받는 상', art: '감성 부자 상', wealth: '재물이 모이는 상', noble: '귀인을 부르는 상' },
     fortuneBody: {
       lead: '추진력이 두드러져서 사람들 앞에 서면 빛나는 리더 기질이 보여요.',
@@ -72,6 +114,18 @@ const T = {
       badger: 'Small, deep-set eyes and a straight nose line speak of focus. You build quiet, practical results without fanfare.',
       otter: 'Wide-set eyes and an open mouth give a bright, playful look. You lift the mood wherever you go.',
     },
+    look: {
+      dog: 'Soft round outline, clear eyes and gentle corners. An impression that puts new people at ease.',
+      cat: 'Upturned eyes and crisp face lines. Cool and clever around the eyes.',
+      fox: 'A slim face with upturned eyes and a small mouth. Sleek and clever-looking.',
+      rabbit: 'Big clear eyes and a small tidy mouth. Gentle and cute.',
+      bear: 'A round, solid face with small eyes and a fuller nose. Warm and dependable.',
+      deer: 'A long face with soft lines and big eyes. Clear and graceful.',
+      tiger: 'A firm jaw and upturned eyes. Sharp and strong.',
+      badger: 'Small, deep eyes and a straight nose line. Calm and focused.',
+      otter: 'A round face and a wide mouth. Bright and playful.',
+    },
+    similar: 'What matches', mixed: (a: string) => `A touch of ${a} is mixed in.`,
     fortune: { lead: 'Born to lead', care: 'A late bloomer', friend: 'Loved by many', art: 'Rich in feeling', wealth: 'A wealth-gathering face', noble: 'A magnet for mentors' },
     fortuneBody: {
       lead: 'Drive stands out, and you shine when people look to you.',
@@ -88,19 +142,30 @@ const T = {
 } as const
 
 export interface AnimalOut {
-  key: AnimalKey; emoji: string; name: string; tags: string[]; body: string
+  key: AnimalKey; emoji: string; name: string; tags: string[]; body: string; look: string; similarT: string; evidence: string[]; mixed: string | null
   fortune: string; fortuneBody: string; title: string; mate: { emoji: string; name: string; label: string }; shareText: string
 }
 
 export function animalOf(m: Metrics, axes: { value: number }[], lang: 'ko' | 'en', year = new Date().getFullYear()): AnimalOut {
   const L = T[lang]
-  let best: AnimalKey = 'dog', bs = -Infinity
-  for (const k of Object.keys(PROTO) as AnimalKey[]) {
+  const keys = Object.keys(PROTO) as AnimalKey[]
+  const score = (k: AnimalKey) => {
     const w = PROTO[k], ks = Object.keys(w) as K[]
-    const norm = Math.sqrt(ks.reduce((s, q) => s + (w[q] as number) ** 2, 0))
-    const s = ks.reduce((a, q) => a + (w[q] as number) * z(m, q), 0) / norm
-    if (s > bs) { bs = s; best = k }
+    const norm = Math.sqrt(ks.reduce((q, c) => q + (w[c] as number) ** 2, 0))
+    return ks.reduce((q, c) => q + (w[c] as number) * z(m, c), 0) / norm
   }
+  const passes = (k: AnimalKey) => GATE[k].every(([c, op, v]) => (op === '>=' ? z(m, c) >= v : z(m, c) <= v))
+  const ranked = keys.map((k) => ({ k, s: score(k), ok: passes(k) })).sort((p, q) => q.s - p.s)
+  const okList = ranked.filter((r) => r.ok)
+  const pool = okList.length ? okList : ranked
+  const best = pool[0].k
+  const second = pool[1] && pool[1].s >= pool[0].s * 0.75 ? pool[1].k : null
+  // 근거: 이 동물의 특징 중 이 얼굴에서 실제로 두드러진 것
+  const ev = (Object.keys(PROTO[best]) as K[])
+    .map((c) => ({ c, v: (PROTO[best][c] as number) * z(m, c), dir: (PROTO[best][c] as number) > 0 ? '+' : '-' }))
+    .filter((e) => e.v >= 0.4 && (L === T.ko ? EVI.ko : EVI.en)[`${e.c}${e.dir}`])
+    .sort((p, q) => q.v - p.v).slice(0, 3)
+    .map((e) => (L === T.ko ? EVI.ko : EVI.en)[`${e.c}${e.dir}`])
   // 이름표: 재물(코) > 귀인(긴 눈썹) > 가장 높은 축
   const [drive, sense, social, care] = axes.map((a) => a.value)
   let f: keyof typeof L.fortune
@@ -112,7 +177,7 @@ export function animalOf(m: Metrics, axes: { value: number }[], lang: 'ko' | 'en
   }
   const mk = MATE[best]
   return {
-    key: best, emoji: EMOJI[best], name: L.name[best], tags: [...L.tags[best]], body: L.body[best],
+    key: best, emoji: EMOJI[best], name: L.name[best], tags: [...L.tags[best]], body: L.body[best], look: L.look[best], similarT: L.similar, evidence: ev, mixed: second ? L.mixed(L.name[second]) : null,
     fortune: L.fortune[f], fortuneBody: L.fortuneBody[f], title: L.title(year, L.fortune[f]),
     mate: { emoji: EMOJI[mk], name: L.name[mk], label: L.mate }, shareText: L.share(L.name[best], L.fortune[f]),
   }
