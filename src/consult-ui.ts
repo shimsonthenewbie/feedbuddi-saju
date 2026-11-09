@@ -86,7 +86,8 @@ export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
     ${cards.map((c, idx) => `<article class="rcard ${c.kind}${idx === 0 ? ' lead' : ''}"><h3><span class="ri">${ICON[c.kind]}</span>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}${c.list ? `<ul>${c.list.map((l) => (l.startsWith('#') ? `<li class="lh">${esc(l.slice(1))}</li>` : `<li>${esc(l)}</li>`)).join('')}</ul>` : ''}</article>`).join('')}
     <article class="card fit"><h3>${esc(t.ui.fit)}</h3><div class="row"><button class="chip" data-f="y" type="button">${esc(t.ui.fitYes)}</button><button class="chip" data-f="n" type="button">${esc(t.ui.fitNo)}</button></div><p class="ok" id="thx" role="status"></p></article>
     <p class="note demo">${esc(t.ui.demo)}</p>
-    <p class="note">${esc(t.ui.disclaimer)}</p>
+    ${cat === 'money' ? `<p class="note warn"><b>${esc(t.ui.moneyWarn)}</b></p>` : ''}
+    <p class="note">${esc(t.ui.disclaimer)} ${esc(t.ui.school)}</p>
     <button class="go ghost" id="again" type="button">${esc(t.ui.again)}</button>`
     box.querySelectorAll<HTMLButtonElement>('[data-f]').forEach((b) => (b.onclick = () => { box.querySelector('#thx')!.textContent = t.ui.thanks }))
     box.querySelector<HTMLButtonElement>('#again')!.onclick = () => { cat = null; q = ''; date = ''; form() }
