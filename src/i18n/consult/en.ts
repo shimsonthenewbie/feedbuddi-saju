@@ -18,6 +18,7 @@ export const en: ConsultText = {
     lead: 'In the {ganzi} month,',
     stem: 'the energy of {stemMean} ({stemSip}) and',
     branch: 'the energy of {branchMean} ({branchSip}) arrive together.',
+    same: 'the energy of {stemMean} ({stemSip}) comes in doubled.',
     clash: ' It also has {kinds} with your chart, so plans may shift. Leave some slack.',
     harmony: ' It also pulls toward your chart, so people and tasks fit together.',
     year: '{year} is a {yg} year.',

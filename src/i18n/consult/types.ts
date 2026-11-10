@@ -5,7 +5,7 @@ export interface ConsultText {
   /** 핵심 답 제목: {when} 자리에 "2027년 4월" 같은 시기 */
   headline: Record<AskCat, string[]>
   answerBody: { best: string[]; flat: string[] }
-  why: { lead: string; stem: string; branch: string; clash: string; harmony: string; year: string }
+  why: { lead: string; stem: string; branch: string; same: string; clash: string; harmony: string; year: string }
   you: { strong: string; weak: string; mid: string; yongsin: string; el: Record<string, string> }
   timeline: { title: string; best: string; care: string; none: string; month: string }
   event: { title: string; best: string; mid: string; care: string }

@@ -55,8 +55,10 @@ export function composeConsult(c: ConsultCalc, a: Analysis, lang: string, seed: 
     const clashes = main.hitKinds.filter((k) => /^(충|형|해|파)/.test(k))
     const harm = main.hitKinds.some((k) => k.startsWith('합'))
     const name = lang === 'ko' ? ganziKo(g) : g
-    let p = fill(t.why.lead, { ganziKo: name, ganzi: g }) + ' ' + fill(t.why.stem, { stemMean: t.sipsin[main.stemSip], stemSip: main.stemSip }) + ' ' + fill(t.why.branch, { branchMean: t.sipsin[main.branchSip], branchSip: main.branchSip })
-    if (clashes.length) p += fill(t.why.clash, { kinds: Array.from(new Set(clashes.map(kindLabel))).join(lang === 'ko' ? ', ' : ' and ') })
+    let p = fill(t.why.lead, { ganziKo: name, ganzi: g }) + ' ' + (main.stemSip === main.branchSip
+      ? fill(t.why.same, { stemMean: t.sipsin[main.stemSip], stemSip: main.stemSip })
+      : fill(t.why.stem, { stemMean: t.sipsin[main.stemSip], stemSip: main.stemSip }) + ' ' + fill(t.why.branch, { branchMean: t.sipsin[main.branchSip], branchSip: main.branchSip }))
+    if (clashes.length) p += fill(t.why.clash, { kinds: kindLabel(['충', '형', '해', '파'].find((k) => clashes.some((c) => c.startsWith(k))) ?? clashes[0]) })
     else if (harm) p += t.why.harmony
     const y = main.year
     const yg = c.yearGanzi[y]
