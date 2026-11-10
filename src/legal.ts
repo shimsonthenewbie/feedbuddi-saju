@@ -21,7 +21,7 @@ const ko: Record<LegalDoc, Doc> = {
   terms: {
     title: '이용약관', date: '시행일: 2026년 11월 9일',
     secs: [
-      { h: '1. 서비스의 성격', p: ['피드버디 사주는 전통 명리학(자평명리 기준)의 이론으로 계산한 결과를 보여 주는 재미·참고용 서비스예요. 사건을 확정하는 예언이 아니에요. 유파에 따라 해석이 다를 수 있어요.'] },
+      { h: '1. 서비스의 성격', p: ['용용신점는 전통 명리학(자평명리 기준)의 이론으로 계산한 결과를 보여 주는 재미·참고용 서비스예요. 사건을 확정하는 예언이 아니에요. 유파에 따라 해석이 다를 수 있어요.'] },
       { h: '2. 중요한 결정', p: ['풀이는 의학·법률·투자 조언이 아니에요. 건강, 법률, 투자와 금전 결정은 스스로 판단해야 하고, 무리한 주식·코인 투자나 빚을 내는 투자는 권하지 않아요.'] },
       { h: '3. 관상(얼굴 사진)', p: ['관상은 얼굴 비율로 보는 재미용 경향 풀이예요. 사람의 능력·성격·가치를 단정하지 않고, 외모를 평가하는 용도가 아니에요.', '본인 사진이거나, 사진 속 사람의 허락을 받은 사진만 올려 주세요. 허락 없이 다른 사람 사진을 올리면 안 돼요. 만 14세 미만은 보호자 동의 없이 사진을 올릴 수 없어요.'] },
       { h: '4. 이용 방법', p: ['서비스를 자동화 수단으로 대량 호출하거나, 질문권을 사고팔거나, 서비스를 방해하는 행위는 할 수 없어요.'] },
@@ -48,7 +48,7 @@ const en: Record<LegalDoc, Doc> = {
   terms: {
     title: 'Terms of use', date: 'Effective: 9 Nov 2026',
     secs: [
-      { h: '1. Nature of the service', p: ['Feedbuddi Saju shows results calculated from traditional Korean saju theory (Ziping school) for fun and reference. It does not predict fixed events. Schools may interpret differently.'] },
+      { h: '1. Nature of the service', p: ['Yongyong Sinjeom shows results calculated from traditional Korean saju theory (Ziping school) for fun and reference. It does not predict fixed events. Schools may interpret differently.'] },
       { h: '2. Important decisions', p: ['Readings are not medical, legal or investment advice. Health, legal and money decisions are yours. We do not recommend reckless stock or crypto bets or investing with borrowed money.'] },
       { h: '3. Face reading (photos)', p: ['Face reading is a for-fun tendency reading from face proportions. It does not judge ability, character or worth, and is not an appearance rating.', 'Upload only your own photo, or one the person has allowed you to use. Do not upload others\' photos without permission. Under 14 needs a guardian\'s consent.'] },
       { h: '4. Use', p: ['Do not bulk-call the service with automation, trade tickets, or interfere with the service.'] },

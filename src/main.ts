@@ -44,8 +44,8 @@ const EL_EMOJI: Record<El, string> = { tree: '木', fire: '火', earth: '土', m
 
 const T = {
   ko: {
-    title: '피드버디 사주',
-    sub: '생년월일만 넣으면 오늘의 운세와\n고민 상담까지 바로 받아볼 수 있어요',
+    title: '용용신점',
+    sub: '용하디 용한 신점, 용용이가 봐 드려요\n생년월일만 넣으면 오늘의 운세와 고민 상담까지',
     today: '오늘',
     home: '홈',
     freeTitle: '무료 사주 맛보기',
@@ -55,7 +55,7 @@ const T = {
     wuTitle: '오행 얼굴형', wuMix: (e: string) => `${e}의 성향이 함께 섞여 있어요. 한 가지 색으로만 설명되지 않는 얼굴이에요.`,
     faceShare: '내 관상 카드 공유하기', faceShared: '카드 이미지를 저장했어요. 친구에게 보내 보세요.',
     faceConsentT: '사진을 올리기 전에 확인해 주세요', faceAll: '아래 내용에 모두 동의해요', faceSlow: '분석이 오래 걸려요. 인터넷 연결을 확인하고 다시 시도해 주세요.', faceC1: '사진은 이 기기 안에서만 분석하고, 서버로 보내거나 저장하지 않는다는 점을 확인했어요.', faceC2: '내 사진이거나, 사진 속 사람의 허락을 받은 사진이에요. (만 14세 미만은 보호자 동의가 필요해요)', faceC3: '관상은 재미로 보는 경향 풀이이고, 성격·능력을 단정하지 않는다는 점을 알아요.', faceOk: '동의하고 사진 고르기', faceNo: '취소', legalPrivacy: '개인정보 처리방침', legalTerms: '이용약관', legalBack: '돌아가기',
-    faceCam: '카메라로 찍기', faceAlbum: '앨범에서 고르기', faceBusy: '여의가 얼굴을 살펴보는 중…',
+    faceCam: '카메라로 찍기', faceAlbum: '앨범에서 고르기', faceBusy: '용용이가 얼굴을 살펴보는 중…',
     faceNone: '얼굴을 찾지 못했어요. 밝은 곳에서 정면으로 다시 찍어 주세요.', faceMany: '얼굴이 여러 개 보여요. 한 사람만 나오게 찍어 주세요.',
     faceSide: '얼굴이 옆으로 돌아가 있어요. 정면을 보고 다시 찍어 주세요.', faceTilt: '고개가 많이 기울었어요. 바르게 세우고 다시 찍어 주세요.', faceAngle: (yw: number, pt: number, rl: number) => `정면을 바라보는 사진을 올려 주세요. (얼굴이 좌우 ${yw}°, 상하 ${pt}°, 기울기 ${rl}° 만큼 벗어나 있어요)`, ringCaps: ['얼굴을 분석하고 있어요…', '인상 특징을 읽고 있어요…', '성향을 해석하고 있어요…', '리포트를 작성하고 있어요…'], faceFail: '분석에 실패했어요. 잠시 뒤 다시 시도해 주세요.',
     faceAgain: '다른 사진으로 다시 보기', faceToSaju: '사주도 같이 보기', faceKept: '사진은 저장되지 않아요. 이 화면을 닫으면 사라져요.',
@@ -67,19 +67,19 @@ const T = {
     rpNote: '리포트는 사주 구조로 계산한 경향이에요. 건강·사건은 확정이 아니고, 재미와 참고로 봐 주세요. 중요한 결정은 스스로 판단해 주세요.',
     yThis: '올해', yNext: '내년',
     selY: '연도', selM: '월', selD: '일', selH: '시', selMi: '분',
-    shT: '친구와 나누기', again: '나도 다른 사람과 궁합 보기', shSend: '친구에게 궁합 보내기', shCard: '결과 카드 저장', shPriv: '링크에는 내 생년월일이 들어 있어요. 믿는 사람에게만 보내세요.', shCopied: '링크를 복사했어요. 친구에게 붙여 넣어 보내세요.', shSaved: '카드를 저장했어요.', shText: (sc: number, hl: string) => `여의가 본 우리 궁합은 ${sc}점, "${hl}"! 너랑도 궁합 볼래?`,
+    shT: '친구와 나누기', again: '나도 다른 사람과 궁합 보기', shSend: '친구에게 궁합 보내기', shCard: '결과 카드 저장', shPriv: '링크에는 내 생년월일이 들어 있어요. 믿는 사람에게만 보내세요.', shCopied: '링크를 복사했어요. 친구에게 붙여 넣어 보내세요.', shSaved: '카드를 저장했어요.', shText: (sc: number, hl: string) => `용용이가 본 우리 궁합은 ${sc}점, "${hl}"! 너랑도 궁합 볼래?`,
     invT: (n: string) => (n ? `${n}님이 궁합을 보내왔어요` : '친구가 궁합을 보내왔어요'), invD: '내 생년월일만 넣으면 둘의 궁합을 바로 볼 수 있어요. 가입은 필요 없어요.', invGo: '우리 궁합 보기',
     starTag: '해외 인기', starT: '해외에선 이렇게 봐요', starD: '서양 별자리로 보는 내 성격. 생일만 넣으면 태양·달·상승 별자리를 풀어 드려요.', starCta: '별자리 맛보기',
     starPageT: '별자리 맛보기', starPageD: '생일만 넣으면 돼요. 해외에서 가장 많이 보는 방식이에요.', starGo: '별자리 보기', starMore: '내 사주도 보기',
     introT: '', introD: '', introL: [] as string[], introCta: '',
-    freeSub: '이름도 가입도 필요 없어요. 생일만 알려주면 여의가 슬쩍 봐 줄게요!',
+    freeSub: '이름도 가입도 필요 없어요. 생일만 알려주면 용용이가 슬쩍 봐 줄게요!',
     freeGo: '무료 사주 보기',
     freeBack: '다시 입력',
     todayLockT: '오늘의 운세',
     todayLockD: '로그인하면 매일 열려요',
     todayLockB: '베타 체험으로 열기',
     svcTitle: '모든 운세 보기',
-    homeBannerT: '여의에게 물어보기',
+    homeBannerT: '용용이에게 물어보기',
     homeBannerD: '고민을 적으면 좋은 시기까지 짚어 드려요',
     homeBannerB: '질문하기',
     homeBeta: '베타 기간 무료',
@@ -149,8 +149,8 @@ const T = {
     shared: '궁합',
   },
   en: {
-    title: 'Feedbuddi Saju',
-    sub: 'Enter your birth date to get today\'s fortune\nand ask about what is on your mind',
+    title: 'Yongyong Sinjeom',
+    sub: 'Fortune-telling so sharp it is uncanny\nEnter your birth date for today\'s fortune and advice',
     today: 'Today',
     home: 'Home',
     freeTitle: 'Free Saju taste',
@@ -941,9 +941,9 @@ async function onFacePick(file: File) {
       const url = location.origin + location.pathname + '#face'
       try {
         const blob = await makeFaceCard({ emoji: an.emoji, animal: an.name + (lang === 'ko' ? '상' : ' face'), title: an.title, tags: an.tags, axes: r.axes, brand: x.title, foot: 'feedbuddi.com', mate: `${an.mate.label} ${an.mate.emoji} ${an.mate.name}` })
-        const file = new File([blob], 'feedbuddi-face.png', { type: 'image/png' })
+        const file = new File([blob], 'yongyong-face.png', { type: 'image/png' })
         if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: x.title, text: `${an.shareText}\n${url}` }); return }
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'feedbuddi-face.png'; document.body.append(a); a.click(); a.remove()
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'yongyong-face.png'; document.body.append(a); a.click(); a.remove()
         try { await navigator.clipboard.writeText(`${an.shareText}\n${url}`) } catch { /* 복사 불가 */ }
         ok.textContent = x.faceShared
       } catch (e) {
@@ -1319,9 +1319,9 @@ function bindShare() {
   card.onclick = async () => {
     try {
       const blob = await makeCard({ score: m.score, headline: m.headline, axes: m.axes, brand: x.title, foot: 'feedbuddi.com' })
-      const file = new File([blob], 'feedbuddi-match.png', { type: 'image/png' })
+      const file = new File([blob], 'yongyong-match.png', { type: 'image/png' })
       if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: x.title }); return }
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'feedbuddi-match.png'; document.body.append(a); a.click(); a.remove()
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'yongyong-match.png'; document.body.append(a); a.click(); a.remove()
       ok.textContent = x.shSaved
     } catch (e) { if ((e as Error).name !== 'AbortError') ok.textContent = '' }
   }

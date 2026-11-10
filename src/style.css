@@ -363,7 +363,7 @@ input[type=date],input[type=time],input[type=text],textarea{border-radius:16px;p
 .rcard.score h3{justify-content:center}
 details.charts{margin:0 0 14px}
 
-/* 여의 이미지 */
+/* 용용이 이미지 */
 .hero{padding-top:8px}
 .dmascot{display:block;margin:0 auto 4px;width:150px;height:auto;max-height:170px;object-fit:contain;filter:drop-shadow(0 4px 6px rgba(30,28,25,.25))}
 .mascot{width:104px;height:auto}
