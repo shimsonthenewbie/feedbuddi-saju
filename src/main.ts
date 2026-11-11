@@ -1,3 +1,4 @@
+import { aiConsentHtml, aiConsentOk } from './ai-consent'
 import './style.css'
 import { calculateSaju } from '@orrery/core/saju'
 import { SEOUL, filterCities, formatCityName, type City } from '@orrery/core/cities'
@@ -357,6 +358,7 @@ function showReport() {
     <div class="freehead"><div><h2>${esc(x.rpT)}</h2><p class="meta">${esc(x.rpD)}</p></div><img class="fmascot" src="${art('dragon-cheer')}" alt="" width="92" height="92"></div>
     <div class="chips2">${x.rpList.map((v: string) => `<span>${esc(v)}</span>`).join('')}</div>
     <div class="row between"><span>${esc(x.rpTone)}</span><div class="seg small"><label><input type="radio" name="rpt" value="pro" ${rpTone === 'pro' ? 'checked' : ''}><span>${esc(x.rpPro)}</span></label><label><input type="radio" name="rpt" value="warm" ${rpTone === 'warm' ? 'checked' : ''}><span>${esc(x.rpWarm)}</span></label></div></div>
+    ${rpTicket() ? aiConsentHtml(lang, false) : ''}
     <button class="go" type="button" id="rpmake">${esc(x.rpMake)}</button>
     <p class="note" id="rpmsg" role="status">${rpTicket() ? '' : esc(x.rpNoTicket)}</p>
   </article>
@@ -386,6 +388,7 @@ function showReport() {
   document.getElementById('rpmake')!.onclick = async () => {
     const tk = rpTicket()
     if (!tk) { msg.textContent = x.rpNoTicket; return }
+    if (!aiConsentOk(out)) { msg.textContent = lang === 'ko' ? 'AI 풀이를 쓰려면 위의 두 칸을 체크해 주세요.' : 'Tick both boxes above to use the AI report.'; return }
     const btn = document.getElementById('rpmake') as HTMLButtonElement
     btn.disabled = true; msg.textContent = x.rpBusy(1); box.innerHTML = ''
     let got = 0, failed = false

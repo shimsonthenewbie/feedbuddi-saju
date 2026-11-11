@@ -522,3 +522,7 @@ label:has(> input[name$=city]){position:relative}
 .camview video{width:100%;transform:scaleX(-1)}
 .camguide{position:absolute;left:50%;top:50%;width:46%;aspect-ratio:3/4;transform:translate(-50%,-50%);border:3px dashed rgba(255,255,255,.8);border-radius:50%}
 .camsheet{padding:16px 16px 0}
+.aiconsent{border:1px dashed var(--tan,#d2b574);border-radius:4px;padding:10px 12px;margin:12px 0;background:rgba(210,181,116,.12)}
+.aiconsent h3{margin:0 0 4px;font-size:15px}
+.aiconsent .chk{padding-bottom:6px}
+.ac-sens[hidden]{display:none}

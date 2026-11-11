@@ -3,6 +3,7 @@ import { analyze, analysisText } from './myeongri'
 import { art, catArt } from './art'
 import { ASK_CATS, consultCalc, type AskCat } from './myeongri/consult'
 import { composeConsult, consultPool } from './i18n/consult'
+import { aiConsentHtml, aiConsentOk, looksSensitive, showSensitive } from './ai-consent'
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
 const ICON: Record<string, string> = { now: '今', answer: '✦', why: '據', you: '我', timeline: '時', event: '日', do: '行', care: '慎', close: '語' }
@@ -14,6 +15,7 @@ export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
   let cat: AskCat | null = null
   let q = ''
   let date = ''
+  let aiOk = false
 
   const form = () => {
     box.innerHTML = `
@@ -28,10 +30,15 @@ export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
       <label for="d">${esc(t.ui.dTitle)}</label>
       <input type="date" id="d" value="${esc(date)}">
       <p class="note">${esc(t.ui.dHint)}</p>
+      ${ticket() ? aiConsentHtml(lang, true) : ''}
       <button class="go" id="go" type="button">${esc(t.ui.go)}</button>
     </section>`
     const go = box.querySelector<HTMLButtonElement>('#go')!
-    const sync = () => { go.disabled = !(cat && q.trim().length >= 2) }
+    const sync = () => {
+      const bad = !!ticket() && aiConsentOk(box) && looksSensitive(q)
+      showSensitive(box, bad)
+      go.disabled = !(cat && q.trim().length >= 2) || bad
+    }
     sync()
     box.querySelectorAll<HTMLButtonElement>('.chip').forEach((b) => (b.onclick = () => {
       cat = b.dataset.k as AskCat
@@ -40,6 +47,7 @@ export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
     }))
     const ta = box.querySelector<HTMLTextAreaElement>('#q')!
     ta.oninput = () => { q = ta.value; box.querySelector('#cnt')!.textContent = String(q.length); sync() }
+    box.querySelectorAll<HTMLInputElement>('.aiconsent input').forEach((i) => (i.onchange = () => { aiOk = aiConsentOk(box); sync() }))
     box.querySelector<HTMLInputElement>('#d')!.onchange = (e) => { date = (e.target as HTMLInputElement).value }
     go.onclick = loading
   }
@@ -65,6 +73,8 @@ export function mountAsk(box: HTMLElement, lang: string, r: SajuResult) {
     let seed = 0
     for (const ch of q + date + cat) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0
     const draft = composeConsult(calc, a, lang, seed)
+    // 질문권이 없거나 확인란에 체크하지 않으면 서버로 아무것도 보내지 않고 기본 풀이만 보여 준다.
+    if (!ticket() || !aiOk || looksSensitive(q)) return draft
     try {
       const res = await fetch('/api/ask', {
         method: 'POST', headers: { 'content-type': 'application/json', ...(ticket() ? { authorization: `Bearer ${ticket()}` } : {}) },

@@ -199,7 +199,7 @@ function render(p) {
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" href="/favicon-96.png" sizes="96x96">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Serif+KR:wght@600;700&display=swap">
+<link rel="stylesheet" href="/fonts/fonts.css">
 <style>${CSS}</style>
 <script type="application/ld+json">${JSON.stringify(crumbs)}</script>
 ${faqLd ? `<script type="application/ld+json">${JSON.stringify(faqLd)}</script>` : ''}
@@ -215,7 +215,7 @@ ${p.faq.length ? `<section><h2>자주 묻는 질문</h2>${p.faq.map(([q, a]) => 
 <a class="cta" href="${p.cta[1]}">${esc(p.cta[0])}</a>
 ${nav(p.slug)}
 </main>
-<footer><small>풀이는 재미와 참고를 위한 경향이며 의학·법률·투자 등 중요한 결정을 대신하지 않아요.</small><small><a href="/">${SITE}</a> · 문의 ${CONTACT}</small></footer>
+<footer><small>풀이는 재미와 참고를 위한 경향이며 의학·법률·투자 등 중요한 결정을 대신하지 않아요.</small><small><a href="/">${SITE}</a> · 문의 ${CONTACT} · <a href="https://github.com/shimsonthenewbie/feedbuddi-saju" rel="noopener">소스 코드 (AGPL-3.0)</a></small></footer>
 </body>
 </html>
 `

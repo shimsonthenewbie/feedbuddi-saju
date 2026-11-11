@@ -2,3 +2,5 @@ node_modules
 dist
 .check/
 public/mediapipe/
+
+public/fonts/
