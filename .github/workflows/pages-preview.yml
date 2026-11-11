@@ -26,7 +26,9 @@ jobs:
         env:
           BASE: /feedbuddi-saju/
       - name: 검색에 잡히지 않게(시험용)
-        run: printf 'User-agent: *\nDisallow: /\n' > dist/robots.txt
+        run: |
+          printf 'User-agent: *\nDisallow: /\n' > dist/robots.txt
+          printf '<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>' > dist/sitemap.xml
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: dist }
