@@ -13,7 +13,7 @@ button{background:var(--wine);color:#fbf4e3;border:0;cursor:pointer}button.s{bac
 tr.soon td{background:#f3d9b0}.mute{color:var(--mute);font-size:13px}code{font-size:12px}
 </style></head><body><main>
 <h1>용용사주 관리</h1>
-<div class="box"><label>관리 비밀번호 <input id="tok" type="password" autocomplete="off" size="28"></label> <button id="go" type="button">불러오기</button>
+<div class="box"><label>관리 비밀번호 <input id="tok" type="password" autocomplete="off" size="28"></label> <button id="eye" type="button" class="s" aria-pressed="false" aria-label="비밀번호 보기">👁 보기</button> <button id="go" type="button">불러오기</button>
 <p class="mute">비밀번호는 이 화면을 닫으면 사라지고, 어디에도 저장되지 않아요.</p></div>
 <p id="msg" role="status"></p>
 <h2>요약</h2><div class="sum" id="sum"></div>
@@ -52,6 +52,8 @@ function load(){
   if(!r.rows.length)$('msg').textContent=($('msg').textContent+' 표시할 질문권이 없어요.').trim();
  }).catch(function(e){$('msg').textContent=e.message||'불러오지 못했어요.'})
 }
+$('eye').onclick=function(){var h=$('tok').type==='password';$('tok').type=h?'text':'password';this.textContent=h?'🙈 숨기기':'👁 보기';this.setAttribute('aria-pressed',h)};
+$('tok').onkeydown=function(e){if(e.key==='Enter')load()};
 $('go').onclick=load;$('view').onchange=load;$('sort').onchange=load;
 $('grant').onclick=function(){
  api('grant',{owner:$('go-owner').value,count:+$('go-n').value,kind:$('go-kind').value,reason:$('go-reason').value}).then(function(r){
