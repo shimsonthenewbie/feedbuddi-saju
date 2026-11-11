@@ -2,7 +2,7 @@
 export type LegalDoc = 'privacy' | 'terms'
 interface Sec { h: string; p: string[] }
 interface Doc { title: string; date: string; secs: Sec[] }
-const REPO = 'https://github.com/shimsonthenewbie/feedbuddi-saju/issues'
+const REPO = 'followonder99@gmail.com'
 
 const ko: Record<LegalDoc, Doc> = {
   privacy: {
