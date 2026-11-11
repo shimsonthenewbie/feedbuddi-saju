@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>용용사주 관리</title>
+<style>
+:root{--bg:#f6ecd6;--card:#fbf4e3;--fg:#2a2118;--mute:#6b5a45;--line:#d9c79b;--wine:#6a2623;--warn:#8a4b12}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 system-ui,sans-serif;padding:16px}
+main{max-width:900px;margin:0 auto}h1{color:var(--wine);font-size:22px}h2{font-size:17px;margin:22px 0 6px;border-bottom:2px solid var(--wine)}
+.box{background:var(--card);border:1px solid var(--line);padding:10px 14px;margin:8px 0}
+input,select,button{font:inherit;padding:7px 10px;border:1px solid var(--line);background:#fff;color:var(--fg)}
+button{background:var(--wine);color:#fbf4e3;border:0;cursor:pointer}button.s{background:#fff;color:var(--wine);border:1px solid var(--wine);padding:3px 8px}
+.sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}.sum div{background:var(--card);border:1px solid var(--line);padding:8px;text-align:center}.sum b{display:block;font-size:22px}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid var(--line);padding:5px 8px;text-align:left;white-space:nowrap}th{background:var(--card)}
+tr.soon td{background:#f3d9b0}.mute{color:var(--mute);font-size:13px}code{font-size:12px}
+</style></head><body><main>
+<h1>용용사주 관리</h1>
+<div class="box"><label>관리 비밀번호 <input id="tok" type="password" autocomplete="off" size="28"></label> <button id="go" type="button">불러오기</button>
+<p class="mute">비밀번호는 이 화면을 닫으면 사라지고, 어디에도 저장되지 않아요.</p></div>
+<p id="msg" role="status"></p>
+<h2>요약</h2><div class="sum" id="sum"></div>
+<h2>질문권 목록</h2>
+<div class="box">
+ <label>보기 <select id="view"><option value="all">전체</option><option value="unused">안 쓴 것</option><option value="soon">만료 임박(7일 이내)</option><option value="used">사용함</option><option value="expired">만료됨</option><option value="revoked">회수됨</option></select></label>
+ <label>정렬 <select id="sort"><option value="new">최신순(생성일)</option><option value="expiring">만료 임박순</option></select></label>
+</div>
+<div class="tw"><table><thead><tr><th>번호</th><th>발급 대상</th><th>생성일</th><th>만료일</th><th>잔여</th><th>상태</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+<p class="mute">번호는 앞 8자리만 보여요. 안 쓴 질문권만 회수할 수 있어요. 1년이 지난 기록은 매일 새벽 자동으로 지워져요.</p>
+<h2>질문권 지급</h2>
+<div class="box"><input id="go-owner" placeholder="받는 사람(식별자)"> <input id="go-n" type="number" min="1" max="20" value="1" style="width:70px">
+<select id="go-kind"><option value="compensation">보상</option><option value="event">이벤트</option><option value="test">테스트</option></select>
+<input id="go-reason" placeholder="이유" size="24"> <button id="grant" type="button">지급</button><p id="gout" class="mute"></p></div>
+<script>
+var $=function(i){return document.getElementById(i)},ST={unused:'안 씀',used:'사용함',expired:'만료',revoked:'회수'};
+function d(t){var x=new Date(t+9*36e5);return x.toISOString().slice(0,10)}
+function api(p,b){return fetch('/api/admin/'+p,{method:'POST',headers:{'content-type':'application/json','x-admin-token':$('tok').value},body:JSON.stringify(b||{})}).then(function(r){if(r.status===403)throw new Error('비밀번호가 맞지 않아요.');return r.json()})}
+function cell(tr,t){var td=document.createElement('td');td.textContent=t;tr.appendChild(td);return td}
+function load(){
+ $('msg').textContent='불러오는 중…';
+ api('summary').then(function(s){
+  var L=[['전체',s.total],['안 쓴 것',s.unused],['7일 내 만료',s.soon],['사용함',s.used],['만료됨',s.expired],['회수됨',s.revoked],['오늘 AI 풀이',s.aiToday]];
+  $('sum').textContent='';L.forEach(function(a){var e=document.createElement('div'),b=document.createElement('b');b.textContent=a[1];e.appendChild(b);e.appendChild(document.createTextNode(a[0]));$('sum').appendChild(e)});
+  $('msg').textContent=s.soon>0?'⚠ 7일 안에 만료되는 질문권이 '+s.soon+'장 있어요.':'';
+  return api('tickets',{view:$('view').value,sort:$('sort').value})
+ }).then(function(r){
+  var tb=$('rows');tb.textContent='';
+  r.rows.forEach(function(x){var tr=document.createElement('tr');
+   if(x.status==='unused'&&x.remainDays<=7)tr.className='soon';
+   cell(tr,x.id.slice(0,8));cell(tr,x.owner);cell(tr,d(x.createdAt));cell(tr,d(x.expiresAt));
+   cell(tr,x.remainDays==null?'-':x.remainDays+'일');cell(tr,ST[x.status]||x.status);
+   var td=cell(tr,'');if(x.status==='unused'){var b=document.createElement('button');b.className='s';b.textContent='회수';
+    b.onclick=function(){if(confirm('이 질문권을 회수할까요? 되돌릴 수 없어요.'))api('revoke',{id:x.id}).then(load)};td.appendChild(b)}
+   tb.appendChild(tr)});
+  if(!r.rows.length)$('msg').textContent=($('msg').textContent+' 표시할 질문권이 없어요.').trim();
+ }).catch(function(e){$('msg').textContent=e.message||'불러오지 못했어요.'})
+}
+$('go').onclick=load;$('view').onchange=load;$('sort').onchange=load;
+$('grant').onclick=function(){
+ api('grant',{owner:$('go-owner').value,count:+$('go-n').value,kind:$('go-kind').value,reason:$('go-reason').value}).then(function(r){
+  $('gout').textContent=r.ok?'지급했어요. 질문권 번호(한 번만 보여요): '+r.tickets.join(', '):'지급하지 못했어요. 입력을 확인해 주세요.';if(r.ok)load()}).catch(function(e){$('gout').textContent=e.message})
+};
+</script></main></body></html>

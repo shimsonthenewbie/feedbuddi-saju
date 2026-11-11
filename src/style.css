@@ -526,3 +526,5 @@ label:has(> input[name$=city]){position:relative}
 .aiconsent h3{margin:0 0 4px;font-size:15px}
 .aiconsent .chk{padding-bottom:6px}
 .ac-sens[hidden]{display:none}
+
+.tk-banner{background:#8a4b12;color:#fbf4e3;text-align:center;padding:8px 12px;font-size:14px}

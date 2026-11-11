@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS tickets (
   id TEXT PRIMARY KEY,           -- 무작위 128비트(hex). 결제 확인 뒤에만 발급
   owner TEXT NOT NULL,           -- 구매자 식별자(로그인 계정 id). 연속 사용 제한 기준
-  status TEXT NOT NULL DEFAULT 'unused',  -- unused | used
+  status TEXT NOT NULL DEFAULT 'unused',  -- unused | used | revoked(주인이 회수)
   created_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL,
   used_at INTEGER

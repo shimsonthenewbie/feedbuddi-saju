@@ -4,7 +4,7 @@
  * - 키가 있으면 초안 카드를 근거로 Gemini가 쉬운 말로 다시 써서 같은 카드 형식(JSON)으로 돌려준다.
  * 어떤 오류든 초안 카드로 되돌아가므로 화면은 항상 결과를 보여 줄 수 있다.
  */
-import { D1Store, MemoryStore, DAILY_CAP, type D1, type Store } from './tickets'
+import { D1Store, MemoryStore, DAILY_CAP, SOON_MS, effective, isTicketId, type D1, type Store, type View, type Sort } from './tickets'
 import { buildReportRequest, type Part, type Tone } from '../src/report-prompt'
 
 interface Env {
@@ -13,6 +13,8 @@ interface Env {
   DEV_TICKET_SECRET?: string
   /** 주인 전용 관리 경로(질문권 지급)용 비밀값. Cloudflare Secret으로만 넣는다. */
   ADMIN_TOKEN?: string
+  /** 선택: 질문권 만료 임박 알림을 받을 웹훅 주소(디스코드·슬랙 등). Cloudflare Secret으로만 넣는다. */
+  ADMIN_WEBHOOK_URL?: string
   DAILY_CAP?: string
   ASSETS: { fetch(req: Request): Promise<Response> }
   GEMINI_API_KEY?: string
@@ -185,20 +187,57 @@ export default {
       return json({ ticket: await store.issue(typeof owner === 'string' && owner ? owner.slice(0, 64) : 'dev', now) })
     }
 
-    // 주인 전용: 질문권 지급(보상·이벤트). 비밀값이 맞을 때만 열리고, 모든 지급은 기록에 남는다.
-    if (url.pathname === '/api/admin/grant') {
+    // 로그인 없이 자기 질문권의 남은 기간만 확인(화면의 만료 알림용). 질문권 번호를 아는 사람만 조회된다.
+    if (url.pathname === '/api/ticket/status') {
+      const auth = req.headers.get('authorization') ?? ''
+      const id = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+      const r = isTicketId(id) ? await store.peek(id) : null
+      if (!r) return json({ ok: false })
+      const st = effective(r, now)
+      return json({ ok: true, status: st, expiresAt: r.expiresAt, remainDays: st === 'unused' ? Math.max(0, Math.ceil((r.expiresAt - now) / 86400_000)) : 0 })
+    }
+
+    // 주인 전용 경로. 비밀값이 맞을 때만 열린다.
+    if (url.pathname.startsWith('/api/admin/')) {
       const given = req.headers.get('x-admin-token') ?? ''
       if (!env.ADMIN_TOKEN || env.ADMIN_TOKEN.length < 16 || !timingSafeEq(given, env.ADMIN_TOKEN)) return json({ error: 'forbidden' }, 403)
-      const b: any = await req.json().catch(() => null)
-      const owner = typeof b?.owner === 'string' ? b.owner.trim().slice(0, 64) : ''
-      const count = Number(b?.count), reason = typeof b?.reason === 'string' ? b.reason.trim().slice(0, 200) : ''
-      const kind = ['compensation', 'event', 'test'].includes(b?.kind) ? b.kind : ''
-      if (!owner || !Number.isInteger(count) || count < 1 || count > MAX_GRANT || !reason || !kind) return json({ error: 'invalid', max: MAX_GRANT }, 400)
-      const tickets: string[] = []
-      for (let i = 0; i < count; i++) tickets.push(await store.issue(owner, now))
-      if (env.DB) await env.DB.prepare('INSERT INTO grants (at,owner,count,kind,reason) VALUES (?,?,?,?,?)').bind(now, owner, count, kind, reason).run()
-      else memGrants.push({ at: now, owner, count, kind, reason })
-      return json({ ok: true, owner, count, kind, tickets })
+      const b: any = await req.json().catch(() => ({}))
+
+      if (url.pathname === '/api/admin/summary') return json({ now, soonDays: SOON_MS / 86400_000, ...(await store.summary(now)) })
+
+      if (url.pathname === '/api/admin/tickets') {
+        const views = ['all', 'unused', 'used', 'expired', 'soon', 'revoked']
+        const view = (views.includes(b?.view) ? b.view : 'all') as View
+        const sort = (b?.sort === 'expiring' ? 'expiring' : 'new') as Sort
+        const rows = await store.list(view, sort, now, 200)
+        return json({ now, rows: rows.map((r) => ({ ...r, status: effective(r, now), remainDays: effective(r, now) === 'unused' ? Math.max(0, Math.ceil((r.expiresAt - now) / 86400_000)) : null })) })
+      }
+
+      if (url.pathname === '/api/admin/revoke') {
+        const ok = typeof b?.id === 'string' && isTicketId(b.id) ? await store.revoke(b.id) : false
+        return json({ ok })
+      }
+
+      if (url.pathname === '/api/admin/grants') {
+        if (env.DB) {
+          const r = await env.DB.prepare('SELECT at,owner,count,kind,reason FROM grants ORDER BY at DESC LIMIT ?').bind(100).all()
+          return json({ rows: r.results })
+        }
+        return json({ rows: [...memGrants].reverse().slice(0, 100) })
+      }
+
+      if (url.pathname === '/api/admin/grant') {
+        const owner = typeof b?.owner === 'string' ? b.owner.trim().slice(0, 64) : ''
+        const count = Number(b?.count), reason = typeof b?.reason === 'string' ? b.reason.trim().slice(0, 200) : ''
+        const kind = ['compensation', 'event', 'test'].includes(b?.kind) ? b.kind : ''
+        if (!owner || !Number.isInteger(count) || count < 1 || count > MAX_GRANT || !reason || !kind) return json({ error: 'invalid', max: MAX_GRANT }, 400)
+        const tickets: string[] = []
+        for (let i = 0; i < count; i++) tickets.push(await store.issue(owner, now))
+        if (env.DB) await env.DB.prepare('INSERT INTO grants (at,owner,count,kind,reason) VALUES (?,?,?,?,?)').bind(now, owner, count, kind, reason).run()
+        else memGrants.push({ at: now, owner, count, kind, reason })
+        return json({ ok: true, owner, count, kind, tickets })
+      }
+      return json({ error: 'not_found' }, 404)
     }
 
     if (url.pathname === '/api/report') {
@@ -234,5 +273,20 @@ export default {
     const ai = await rewrite(body, env)
     if (!ai) { await store.release(ticket, now); return json({ mode: 'engine', reason: 'ai_failed', refunded: true, cards: body.cards }) }
     return json({ mode: 'ai', cards: ai })
+  },
+
+  /** 매일 새벽(한국 시간 03시): 보유 기간이 지난 기록을 지우고, 만료가 임박한 질문권이 있으면 웹훅으로 알린다. */
+  async scheduled(_e: unknown, env: Env, ctx: { waitUntil(p: Promise<unknown>): void }): Promise<void> {
+    ctx.waitUntil((async () => {
+      const store = storeOf(env)
+      const now = Date.now()
+      const removed = await store.purge(now)
+      const sum = await store.summary(now)
+      const url = env.ADMIN_WEBHOOK_URL
+      if (url && url.startsWith('https://') && sum.soon > 0) {
+        const text = `[용용사주] 질문권 ${sum.soon}장이 ${SOON_MS / 86400_000}일 안에 만료돼요. (미사용 ${sum.unused}장, 오늘 AI 풀이 ${sum.aiToday}회, 오래된 기록 ${removed}건 삭제)`
+        await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ content: text, text }) }).catch(() => undefined)
+      }
+    })())
   },
 }

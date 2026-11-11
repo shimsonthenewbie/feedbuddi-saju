@@ -2,6 +2,7 @@
   "name": "feedbuddi-saju",
   "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
+  "triggers": { "crons": ["0 18 * * *"] },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

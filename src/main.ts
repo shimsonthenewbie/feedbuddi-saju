@@ -1,4 +1,5 @@
 import { aiConsentHtml, aiConsentOk } from './ai-consent'
+import { ticketBanner } from './ticket-banner'
 import './style.css'
 import { calculateSaju } from '@orrery/core/saju'
 import { SEOUL, filterCities, formatCityName, type City } from '@orrery/core/cities'
@@ -388,7 +389,7 @@ function showReport() {
   document.getElementById('rpmake')!.onclick = async () => {
     const tk = rpTicket()
     if (!tk) { msg.textContent = x.rpNoTicket; return }
-    if (!aiConsentOk(out)) { msg.textContent = lang === 'ko' ? 'AI 풀이를 쓰려면 위의 두 칸을 체크해 주세요.' : 'Tick both boxes above to use the AI report.'; return }
+    if (!aiConsentOk(out)) { msg.textContent = lang === 'ko' ? 'AI 풀이를 쓰려면 위의 동의 칸을 체크해 주세요.' : 'Tick the consent box above to use the AI report.'; return }
     const btn = document.getElementById('rpmake') as HTMLButtonElement
     btn.disabled = true; msg.textContent = x.rpBusy(1); box.innerHTML = ''
     let got = 0, failed = false
@@ -1331,3 +1332,4 @@ function bindShare() {
 }
 
 render()
+void ticketBanner(navigator.language.startsWith('ko') ? 'ko' : 'en')
