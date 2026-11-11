@@ -2,6 +2,7 @@
   "name": "feedbuddi-saju",
   "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
+  "d1_databases": [{ "binding": "DB", "database_name": "yongyong-saju-db", "database_id": "495d4e44-ab34-458e-9f0b-f3c4b033d74f" }],
   "triggers": { "crons": ["0 18 * * *"] },
   "assets": {
     "directory": "./dist",
