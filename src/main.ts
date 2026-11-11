@@ -940,7 +940,7 @@ async function onFacePick(file: File) {
       const ok = document.getElementById('fshok')!
       const url = location.origin + location.pathname + '#face'
       try {
-        const blob = await makeFaceCard({ emoji: an.emoji, animal: an.name + (lang === 'ko' ? '상' : ' face'), title: an.title, tags: an.tags, axes: r.axes, brand: x.title, foot: 'feedbuddi.com', mate: `${an.mate.label} ${an.mate.emoji} ${an.mate.name}` })
+        const blob = await makeFaceCard({ emoji: an.emoji, animal: an.name + (lang === 'ko' ? '상' : ' face'), title: an.title, tags: an.tags, axes: r.axes, brand: x.title, foot: 'saju.feedbuddi.com', mate: `${an.mate.label} ${an.mate.emoji} ${an.mate.name}` })
         const file = new File([blob], 'yongyong-face.png', { type: 'image/png' })
         if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: x.title, text: `${an.shareText}\n${url}` }); return }
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'yongyong-face.png'; document.body.append(a); a.click(); a.remove()
@@ -1318,7 +1318,7 @@ function bindShare() {
   }
   card.onclick = async () => {
     try {
-      const blob = await makeCard({ score: m.score, headline: m.headline, axes: m.axes, brand: x.title, foot: 'feedbuddi.com' })
+      const blob = await makeCard({ score: m.score, headline: m.headline, axes: m.axes, brand: x.title, foot: 'saju.feedbuddi.com' })
       const file = new File([blob], 'yongyong-match.png', { type: 'image/png' })
       if (navigator.canShare?.({ files: [file] })) { await navigator.share({ files: [file], title: x.title }); return }
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'yongyong-match.png'; document.body.append(a); a.click(); a.remove()
