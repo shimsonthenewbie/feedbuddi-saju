@@ -44,8 +44,8 @@ const EL_EMOJI: Record<El, string> = { tree: '木', fire: '火', earth: '土', m
 
 const T = {
   ko: {
-    title: '용용신점',
-    sub: '용하디 용한 신점, 용용이가 봐 드려요\n생년월일만 넣으면 오늘의 운세와 고민 상담까지',
+    title: '용용사주',
+    sub: '용하디 용한 사주, 용용이가 봐 드려요\n생년월일만 넣으면 오늘의 운세와 고민 상담까지',
     today: '오늘',
     home: '홈',
     freeTitle: '무료 사주 맛보기',
@@ -149,8 +149,8 @@ const T = {
     shared: '궁합',
   },
   en: {
-    title: 'Yongyong Sinjeom',
-    sub: 'Fortune-telling so sharp it is uncanny\nEnter your birth date for today\'s fortune and advice',
+    title: 'Yongyong Saju',
+    sub: 'Saju so sharp it is uncanny\nEnter your birth date for today\'s fortune and advice',
     today: 'Today',
     home: 'Home',
     freeTitle: 'Free Saju taste',
