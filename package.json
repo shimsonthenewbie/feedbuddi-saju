@@ -6,7 +6,7 @@
   "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "node scripts/copy-mediapipe.mjs && vite",
-    "build": "node scripts/copy-mediapipe.mjs && tsc --noEmit && vite build",
+    "build": "node scripts/gen-seo.mjs && node scripts/copy-mediapipe.mjs && tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
