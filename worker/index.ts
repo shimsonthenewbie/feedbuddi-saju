@@ -7,6 +7,7 @@
 import { D1Store, MemoryStore, DAILY_CAP, SOON_MS, effective, isTicketId, type D1, type Store, type View, type Sort } from './tickets'
 import { buildReportRequest, type Part, type Tone } from '../src/report-prompt'
 import { buildDreamRequest, type DreamInput } from '../src/dream-prompt'
+import { buildTaegilRequest, type TaegilCand } from '../src/taegil-prompt'
 
 interface Env {
   DB?: D1
@@ -281,6 +282,34 @@ export default {
       const opt = { model: env.DREAM_MODEL, thinking: 1024, temp: 0.7 }
       let text = await geminiText(env, rq.system, rq.user, 100_000, opt)
       if (!text) text = await geminiText(env, rq.system, rq.user, 100_000, opt)
+      if (!text) { await store.release(ticket, now); return json({ mode: 'engine', reason: 'ai_failed', refunded: true }) }
+      return json({ mode: 'ai', text })
+    }
+
+    if (url.pathname === '/api/taegil') {
+      let b: any
+      try { b = await req.json() } catch { return json({ error: 'json' }, 400) }
+      const cut = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
+      const cand = (arr: unknown): TaegilCand[] => (Array.isArray(arr) ? arr.slice(0, 12).map((c: any) => ({
+        date: cut(c?.date, 20), weekday: cut(c?.weekday, 4), lunar: cut(c?.lunar, 20), ganji: cut(c?.ganji, 4), grade: cut(c?.grade, 8),
+        reasons: Array.isArray(c?.reasons) ? c.reasons.slice(0, 5).map((r: unknown) => cut(r, 60)) : [],
+        cautions: Array.isArray(c?.cautions) ? c.cautions.slice(0, 4).map((r: unknown) => cut(r, 60)) : [],
+        note: cut(c?.note, 120) || undefined,
+      })).filter((c) => c.date) : [])
+      const candidates = cand(b?.candidates)
+      const category = cut(b?.category, 30)
+      if (!category || candidates.length < 1) return json({ error: 'invalid' }, 400)
+      const auth = req.headers.get('authorization') ?? ''
+      const ticket = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+      if (!ticket) return json({ mode: 'engine', reason: 'no_ticket' })
+      if (!env.GEMINI_API_KEY) return json({ mode: 'engine', reason: 'no_ai' })
+      const cap = Number(env.DAILY_CAP) > 0 ? Number(env.DAILY_CAP) : DAILY_CAP
+      const deny = await store.consume(ticket, now, cap)
+      if (deny) return json({ mode: 'engine', reason: deny })
+      const rq = buildTaegilRequest({ category, situation: cut(b?.situation, 600), candidates, avoid: cand(b?.avoid), chart: cut(b?.chart, 3000), zodiac: cut(b?.zodiac, 6) })
+      const opt = { model: env.DREAM_MODEL, thinking: 1024, temp: 0.5 }
+      let text = await geminiText(env, rq.system, rq.user, 90_000, opt)
+      if (!text) text = await geminiText(env, rq.system, rq.user, 90_000, opt)
       if (!text) { await store.release(ticket, now); return json({ mode: 'engine', reason: 'ai_failed', refunded: true }) }
       return json({ mode: 'ai', text })
     }

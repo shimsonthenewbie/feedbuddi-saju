@@ -38,6 +38,7 @@ import { dailyHexagram } from './i18n/iching'
 import { draw, dailyCard, type Drawn } from './i18n/tarot'
 import { composeAstro } from './i18n/natal'
 import { readName, WX_KO, type Wx } from './myeongri/name'
+import type { TaegilCand } from './taegil-prompt'
 import { gusungOf, STARS, STAR_TEXT, type DirRead } from './myeongri/gusung'
 import { CATS, pickDays, yearBranch, zodiacOf, type CatKey, type DayPick } from './myeongri/taegil'
 import { pickCalc } from './myeongri/pick'
@@ -554,7 +555,33 @@ function initTaegil() {
     out.innerHTML = `<article class="card"><h2>${esc(CATS[cat].name)} 좋은 날</h2><p class="meta">${r.total}일을 살펴 좋은 날 ${r.best.length}일을 골랐어요.${zod ? ` 내 띠(${esc(zodiacOf(zod))})${dayBranch ? '·일주' : ''}를 반영했어요.` : ' 띠를 고르면 나와 충이 되는 날을 더 정확히 피해요.'}</p></article>
       ${r.best.length ? r.best.map((p) => tgCard(p)).join('') : '<article class="card"><p>이 기간에는 뚜렷하게 좋은 날이 없어요. 기간을 늘려 보세요.</p></article>'}
       ${r.worst.length ? `<article class="card"><h3>가능하면 피할 날</h3><p class="meta">꺼리는 요소가 겹친 날이에요.</p></article>${r.worst.map((p) => tgCard(p, true)).join('')}` : ''}
+      <section class="card tg" id="tgai">${rpTicket() ? `<h3>내 사정에 맞춘 AI 추천 (질문권 1장)</h3><p class="meta">일정·제약을 적으면 위 후보 중에서 내게 맞는 날을 1~3순위로 골라 이유와 준비물까지 알려 드려요.</p><textarea id="tgsit" rows="4" maxlength="600" placeholder="예: 이번 달 안에 중요한 계약을 해야 하고, 평일 오후만 가능해요. 상대방은 20일 이후를 원해요."></textarea>${aiConsentHtml(lang, true)}<button class="go" id="tgaib" type="button">맞춤 날짜 추천받기</button><p class="note" id="tgmsg" role="status"></p><div id="tgaiout"></div>` : '<p class="note">내 사정(일정·제약)을 반영한 AI 맞춤 추천은 질문권이 있을 때 쓸 수 있어요. 질문권은 곧 판매를 시작해요.</p>'}</section>
       <article class="card"><p class="note">손 없는 날, 건제 12신, 황도·흑도, 의기(옛 책력의 일 별 길흉)와 내 띠·일지와의 충·합을 합산한 용용사주의 간단한 규칙이에요. 유파에 따라 기준이 달라 같은 날도 평가가 다를 수 있어요. 예식장·계약 일정·가족 사정이 우선이고, 재미와 참고용으로 봐 주세요.</p></article>`
+    const toCand = (p: DayPick): TaegilCand => ({ date: `${p.date.getMonth() + 1}월 ${p.date.getDate()}일`, weekday: WD[p.date.getDay()], lunar: p.lunar, ganji: p.ganji, grade: p.grade, reasons: p.reasons, cautions: p.cautions, note: p.note })
+    const aib = document.getElementById('tgaib') as HTMLButtonElement | null
+    if (aib) aib.onclick = async () => {
+      const m = document.getElementById('tgmsg')!
+      const sit = (document.getElementById('tgsit') as HTMLTextAreaElement).value.trim()
+      const box = document.getElementById('tgai') as HTMLElement
+      if (sit.length < 10) { m.textContent = '사정을 10자 이상 적어 주세요.'; return }
+      if (looksSensitive(sit)) { showSensitive(box, true); m.textContent = '번호나 이메일처럼 보이는 글이 있어요. 지우고 다시 눌러 주세요.'; return }
+      if (!aiConsentOk(box)) { m.textContent = 'AI 풀이를 쓰려면 위의 동의 칸을 체크해 주세요.'; return }
+      const tk = rpTicket(); if (!tk) { m.textContent = '질문권이 없어요.'; return }
+      if (!r.best.length) { m.textContent = '추천할 후보가 없어요. 기간을 늘려 보세요.'; return }
+      let chart = ''
+      if (pr) { try { const rr = resultOf(pr); chart = chartText({ label: '나', placeName: pr.place, result: rr }) + '\n' + analysisText(analyze(rr)).slice(0, 2000) } catch { chart = '' } }
+      aib.disabled = true; m.textContent = '날짜를 고르고 있어요. 1분 정도 걸릴 수 있어요…'
+      try {
+        const res = await fetch('/api/taegil', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${tk}` }, body: JSON.stringify({ category: CATS[cat].name, situation: sit, zodiac: zod ? zodiacOf(zod) : '', candidates: r.best.map(toCand), avoid: r.worst.map(toCand), chart }) })
+        const j = await res.json() as { mode?: string; text?: string }
+        if (j.mode === 'ai' && j.text) {
+          try { localStorage.removeItem('fb-saju-ticket') } catch { /* 사용한 질문권은 지운다 */ }
+          m.textContent = ''
+          ;(document.getElementById('tgaiout') as HTMLElement).innerHTML = `<article class="rcard rp">${mdLite(j.text)}</article><p class="note">AI가 쓴 글이에요. 날짜 하나가 결과를 정하지 않아요. 재미와 참고용이에요.</p>`
+        } else m.textContent = '지금은 AI 풀이를 받지 못했어요. 질문권은 차감되지 않았어요. 잠시 뒤 다시 시도해 주세요.'
+      } catch { m.textContent = '연결에 문제가 있어요. 질문권은 차감되지 않았어요.' }
+      aib.disabled = false
+    }
   }
   go.onclick = run
 }
