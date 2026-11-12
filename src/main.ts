@@ -37,6 +37,7 @@ import { composeTojeong } from './i18n/tojeong'
 import { dailyHexagram } from './i18n/iching'
 import { draw, dailyCard, type Drawn } from './i18n/tarot'
 import { composeAstro } from './i18n/natal'
+import { makeKoName, type Gender } from './i18n/koname'
 import { readName, WX_KO, type Wx } from './myeongri/name'
 import type { TaegilCand } from './taegil-prompt'
 import { gusungOf, STARS, STAR_TEXT, type DirRead } from './myeongri/gusung'
@@ -47,7 +48,7 @@ import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from '
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'dream' | 'tarot' | 'astro' | 'name' | 'gusung' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'koname' | 'dream' | 'tarot' | 'astro' | 'name' | 'gusung' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -755,6 +756,44 @@ function initDream() {
   }
 }
 
+function konameHtml(): string {
+  const ko = lang === 'ko'
+  return `<section class="card tg"><h2>${ko ? '내 한국 이름 만들기' : 'Get Your Korean Name'}</h2>
+    <p class="meta">${ko ? '외국인 친구 이름을 넣으면 한국 이름이 나와요. 친구에게 보내 주세요!' : 'Type your name and get a Korean name with a meaning behind it — just for fun.'}</p>
+    <label class="lbl" for="knn">${ko ? '이름 (영문)' : 'Your name (English letters)'}</label>
+    <input id="knn" maxlength="30" placeholder="e.g. Emily" autocomplete="off">
+    <p class="lbl">${ko ? '어떤 느낌의 이름?' : 'Style'}</p>
+    <div class="chips" id="kng"><label class="chip"><input type="radio" name="kg" value="F"> ${ko ? '여성스러운' : 'Feminine'}</label><label class="chip"><input type="radio" name="kg" value="M"> ${ko ? '남성스러운' : 'Masculine'}</label><label class="chip"><input type="radio" name="kg" value="N" checked> ${ko ? '상관없음' : 'Any'}</label></div>
+    <button class="go" id="kngo" type="button">${ko ? '한국 이름 만들기' : 'Make my Korean name'}</button></section>
+  <section id="knout"></section>`
+}
+function initKoname() {
+  let variant = 0
+  const out = document.getElementById('knout')!
+  const make = () => {
+    const nm = (document.getElementById('knn') as HTMLInputElement).value.trim()
+    const g = (document.querySelector('input[name=kg]:checked') as HTMLInputElement)?.value as Gender
+    const k = makeKoName(nm, g || 'N', variant)
+    if (!k) { out.innerHTML = `<article class="card"><p>${lang === 'ko' ? '영문 이름을 2글자 이상 넣어 주세요.' : 'Please type at least 2 English letters.'}</p></article>`; return }
+    const share = `${nm} → ${k.full} (${k.rom})\n${k.story[0]}\n#용용사주`
+    out.innerHTML = `<article class="card ic"><p class="meta">${esc(nm)}</p>
+      <h2 class="kbig">${esc(k.full)}</h2><p class="icn">${esc(k.rom)}</p>
+      <ul class="rs"><li><b>${esc(k.family)}</b> — ${esc(k.surnameGloss[0])}${lang === 'ko' ? ` (${esc(k.surnameGloss[1])})` : ''}</li>
+      ${k.parts.map((p) => `<li><b>${esc(p.h)}</b> ${esc(p.r)} — ${esc(lang === 'ko' ? p.ko : p.en)}</li>`).join('')}</ul>
+      <p class="dbody">${esc(k.story[1])}</p>
+      <div class="trbtns"><button class="go" id="knshare" type="button">${lang === 'ko' ? '복사해서 공유하기' : 'Copy to share'}</button><button class="go ghost" id="knagain" type="button">${lang === 'ko' ? '다른 이름으로 다시' : 'Try another'}</button></div>
+      <p class="note" id="knmsg" role="status"></p>
+      <p class="note">${lang === 'ko' ? '재미로 만든 이름이에요. 글자 뜻은 흔히 쓰는 한자 하나를 기준으로 한 예시예요.' : 'Just for fun. Meanings are examples based on one commonly used Hanja for each syllable.'}</p></article>`
+    document.getElementById('knagain')!.onclick = () => { variant++; make() }
+    document.getElementById('knshare')!.onclick = async () => {
+      const m = document.getElementById('knmsg')!
+      try { if (navigator.share) { await navigator.share({ text: share }); return } } catch { /* 취소하면 복사로 */ }
+      try { await navigator.clipboard.writeText(share); m.textContent = lang === 'ko' ? '복사했어요!' : 'Copied!' } catch { m.textContent = share }
+    }
+  }
+  ;(document.getElementById('kngo') as HTMLButtonElement).onclick = () => { variant = 0; make() }
+}
+
 let examDate = (() => { const t0 = new Date(); const iso = `${t0.getFullYear()}-${String(t0.getMonth() + 1).padStart(2, '0')}-${String(t0.getDate()).padStart(2, '0')}`; return iso <= EXAM_DATE ? EXAM_DATE : iso })()
 function showExam() {
   const x = t()
@@ -824,7 +863,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['dream', '夢', lang === 'ko' ? '꿈해몽 (AI 자세히)' : 'Dream reading'], ['tarot', '🂠', lang === 'ko' ? '타로 (오늘의 카드·3장)' : 'Tarot'], ['astro', '☉', lang === 'ko' ? '별자리 출생차트 (서양 점성술)' : 'Birth chart (Western astrology)'], ['name', '名', lang === 'ko' ? '이름 풀이·작명 비교' : 'Name reading'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['koname', '韓', lang === 'ko' ? '내 한국 이름 만들기' : 'Get your Korean name'], ['dream', '夢', lang === 'ko' ? '꿈해몽 (AI 자세히)' : 'Dream reading'], ['tarot', '🂠', lang === 'ko' ? '타로 (오늘의 카드·3장)' : 'Tarot'], ['astro', '☉', lang === 'ko' ? '별자리 출생차트 (서양 점성술)' : 'Birth chart (Western astrology)'], ['name', '名', lang === 'ko' ? '이름 풀이·작명 비교' : 'Name reading'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -1331,6 +1370,7 @@ let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
 else if (location.hash === '#tojeong') mode = 'tojeong'
 else if (location.hash === '#iching') mode = 'iching'
+else if (location.hash === '#koname') mode = 'koname'
 else if (location.hash === '#dream') mode = 'dream'
 else if (location.hash === '#tarot') mode = 'tarot'
 else if (location.hash === '#astro') mode = 'astro'
@@ -1382,7 +1422,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'dream' ? dreamHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'astro') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'dream' ? dreamHtml() : mode === 'koname' ? konameHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'astro') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
@@ -1449,6 +1489,7 @@ function bind() {
   if (mode === 'name') initName()
   if (mode === 'tarot') initTarot()
   if (mode === 'dream') initDream()
+  if (mode === 'koname') initKoname()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
 
