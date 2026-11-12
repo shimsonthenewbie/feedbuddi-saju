@@ -532,3 +532,7 @@ label:has(> input[name$=city]){position:relative}
 
 .tk-banner{background:#8a4b12;color:#fbf4e3;text-align:center;padding:8px 12px;font-size:14px}
 .classics ul{margin:.4rem 0 0;padding-left:1.1rem}.classics li{margin:.35rem 0}.classics .linkbtn{display:inline;margin-left:.3rem}
+.hex{display:flex;flex-direction:column;gap:7px;width:96px;margin:.8rem auto}
+.hex .yl{display:block;height:11px;border-radius:2px;background:#3a2a22}
+.hex .yl.yin{background:linear-gradient(90deg,#3a2a22 0 42%,transparent 42% 58%,#3a2a22 58%)}
+.icn{margin:.6rem 0 .1rem}

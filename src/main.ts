@@ -33,13 +33,14 @@ import { composeExam, examText, EXAM_DATE } from './i18n/exam'
 import { tojeongOf } from './myeongri/tojeong'
 import { gungtongCard } from './myeongri/gungtong'
 import { composeTojeong } from './i18n/tojeong'
+import { dailyHexagram } from './i18n/iching'
 import { pickCalc } from './myeongri/pick'
 import { composePick } from './i18n/pick'
 import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from './share'
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'tojeong' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'tojeong' | 'iching' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -485,6 +486,25 @@ function showTojeong() {
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
 }
 
+function showIching() {
+  const out = document.getElementById('out')!
+  const pr = loadProfile()
+  const now = new Date()
+  const key = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`
+  const h = dailyHexagram(key, pr ? `${pr.y}-${pr.m}-${pr.d}` : '')
+  const lines = [...h.lines].reverse().map((y) => `<i class="yl ${y ? 'yang' : 'yin'}"></i>`).join('')
+  out.innerHTML = `<article class="card ic">
+    <h2>오늘의 한 괘</h2><p class="meta">${esc(`${now.getMonth() + 1}월 ${now.getDate()}일`)} · 주역 64괘 중 하나</p>
+    <div class="hex" role="img" aria-label="${esc(h.name)}괘">${lines}</div>
+    <h3 class="icn">제${h.no}괘 ${esc(h.name)}(${esc(h.hanja)}) — ${esc(h.keyword)}</h3>
+    <p class="meta">위 ${esc(h.upper)} · 아래 ${esc(h.lower)}</p>
+    <p class="dbody">${esc(h.message)}</p>
+    <p class="dtip">✦ ${esc(h.tip)}</p>
+    <p class="note">괘의 모양(상괘·하괘)은 주역 그대로고, 풀이 글은 용용사주가 오늘 말로 새로 쓴 거예요. 하루 한 번, 오늘 날짜로 정해져요(내 생일을 입력해 두었다면 사람마다 달라요). 재미와 참고용이에요.</p></article>
+  <button class="go ghost" id="icback" type="button">홈으로</button>`
+  document.getElementById('icback')!.onclick = () => { mode = 'home'; render() }
+}
+
 let examDate = (() => { const t0 = new Date(); const iso = `${t0.getFullYear()}-${String(t0.getMonth() + 1).padStart(2, '0')}-${String(t0.getDate()).padStart(2, '0')}`; return iso <= EXAM_DATE ? EXAM_DATE : iso })()
 function showExam() {
   const x = t()
@@ -554,7 +574,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -582,7 +602,7 @@ function homeHtml(): string {
       <button class="go" type="submit">${esc(x.freeGo)}</button>
     </form>
   </section>
-  ${lang === 'ko' ? `<section class="card classics"><h2>옛 책을 연구해서 더 자세하게</h2><p class="meta">용용사주는 사주 고전의 방식을 하나씩 공부해 풀이에 넣고 있어요.</p><ul><li><b>『궁통보감』</b> — 태어난 계절에 맞춰 내게 필요한 기운을 짚어요. (무료 사주 풀이에 적용)</li><li><b>『토정비결』</b> — 원전 방식으로 괘를 계산해 올해 12개월을 봐요. <button type="button" class="linkbtn" data-mode="tojeong">올해의 운세 보기</button></li></ul><p class="note">풀이 글은 오늘 말로 새로 쓴 거예요. 재미와 참고용이에요.</p></section>` : ''}
+  ${lang === 'ko' ? `<section class="card classics"><h2>옛 책을 연구해서 더 자세하게</h2><p class="meta">용용사주는 사주 고전의 방식을 하나씩 공부해 풀이에 넣고 있어요.</p><ul><li><b>『궁통보감』</b> — 태어난 계절에 맞춰 내게 필요한 기운을 짚어요. (무료 사주 풀이에 적용)</li><li><b>『주역』</b> — 64괘 중 오늘의 한 괘를 뽑아요. <button type="button" class="linkbtn" data-mode="iching">오늘의 괘 보기</button></li><li><b>『토정비결』</b> — 원전 방식으로 괘를 계산해 올해 12개월을 봐요. <button type="button" class="linkbtn" data-mode="tojeong">올해의 운세 보기</button></li></ul><p class="note">풀이 글은 오늘 말로 새로 쓴 거예요. 재미와 참고용이에요.</p></section>` : ''}
   <section class="lockcard" aria-label="${esc(x.todayLockT)}">
     <div class="lk1"><img class="lockic" src="${art('ui-lock')}" alt="" width="52" height="52"><div><b>${esc(x.todayLockT)}</b><span>${esc(x.todayLockD)}</span></div></div>
     <div class="dim" aria-hidden="true">★★★★☆</div>
@@ -1060,6 +1080,7 @@ let mode: Mode = 'home'
 let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
 else if (location.hash === '#tojeong') mode = 'tojeong'
+else if (location.hash === '#iching') mode = 'iching'
 else if (location.hash === '#face') mode = 'face'
 else if (location.hash === '#hand') mode = 'hand'
 let lastMatch: { people: Person[]; m: ReturnType<typeof matchReading> } | null = null
@@ -1105,7 +1126,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
@@ -1165,6 +1186,7 @@ function bind() {
   if (mode === 'pick' && loadProfile()) showPick()
   if (mode === 'exam' && loadProfile()) showExam()
   if (mode === 'tojeong' && loadProfile()) showTojeong()
+  if (mode === 'iching') showIching()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
 
