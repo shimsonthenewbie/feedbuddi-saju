@@ -540,3 +540,11 @@ label:has(> input[name$=city]){position:relative}
 .cgc{border:1px solid #cdb98f;border-radius:8px;padding:.45rem .2rem;text-align:center;background:#fbf4e2;display:flex;flex-direction:column;gap:2px;font-size:.82rem}
 .cgc i{font-style:normal;font-size:.75rem}
 .cgc.v-good{background:#d9e6cf}.cgc.v-care{background:#f0d6d2}.cgc.ctr{background:#efe3c4}
+.trbtns{display:flex;flex-direction:column;gap:8px;margin-top:.6rem}
+.tcard{width:120px;margin:.6rem auto;padding:1rem .4rem;border:2px solid #8b6b3d;border-radius:10px;background:linear-gradient(#fbf1d6,#efe0b6);text-align:center;display:flex;flex-direction:column;gap:4px}
+.tcard .tm{font-size:1.9rem;line-height:1.1;display:inline-block}
+.tcard small{font-size:.65rem;color:#6b5a3a}
+.tcard.rev .tm{transform:rotate(180deg)}
+.tg input,.tg select,.tg textarea{width:100%;box-sizing:border-box;padding:12px 10px;border:1.5px solid var(--line);border-radius:16px;background:var(--card,var(--inset));color:var(--ink);font:inherit;font-size:16px;margin:.2rem 0 .5rem}
+.tg .lbl{display:block;margin-top:.5rem;font-size:.9rem}
+.tg .chk{display:flex;gap:.5rem;align-items:center;margin:.3rem 0 .6rem}.tg .chk input{width:auto;margin:0}
