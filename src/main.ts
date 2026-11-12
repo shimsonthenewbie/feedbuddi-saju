@@ -542,10 +542,11 @@ function initTaegil() {
     const wk = (document.getElementById('tgwk') as HTMLInputElement).checked
     const pr = loadProfile()
     let dayBranch: string | undefined
-    if (pr) { try { dayBranch = resultOf(pr).pillars[1].pillar.branch } catch { /* 일지 없이 진행 */ } }
-    const r = pickDays(cat, new Date(), per, { yearBranch: zod || undefined, dayBranch }, wk)
+    let dayStem: string | undefined
+    if (pr) { try { const dp = resultOf(pr).pillars[1].pillar; dayBranch = dp.branch; dayStem = dp.stem } catch { /* 일지 없이 진행 */ } }
+    const r = pickDays(cat, new Date(), per, { yearBranch: zod || undefined, dayBranch, dayStem, gender: pr?.gender === 'F' ? 'F' : pr?.gender === 'M' ? 'M' : undefined }, wk)
     const out = document.getElementById('tgout')!
-    out.innerHTML = `<article class="card"><h2>${esc(CATS[cat].name)} 좋은 날</h2><p class="meta">${r.total}일을 살펴 좋은 날 ${r.best.length}일을 골랐어요.${zod ? ` 내 띠(${esc(zodiacOf(zod))})${dayBranch ? '와 일지' : ''}를 반영했어요.` : ' 띠를 고르면 나와 충이 되는 날을 더 정확히 피해요.'}</p></article>
+    out.innerHTML = `<article class="card"><h2>${esc(CATS[cat].name)} 좋은 날</h2><p class="meta">${r.total}일을 살펴 좋은 날 ${r.best.length}일을 골랐어요.${zod ? ` 내 띠(${esc(zodiacOf(zod))})${dayBranch ? '·일주' : ''}를 반영했어요.` : ' 띠를 고르면 나와 충이 되는 날을 더 정확히 피해요.'}</p></article>
       ${r.best.length ? r.best.map((p) => tgCard(p)).join('') : '<article class="card"><p>이 기간에는 뚜렷하게 좋은 날이 없어요. 기간을 늘려 보세요.</p></article>'}
       ${r.worst.length ? `<article class="card"><h3>가능하면 피할 날</h3><p class="meta">꺼리는 요소가 겹친 날이에요.</p></article>${r.worst.map((p) => tgCard(p, true)).join('')}` : ''}
       <article class="card"><p class="note">손 없는 날, 건제 12신, 황도·흑도, 의기(옛 책력의 일 별 길흉)와 내 띠·일지와의 충·합을 합산한 용용사주의 간단한 규칙이에요. 유파에 따라 기준이 달라 같은 날도 평가가 다를 수 있어요. 예식장·계약 일정·가족 사정이 우선이고, 재미와 참고용으로 봐 주세요.</p></article>`

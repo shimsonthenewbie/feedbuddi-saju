@@ -4,6 +4,7 @@
  * 달력 데이터(宜忌 등)는 lunar-javascript(MIT)의 전통 만년력 표를 쓴다.
  */
 import { Solar } from 'lunar-javascript'
+import { sipsinOf, GROUP_OF, type Sipsin } from './index'
 
 export type CatKey = 'move' | 'wedding' | 'open' | 'contract' | 'build' | 'trip' | 'car' | 'medical' | 'rite' | 'study' | 'burial'
 
@@ -45,7 +46,26 @@ export interface DayPick {
   cautions: string[]
   note?: string
 }
-export interface Me { yearBranch?: string; dayBranch?: string }
+export interface Me { yearBranch?: string; dayBranch?: string; dayStem?: string; gender?: 'M' | 'F' }
+
+/** 내 일간 기준, 그날 천간(십신)이 용도에 주는 점수와 쉬운 설명 */
+const SS_NOTE: Record<Sipsin, string> = {
+  비견: '나와 같은 힘의 날', 겁재: '내 몫을 나누게 되는 경쟁의 날', 식신: '여유롭게 표현하고 즐기는 날', 상관: '말이 앞서고 튀기 쉬운 날',
+  편재: '큰 돈과 기회가 움직이는 날', 정재: '안정적인 돈과 실속이 따르는 날', 편관: '압박과 긴장이 오는 날', 정관: '신용과 질서가 서는 날',
+  편인: '생각이 많고 변덕이 생기는 날', 정인: '문서와 도움, 안정이 따르는 날',
+}
+const SS_PREF: Partial<Record<CatKey, Partial<Record<Sipsin, number>>>> = {
+  contract: { 정인: 2, 정재: 2, 편재: 1, 정관: 2, 겁재: -2, 상관: -1, 편관: -1 },
+  open: { 정재: 2, 편재: 2, 식신: 1, 정관: 1, 겁재: -2, 편관: -1 },
+  car: { 정재: 2, 편재: 1, 정인: 1, 겁재: -2, 편관: -1 },
+  move: { 정인: 2, 식신: 1, 정재: 1, 겁재: -1, 편관: -1, 상관: -1 },
+  trip: { 식신: 1, 상관: 1, 편재: 1, 편관: -1, 겁재: -1 },
+  medical: { 정인: 2, 식신: 1, 편관: -1, 상관: -1 },
+  study: { 정인: 2, 식신: 1, 상관: -1 },
+  build: { 정인: 1, 식신: 1, 정재: 1, 겁재: -1, 편관: -1 },
+  rite: { 정인: 1, 식신: 1, 정관: 1 },
+  burial: { 정인: 1, 정관: 1 },
+}
 
 const pairRel = (me: string | undefined, day: string, label: string, reasons: string[], cautions: string[], w: number): number => {
   if (!me) return 0
@@ -80,6 +100,17 @@ export function scoreDay(date: Date, cat: CatKey, me: Me = {}): DayPick {
   const dayBr: string = lu.getDayZhi()
   sc += pairRel(me.yearBranch, dayBr, `내 띠(${ZODIAC[me.yearBranch ?? ''] ?? ''})`, reasons, cautions, 1)
   sc += pairRel(me.dayBranch, dayBr, '내 일지', reasons, cautions, 1)
+  // 내 일간과 그날 천간의 십신 관계 (생일을 아는 경우)
+  if (me.dayStem) {
+    const ss = sipsinOf(me.dayStem, lu.getDayInGanZhi()[0])
+    let w = SS_PREF[cat]?.[ss] ?? 0
+    if (cat === 'wedding' && me.gender) {
+      const spouse: Sipsin[] = me.gender === 'M' ? ['정재', '편재'] : ['정관', '편관']
+      if (spouse.includes(ss)) w = 2
+      else if (GROUP_OF[ss] === '비겁') w = -1
+    }
+    if (w) { sc += w; (w > 0 ? reasons : cautions).push(`내 일간 기준 ${SS_NOTE[ss]}`) }
+  }
   const grade: DayPick['grade'] = sc >= 6 ? '대길' : sc >= 3 ? '길' : sc >= 1 ? '보통' : sc >= -2 ? '조심' : '피하세요'
   const sha = DIR[lu.getDaySha()]
   return {
