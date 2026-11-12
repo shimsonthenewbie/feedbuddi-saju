@@ -34,6 +34,7 @@ import { tojeongOf } from './myeongri/tojeong'
 import { gungtongCard } from './myeongri/gungtong'
 import { composeTojeong } from './i18n/tojeong'
 import { dailyHexagram } from './i18n/iching'
+import { gusungOf, STARS, STAR_TEXT, type DirRead } from './myeongri/gusung'
 import { CATS, pickDays, yearBranch, zodiacOf, type CatKey, type DayPick } from './myeongri/taegil'
 import { pickCalc } from './myeongri/pick'
 import { composePick } from './i18n/pick'
@@ -41,7 +42,7 @@ import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from '
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'gusung' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -554,6 +555,31 @@ function initTaegil() {
   go.onclick = run
 }
 
+function compass(rs: DirRead[], center: number): string {
+  const by = Object.fromEntries(rs.map((r) => [r.dir, r])) as Record<string, DirRead>
+  const cell = (d: string) => {
+    const r = by[d]
+    return r ? `<div class="cgc v-${r.verdict === '대길' || r.verdict === '길' ? 'good' : r.verdict === '보통' ? 'mid' : 'care'}"><b>${d}</b><span>${STARS[r.star].hanja.slice(0, 2)}${STARS[r.star].el}</span><i>${r.verdict}</i></div>` : ''
+  }
+  return `<div class="cg">${['북서', '북', '북동', '서', null, '동', '남서', '남', '남동'].map((d) => d ? cell(d) : `<div class="cgc ctr"><b>중앙</b><span>${STARS[center].hanja.slice(0, 2)}${STARS[center].el}</span></div>`).join('')}</div>`
+}
+function showGusung() {
+  const pr = loadProfile()!
+  const out = document.getElementById('out')!
+  const g = gusungOf(pr.y, pr.m, pr.d, pr.gender)
+  const st = STARS[g.mine]
+  const tx = STAR_TEXT[g.mine]
+  const list = (rs: DirRead[]) => rs.filter((r) => r.verdict !== '보통').map((r) => `<li><b>${r.dir}쪽 · ${r.verdict}</b> — ${esc(r.why)}</li>`).join('')
+  out.innerHTML = `
+  <article class="card yr"><h2>내 본명성: ${esc(st.name)} (${esc(st.hanja)})</h2><p class="meta">${g.ey}년생(입춘 기준) · ${pr.gender === 'M' ? '남' : '여'} · 기본 방위 ${esc(st.dir)}</p>
+    <p class="dbody"><b>${esc(tx[0])}</b> ${esc(tx[1])}</p></article>
+  <article class="card"><h2>${g.yearLabel}년 방위 (입춘 기준)</h2><p class="meta">올해 중앙 별은 ${esc(STARS[g.yearStar].hanja)}이에요. 이사·여행·큰 일의 방향을 고를 때 참고하세요.</p>${compass(g.year, g.yearStar)}<ul class="rs">${list(g.year)}</ul></article>
+  <article class="card"><h2>이번 달 방위 (${esc(g.monthLabel)})</h2>${compass(g.month, g.monthStar)}<ul class="rs">${list(g.month)}</ul></article>
+  <article class="card"><p class="note">구성기학은 태어난 해의 별(본명성)과 해·달마다 바뀌는 방위의 별을 맞춰 보는 방법이에요. 오황살·암검살·본명살·본명적살 방위를 꺼리고, 나머지는 내 별과의 상생·상극으로 봐요. 이사나 여행처럼 방향을 고를 수 있을 때 참고용으로만 보세요. 풀이 글은 용용사주가 새로 쓴 거예요.</p></article>
+  <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${t().change}</button></p>`
+  document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
+}
+
 let examDate = (() => { const t0 = new Date(); const iso = `${t0.getFullYear()}-${String(t0.getMonth() + 1).padStart(2, '0')}-${String(t0.getDate()).padStart(2, '0')}`; return iso <= EXAM_DATE ? EXAM_DATE : iso })()
 function showExam() {
   const x = t()
@@ -623,7 +649,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -1130,6 +1156,7 @@ let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
 else if (location.hash === '#tojeong') mode = 'tojeong'
 else if (location.hash === '#iching') mode = 'iching'
+else if (location.hash === '#gusung') mode = 'gusung'
 else if (location.hash === '#taegil') mode = 'taegil'
 else if (location.hash === '#face') mode = 'face'
 else if (location.hash === '#hand') mode = 'hand'
@@ -1176,12 +1203,12 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
-    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
+    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
   </form>
   <section id="out"></section>`}
   ${navHtml()}
@@ -1236,6 +1263,7 @@ function bind() {
   if (mode === 'pick' && loadProfile()) showPick()
   if (mode === 'exam' && loadProfile()) showExam()
   if (mode === 'tojeong' && loadProfile()) showTojeong()
+  if (mode === 'gusung' && loadProfile()) showGusung()
   if (mode === 'iching') showIching()
   if (mode === 'taegil') initTaegil()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
@@ -1275,7 +1303,7 @@ function onSubmit(e: Event) {
   const a = readPerson('a', x.me)
   if (typeof a === 'string') { err.textContent = a; return }
   people.push(a)
-  if (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong') {
+  if (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung') {
     saveProfile(a)
     dayOffset = 0
     render()
