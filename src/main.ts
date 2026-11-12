@@ -1613,4 +1613,14 @@ function bindShare() {
 }
 
 render()
+// 질문권 링크(?tk=번호)로 들어오면 질문권을 이 기기에 저장하고 주소창에서 지운다.
+try {
+  const q = new URLSearchParams(location.search)
+  const tk = q.get('tk') ?? ''
+  if (/^[0-9a-f]{32}$/.test(tk)) {
+    localStorage.setItem('fb-saju-ticket', tk)
+    q.delete('tk')
+    history.replaceState(null, '', location.pathname + (q.toString() ? `?${q}` : '') + location.hash)
+  }
+} catch { /* 저장소를 쓸 수 없으면 건너뜀 */ }
 void ticketBanner(navigator.language.startsWith('ko') ? 'ko' : 'en')
