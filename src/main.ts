@@ -31,6 +31,7 @@ import { composePage } from './i18n/year'
 import { legalDoc, type LegalDoc } from './legal'
 import { composeExam, examText, EXAM_DATE } from './i18n/exam'
 import { tojeongOf } from './myeongri/tojeong'
+import { gungtongCard } from './myeongri/gungtong'
 import { composeTojeong } from './i18n/tojeong'
 import { pickCalc } from './myeongri/pick'
 import { composePick } from './i18n/pick'
@@ -581,6 +582,7 @@ function homeHtml(): string {
       <button class="go" type="submit">${esc(x.freeGo)}</button>
     </form>
   </section>
+  ${lang === 'ko' ? `<section class="card classics"><h2>옛 책을 연구해서 더 자세하게</h2><p class="meta">용용사주는 사주 고전의 방식을 하나씩 공부해 풀이에 넣고 있어요.</p><ul><li><b>『궁통보감』</b> — 태어난 계절에 맞춰 내게 필요한 기운을 짚어요. (무료 사주 풀이에 적용)</li><li><b>『토정비결』</b> — 원전 방식으로 괘를 계산해 올해 12개월을 봐요. <button type="button" class="linkbtn" data-mode="tojeong">올해의 운세 보기</button></li></ul><p class="note">풀이 글은 오늘 말로 새로 쓴 거예요. 재미와 참고용이에요.</p></section>` : ''}
   <section class="lockcard" aria-label="${esc(x.todayLockT)}">
     <div class="lk1"><img class="lockic" src="${art('ui-lock')}" alt="" width="52" height="52"><div><b>${esc(x.todayLockT)}</b><span>${esc(x.todayLockD)}</span></div></div>
     <div class="dim" aria-hidden="true">★★★★☆</div>
@@ -613,7 +615,8 @@ function showFree() {
   const tone = luckAt(r, a, new Date()).year.tone
   const base = freeCards(r, a, lang, dg, tone)
   const ac = astroFreeCard(natal(r.input as Parameters<typeof natal>[0]), lang)
-  const cards = [base[0], { title: ac.title, head: '', body: ac.paras }, ...base.slice(1)] as typeof base
+  const gt = lang === 'ko' ? gungtongCard(a.dayStem, a.monthBranch, a.gungtong) : null
+  const cards = [base[0], ...(gt ? [{ title: gt.title, head: '', body: gt.paras }] : []), { title: ac.title, head: '', body: ac.paras }, ...base.slice(1)] as typeof base
   const fp = freePool(lang)
   out.innerHTML = `${chartHtml(freePerson)}
   ${cards.map((c, i) => `<article class="rcard${i === 0 ? ' lead' : ''}"><h3>${esc(c.title)}</h3>${c.head ? `<p class="fhead">${esc(c.head)}</p>` : ''}${c.body.map((b) => `<p>${esc(b)}</p>`).join('')}</article>`).join('')}

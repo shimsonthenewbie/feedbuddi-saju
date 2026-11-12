@@ -27,3 +27,35 @@ export function needStems(day: StemName, monthBranch: string): string[] {
   const i = MONTH_ORDER.indexOf(monthBranch)
   return i < 0 ? [] : GUNGTONG[day][i].split('')
 }
+
+/* ───────── 화면용 풀이 (쉬운 말, 용용사주가 새로 쓴 문장) ───────── */
+const PLAIN: Record<string, string> = {
+  甲: '큰 나무', 乙: '풀과 꽃', 丙: '햇볕', 丁: '촛불', 戊: '큰 산', 己: '논밭의 흙', 庚: '바위·쇠', 辛: '보석', 壬: '큰 물', 癸: '이슬·비',
+}
+const SEASON_OF: Record<string, string> = { 寅: '이른 봄', 卯: '한봄', 辰: '늦봄', 巳: '초여름', 午: '한여름', 未: '늦여름', 申: '초가을', 酉: '한가을', 戌: '늦가을', 亥: '초겨울', 子: '한겨울', 丑: '늦겨울' }
+
+export interface GungtongCard { title: string; paras: string[] }
+/** 궁통보감 표를 내 사주에 맞춰 쉬운 말로 풀어 준다 */
+export function gungtongCard(dayStem: string, monthBranch: string, g: { need: string[]; present: string[]; hidden: string[]; absent: string[] }): GungtongCard | null {
+  if (!g.need.length) return null
+  const nm = (s: string) => `${PLAIN[s]}(${s})`
+  const first = g.need[0]
+  const state = (s: string) => (g.present.includes(s) ? 'p' : g.hidden.includes(s) ? 'h' : 'a')
+  const paras = [
+    `옛 책 『궁통보감』은 ${nm(dayStem)} 기운이 ${SEASON_OF[monthBranch]}(${monthBranch}월)에 태어나면 ${g.need.map(nm).join(' → ')} 순서로 필요하다고 봐요. 계절에 따라 너무 덥거나 춥거나 메마른 것을 어떤 기운으로 맞추느냐를 보는 방법이에요.`,
+    ...g.need.map((s) => {
+      const st = state(s)
+      return st === 'p'
+        ? `${nm(s)}: 사주 겉에 드러나 있어요. 필요한 기운이 눈에 보이는 자리에 있어서 힘이 되어 줘요.`
+        : st === 'h'
+          ? `${nm(s)}: 겉으로는 안 보이지만 지지 속에 숨어 있어요. 이 기운이 들어오는 해나 사람·환경을 만나면 힘이 나요.`
+          : `${nm(s)}: 사주 안에는 없어요. 대신 이 기운이 강한 시기나 환경(활동·색·사람)에서 채워 주면 균형이 좋아져요.`
+    }),
+    state(first) === 'p'
+      ? '가장 필요한 기운이 갖춰져 있어서, 타고난 균형이 좋은 편으로 봐요.'
+      : state(first) === 'h'
+        ? '가장 필요한 기운이 숨어 있어요. 때가 맞을 때 힘이 드러나는 사주로 봐요.'
+        : '가장 필요한 기운이 비어 있어요. 그 기운을 만나는 시기에 흐름이 달라지는 걸 느끼기 쉬워요.',
+  ]
+  return { title: '궁통보감으로 본 내게 필요한 기운', paras }
+}

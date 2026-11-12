@@ -531,3 +531,4 @@ label:has(> input[name$=city]){position:relative}
 .ac-sens[hidden]{display:none}
 
 .tk-banner{background:#8a4b12;color:#fbf4e3;text-align:center;padding:8px 12px;font-size:14px}
+.classics ul{margin:.4rem 0 0;padding-left:1.1rem}.classics li{margin:.35rem 0}.classics .linkbtn{display:inline;margin-left:.3rem}
