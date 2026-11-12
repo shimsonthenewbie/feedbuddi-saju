@@ -7,7 +7,7 @@ import { BRANCH_ELEMENT, STEM_INFO } from '@orrery/core/constants'
 import type { SajuResult } from '@orrery/core/types'
 import tzlookup from '@photostructure/tz-lookup'
 import { buildPrompt, chartText, type Lang, type Person } from './prompt'
-import { matchSymbols } from './i18n/dream'
+import { matchSymbols, FEEL_LINE } from './i18n/dream'
 import { analyze, analysisText, GROUP_OF, mainStemOf, sipsinOf } from './myeongri'
 import { luckAt } from './myeongri/timing'
 import { freeCards, freePool } from './i18n/free'
@@ -727,7 +727,8 @@ function initDream() {
     msg.textContent = ''
     out.innerHTML = `<article class="card"><h2>꿈 속 상징 (무료)</h2><p class="meta">적어 주신 글에서 알아본 상징이에요. 감정과 상황까지 연결한 자세한 풀이는 AI 풀이로 받을 수 있어요.</p></article>
       ${ss.length ? ss.map((s) => `<article class="card"><h3>${esc(s.name)}</h3><p class="dbody"><b>전통 해몽</b> ${esc(s.trad)}</p><p class="dbody"><b>마음으로 보면</b> ${esc(s.mind)}</p></article>`).join('') : '<article class="card"><p>사전에 있는 대표 상징은 찾지 못했어요. 이런 꿈은 장면과 감정을 연결해서 풀어야 해서, 자세한 풀이가 더 잘 맞아요.</p></article>'}
-      <article class="card"><p class="note">상징의 뜻은 꿈꾼 사람의 감정과 상황에 따라 달라져요. 재미와 참고용이에요.</p></article>`
+      ${i.feelings.length ? `<article class="card"><h3>꿈속 감정이 말해 주는 것</h3>${i.feelings.slice(0, 4).map((f) => `<p class="dbody"><b>${esc(f)}</b> ${esc(FEEL_LINE[f] ?? '')}</p>`).join('')}</article>` : ''}
+      <article class="card"><p class="note">무료 풀이는 글에서 대표 단어를 찾아 보여 주는 간단한 방식이라 꿈의 이야기 흐름까지는 읽지 못해요. 장면 하나하나와 요즘 상황을 연결한 풀이는 AI 풀이에서 해 드려요. 재미와 참고용이에요.</p></article>`
   }
   const ai = document.getElementById('drai') as HTMLButtonElement | null
   if (ai) ai.onclick = async () => {
