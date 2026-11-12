@@ -3,7 +3,6 @@ export type LegalDoc = 'privacy' | 'terms'
 interface Sec { h: string; p: string[] }
 interface Doc { title: string; date: string; secs: Sec[] }
 const REPO = 'followonder99@gmail.com'
-const SRC = 'https://github.com/shimsonthenewbie/feedbuddi-saju'
 
 const ko: Record<LegalDoc, Doc> = {
   privacy: {
@@ -32,7 +31,7 @@ const ko: Record<LegalDoc, Doc> = {
       { h: '4. 이용 방법과 금지 행위', p: ['서비스를 자동화 수단으로 대량 호출하거나, 질문권을 사고팔거나, 서비스 운영을 방해하는 행위, 다른 사람의 정보를 도용하는 행위는 할 수 없어요. 어기면 이용을 제한할 수 있어요.'] },
       { h: '5. 유료 이용', p: ['유료 결제는 준비 중이에요. 시작할 때 사업자 정보(상호, 대표자, 주소, 연락처, 통신판매업 신고번호), 가격, 이용 범위, 환불 기준, 청약철회 가능 여부를 이 약관과 결제 화면에 따로 알려요.', '사용하지 않은 질문권은 법령이 정한 기간과 요건에 따라 청약철회와 환불이 가능해요. 질문권을 써서 AI 풀이가 제공된 부분은 전자상거래법이 정한 요건을 갖춘 경우에 한해 청약철회가 제한될 수 있고, 그 사실을 결제 전에 결제 화면에서 알려요. 시스템 오류, 중복 결제, 질문권만 차감되고 풀이가 제공되지 않은 경우에는 질문권 복구, 재제공 또는 환불로 처리해요. 이 안내는 유료 이용이 시작될 때 가격, 유효기간과 함께 구체적으로 보완돼요.'] },
       { h: '6. 책임의 한계', p: ['풀이는 오락과 참고를 위한 정보이고, 이용자가 풀이를 참고해 독립적으로 내린 결정의 결과에 대해서는 서비스에 귀책사유가 없는 범위에서 책임지지 않아요. 서비스의 고의 또는 과실로 이용자에게 손해가 생기면 법령에 따라 책임지고, 이 약관은 법령이 인정하는 이용자의 권리를 제한하지 않아요. 천재지변이나 외부 서비스(Cloudflare, Google 등)의 장애처럼 서비스가 막을 수 없는 사유로 제공하지 못한 경우에는 책임을 지지 않아요. 계산 오류를 발견하면 알려 주세요. 바로잡을게요.'] },
-      { h: '7. 소스 코드', p: [`이 사이트의 소스 코드는 AGPL-3.0으로 공개돼 있어요(${SRC}). 사주 계산 엔진은 오픈소스 orrery(AGPL-3.0)를 사용해요.`] },
+      { h: '7. 계산 방식과 오픈소스', p: ['사주 계산(네 기둥·십신·대운·합충 등)은 용용사주가 직접 구현한 엔진으로 해요. 절기 시각 계산에는 오픈소스 lunar-javascript(MIT)를, 별자리 계산에는 astronomy-engine(MIT)을 사용해요.'] },
       { h: '8. 약관의 변경', p: ['약관을 바꿀 때는 적용일과 바꾼 이유를 이 화면에 알려요. 일반적인 변경은 적용 7일 전, 이용자에게 불리하거나 중요한 변경은 적용 30일 전에 알려요. 별도의 동의가 필요한 변경은 이용자의 동의를 받아요. 이미 결제한 유료 이용에는 법령과 구매 당시의 조건이 우선하고, 이용자의 법정 권리를 부당하게 제한하지 않아요.'] },
       { h: '9. 문의와 분쟁', p: [`문의: ${REPO}`, '이 약관은 대한민국 법을 따르고, 분쟁은 법령이 정한 관할 법원에서 해결해요.'] },
     ],
@@ -65,7 +64,7 @@ const en: Record<LegalDoc, Doc> = {
       { h: '4. Use and prohibited acts', p: ['Do not bulk-call the service with automation, trade tickets, interfere with operations, or use another person\'s information. We may restrict use if these terms are broken.'] },
       { h: '5. Paid use', p: ['Payments are not open yet. Before they start we will show business details (name, representative, address, contact, mail-order registration number), price, scope, refund rules and whether withdrawal is possible, in these terms and at checkout.', 'Unused tickets can be withdrawn and refunded within the period and conditions set by law. For AI readings already delivered with a ticket, withdrawal may be limited only where the law\'s requirements are met, and we will say so on the checkout screen before you pay. If a system error, double payment, or a ticket spent without a reading being delivered occurs, we restore the ticket, provide the reading again, or refund. This section will be completed with price and validity when paid use starts.'] },
       { h: '6. Limits of liability', p: ['Readings are for entertainment and reference. We are not responsible for the outcome of decisions you make independently based on a reading, to the extent we are not at fault. We remain liable as the law requires for damage caused by our intent or negligence, and these terms do not limit rights the law grants you. We are not responsible when we cannot provide the service because of causes we cannot prevent, such as natural disasters or outages of outside services (Cloudflare, Google, etc.). If you find a calculation error, tell us and we will fix it.'] },
-      { h: '7. Source code', p: [`This site's source code is published under AGPL-3.0 (${SRC}). Chart calculation uses the open-source orrery engine (AGPL-3.0).`] },
+      { h: '7. How it is calculated', p: ['Chart calculation (pillars, ten gods, luck cycles, relations) uses an in-house engine. Solar-term timing uses the open-source lunar-javascript (MIT) and the sky chart uses astronomy-engine (MIT).'] },
       { h: '8. Changes to these terms', p: ['We will post the effective date and the reason for a change here. Ordinary changes are announced 7 days before they apply, and changes that are disadvantageous or important 30 days before. Changes that need your consent will ask for it. For paid use already purchased, the law and the conditions at the time of purchase take priority, and we will not unfairly limit your legal rights.'] },
       { h: '9. Contact and disputes', p: [`Contact: ${REPO}`, 'These terms follow the laws of the Republic of Korea, and disputes go to the court with jurisdiction under the law.'] },
     ],

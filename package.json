@@ -7,11 +7,11 @@
   "scripts": {
     "dev": "node scripts/gen-fonts.mjs && node scripts/copy-mediapipe.mjs && vite",
     "build": "node scripts/gen-fonts.mjs && node scripts/gen-seo.mjs && node scripts/copy-mediapipe.mjs && tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify:engine": "tsx scripts/verify-engine.ts 3000"
   },
   "dependencies": {
     "@mediapipe/hands": "^0.4.1675469240",
-    "@orrery/core": "^0.4.5",
     "@photostructure/tz-lookup": "^11.7.0",
     "astronomy-engine": "^2.1.19",
     "lunar-javascript": "^1.7.7"
@@ -21,6 +21,8 @@
     "@fontsource/jua": "^5.3.0",
     "@fontsource/noto-serif-kr": "^5.3.1",
     "@mediapipe/face_mesh": "^0.4.1633559619",
+    "@orrery/core": "^0.4.5",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.5"
   }

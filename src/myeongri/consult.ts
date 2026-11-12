@@ -3,7 +3,7 @@
  * 고민 카테고리별로 앞으로 12개월을 훑어 "좋은 달"과 "신중할 달"을 고르고, 그 근거(간지·십성·부딪힘)를 돌려준다.
  * 문장은 src/i18n/consult/ 의 문구 풀(또는 AI)이 만든다.
  */
-import type { SajuResult } from '@orrery/core/types'
+import type { SajuResult } from '../engine/types'
 import { GROUP_OF, type Analysis, type Group, type Role } from './index'
 import { yearLuck, type Luck } from './timing'
 

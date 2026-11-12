@@ -8,8 +8,8 @@
  *
  * 건강 항목은 오행과 장부의 전통적 대응에 따른 "경향"이며 진단이 아니다.
  */
-import type { Element, SajuResult } from '@orrery/core/types'
-import { BRANCH_ELEMENT, STEM_INFO } from '@orrery/core/constants'
+import type { Element, SajuResult } from '../engine/types'
+import { BRANCH_ELEMENT, STEM_INFO } from '../engine/constants'
 import { GROUP_OF, KO, hiddenStems, mainStemOf, roleOf, sipsinOf, type Analysis, type Group, type Sipsin } from './index'
 import { yearLuck } from './timing'
 

@@ -1,15 +1,15 @@
 /**
  * 명리 구조 판단 모듈 (1단계)
  *
- * 만세력 계산은 @orrery/core가 맡고, 이 모듈은 그 결과 위에서
+ * 만세력 계산은 자체 엔진(src/engine)이 맡고, 이 모듈은 그 결과 위에서
  * 신강·신약, 득령·득지·득세, 오행/십신 분포, 격국, 조후, 용신 후보, 구조 신호를 계산한다.
  *
  * 주의: 명리학의 판단 기준은 유파마다 다르다. 여기서는 자평명리 주류
  * (억부 + 조후 + 격국 혼합)를 따르며, 가중치·임계값은 아래 상수로 모아 두어 조정할 수 있다.
  * 결과는 "확정 사실"이 아니라 "전통 이론에 따른 후보"로 다룬다.
  */
-import type { Element, SajuResult } from '@orrery/core/types'
-import { BRANCH_ELEMENT, JIJANGGAN, STEM_INFO } from '@orrery/core/constants'
+import type { Element, SajuResult } from '../engine/types'
+import { BRANCH_ELEMENT, JIJANGGAN, STEM_INFO } from '../engine/constants'
 import { needStems, type StemName } from './gungtong'
 
 /* ───────── 조정 가능한 상수 ───────── */

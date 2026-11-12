@@ -8,11 +8,11 @@
  * 점수는 "흐름의 방향"을 보여 주는 참고 지표이며, 확정 예언이 아니다.
  * 가중치는 아래 상수에서 조정한다.
  */
-import type { DaewoonItem, Element, RelationResult, SajuResult } from '@orrery/core/types'
-import { calcSolarTerms, getBranchRelation, getFourPillars, getStemRelation, getYearGanzi } from '@orrery/core/pillars'
+import type { DaewoonItem, Element, RelationResult, SajuResult } from '../engine/types'
+import { calcSolarTerms, getBranchRelation, getFourPillars, getStemRelation, getYearGanzi } from '../engine/pillars'
 import {
   BRANCH_ELEMENT, DIRECTIONAL_COMPOSES, DIRECTIONAL_COMPOSE_ELEMENTS, STEM_INFO, TRIPLE_COMPOSES, TRIPLE_COMPOSE_ELEMENTS,
-} from '@orrery/core/constants'
+} from '../engine/constants'
 import { KO, GROUP_OF, roleOf, sipsinOf, type Analysis, type Role } from './index'
 
 /* ───────── 조정 가능한 상수 ───────── */

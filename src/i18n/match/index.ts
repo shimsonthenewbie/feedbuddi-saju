@@ -1,6 +1,6 @@
 import type { Analysis } from '../../myeongri'
 import { matchCalc, type MatchCalc, type RelKind } from '../../myeongri/match'
-import type { SajuResult } from '@orrery/core/types'
+import type { SajuResult } from '../../engine/types'
 
 export interface MatchCard { kind: string; title: string; paras: string[]; list?: string[] }
 type L = 'ko' | 'en'

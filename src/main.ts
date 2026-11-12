@@ -1,10 +1,10 @@
 import { aiConsentHtml, aiConsentOk, looksSensitive, showSensitive } from './ai-consent'
 import { ticketBanner } from './ticket-banner'
 import './style.css'
-import { calculateSaju } from '@orrery/core/saju'
-import { SEOUL, filterCities, formatCityName, type City } from '@orrery/core/cities'
-import { BRANCH_ELEMENT, STEM_INFO } from '@orrery/core/constants'
-import type { SajuResult } from '@orrery/core/types'
+import { calculateSaju } from './engine/saju'
+import { SEOUL, filterCities, formatCityName, type City } from './engine/cities'
+import { BRANCH_ELEMENT, STEM_INFO } from './engine/constants'
+import type { SajuResult } from './engine/types'
 import tzlookup from '@photostructure/tz-lookup'
 import { buildPrompt, chartText, type Lang, type Person } from './prompt'
 import { matchSymbols, FEEL_LINE } from './i18n/dream'
@@ -146,7 +146,7 @@ const T = {
     errPlace: '출생지를 찾지 못했어요. 도시 이름을 다시 검색해 주세요.',
     errCalc: '계산에 실패했어요. 날짜와 출생지를 확인해 주세요.',
     reading: '풀이 언어',
-    footer: '사주 계산은 오픈소스 orrery(AGPL-3.0)를 사용해요. 조후 풀이는 옛 고전 궁통보감의 표(위키문헌, CC BY-SA 4.0)를 바탕으로 해요.',
+    footer: '사주 계산은 용용사주 자체 엔진으로 해요(절기 계산: lunar-javascript, MIT). 조후 풀이는 옛 고전 궁통보감의 표(위키문헌, CC BY-SA 4.0)를 바탕으로 해요.',
     source: '소스 코드 보기',
     who: '의 사주',
     dToday: '오늘', dYest: '어제', dTom: '내일', change: '정보 바꾸기',
@@ -252,7 +252,7 @@ const T = {
     errPlace: 'Birthplace not found. Please search the city name again.',
     errCalc: 'Calculation failed. Please check the date and birthplace.',
     reading: 'Reading language',
-    footer: 'Chart calculation uses the open-source orrery engine (AGPL-3.0). Seasonal-balance notes draw on the classical Qiongtong Baojian table (Wikisource, CC BY-SA 4.0).',
+    footer: 'Chart calculation uses an in-house engine (solar terms: lunar-javascript, MIT). Seasonal-balance notes draw on the classical Qiongtong Baojian table (Wikisource, CC BY-SA 4.0).',
     source: 'View source code',
     who: "'s chart",
     dToday: 'Today', dYest: 'Yesterday', dTom: 'Tomorrow', change: 'Change details',
@@ -1434,7 +1434,7 @@ function render() {
   ${navHtml()}
   <footer>
     <p>${x.fun}</p>
-    <p>${x.footer} <a href="https://github.com/rath/orrery" target="_blank" rel="noopener">orrery</a> · <a href="https://github.com/shimsonthenewbie/feedbuddi-saju" target="_blank" rel="noopener">${x.source}</a></p>
+    <p>${x.footer}</p>
     <p><button type="button" class="linkbtn" data-legal="privacy">${x.legalPrivacy}</button> · <button type="button" class="linkbtn" data-legal="terms">${x.legalTerms}</button></p>
   </footer>`
   bind()

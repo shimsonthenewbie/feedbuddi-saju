@@ -5,7 +5,7 @@
 생년월일시로 사주 차트를 계산하고, AI에게 풀이를 물어볼 수 있는 요청문을 만들어 주는 정적 웹사이트입니다.
 계산은 모두 브라우저 안에서 이루어지며 생년월일은 서버로 전송하거나 저장하지 않습니다.
 
-- 계산 엔진: [`@orrery/core`](https://github.com/rath/orrery) (AGPL-3.0)
+- 계산 엔진: `src/engine` (직접 구현. 절기 계산은 lunar-javascript(MIT), 별자리는 astronomy-engine(MIT)). `@orrery/core`는 개발용 대조 테스트(`npm run verify:engine`)에만 쓰고 배포물에는 들어가지 않습니다.
 - 라이선스: AGPL-3.0-only (`LICENSE` 참고) — 이 저장소의 소스는 누구나 볼 수 있습니다.
 
 ## 개발

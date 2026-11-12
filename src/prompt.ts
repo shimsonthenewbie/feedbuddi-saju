@@ -1,5 +1,5 @@
-import type { SajuResult } from '@orrery/core/types'
-import { ELEMENT_HANJA } from '@orrery/core/constants'
+import type { SajuResult } from './engine/types'
+import { ELEMENT_HANJA } from './engine/constants'
 import { analyze, analysisText } from './myeongri'
 import { daewoonText, yearText, yearsOverviewText } from './myeongri/timing'
 import { domainsText, type DomainKey } from './myeongri/domains'

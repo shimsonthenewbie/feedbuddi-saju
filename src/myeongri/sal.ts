@@ -1,6 +1,6 @@
 /** 신살: 타고난 살·귀인(원국)과, 올해 들어오는 살(12신살). 이름은 그대로, 풀이는 i18n/year에서 쉬운 말로 붙인다. */
-import type { SajuResult } from '@orrery/core/types'
-import { getTwelveSpirit, getYearGanzi } from '@orrery/core/pillars'
+import type { SajuResult } from '../engine/types'
+import { getTwelveSpirit, getYearGanzi } from '../engine/pillars'
 
 export type SalKey =
   | 'dohwa' | 'yeokma' | 'hwagae' | 'geopsal' | 'jaesal' | 'mangsin' | 'jangseong' | 'banan'

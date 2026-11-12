@@ -1,4 +1,4 @@
-import type { SajuResult } from '@orrery/core/types'
+import type { SajuResult } from '../../engine/types'
 import type { Pick } from '../../myeongri/pick'
 import { ganziKo } from '../consult'
 

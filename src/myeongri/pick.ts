@@ -3,9 +3,9 @@
  * 태어난 해의 간지(년주)만 알 수 있으므로, 내 사주의 용신·일지·년지와의 관계만 본다.
  * 월·일·시가 빠져 있어 정확한 궁합이 아니다. 정확한 값은 생년월일시 궁합에서 본다.
  */
-import type { Element, SajuResult } from '@orrery/core/types'
-import { getStemRelation, getYearGanzi } from '@orrery/core/pillars'
-import { BRANCH_ELEMENT, STEM_INFO } from '@orrery/core/constants'
+import type { Element, SajuResult } from '../engine/types'
+import { getStemRelation, getYearGanzi } from '../engine/pillars'
+import { BRANCH_ELEMENT, STEM_INFO } from '../engine/constants'
 import { roleOf, type Analysis, type Role } from './index'
 import { branchKind, type RelKind } from './match'
 

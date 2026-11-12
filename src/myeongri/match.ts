@@ -3,10 +3,10 @@
  * 같은 두 사람이면 순서를 바꿔도 점수가 같도록 모든 항목을 양쪽 합으로 계산한다.
  * 점수는 '잘 맞는 정도의 경향'을 보여 주는 참고값이다(정답이 아님).
  */
-import type { Element, SajuResult } from '@orrery/core/types'
-import { getBranchRelation, getStemRelation } from '@orrery/core/pillars'
+import type { Element, SajuResult } from '../engine/types'
+import { getBranchRelation, getStemRelation } from '../engine/pillars'
 import { GEN, CTRL, ELEMENTS, sipsinOf, GROUP_OF, type Analysis, type Sipsin, type Group } from './index'
-import { STEM_INFO } from '@orrery/core/constants'
+import { STEM_INFO } from '../engine/constants'
 
 export type RelKind = 'harmony' | 'half' | 'clash' | 'punish' | 'harm' | 'break' | 'none'
 export type StemRel = 'combine' | 'same' | 'feed' | 'control' | 'clash' | 'plain'

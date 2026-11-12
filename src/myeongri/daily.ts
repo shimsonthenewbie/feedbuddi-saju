@@ -5,8 +5,8 @@
  * 그래서 15개 언어로 늘려도 계산은 한 번만 쓰고, 문구만 추가하면 된다.
  * 별점은 "이 사람의 최근 ±30일 분포" 안에서의 상대 위치로 매겨, 사람마다 비슷하게 분포한다(항상 같은 점수가 나오지 않도록).
  */
-import type { Element, SajuResult } from '@orrery/core/types'
-import { STEM_INFO } from '@orrery/core/constants'
+import type { Element, SajuResult } from '../engine/types'
+import { STEM_INFO } from '../engine/constants'
 import { GROUP_OF, roleOf, type Analysis, type Group, type Role } from './index'
 import { dayLuck, type Luck } from './timing'
 

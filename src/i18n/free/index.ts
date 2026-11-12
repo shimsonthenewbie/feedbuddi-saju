@@ -1,6 +1,6 @@
 import type { Analysis } from '../../myeongri'
-import type { SajuResult } from '@orrery/core/types'
-import { getBranchRelation, getStemRelation } from '@orrery/core/pillars'
+import type { SajuResult } from '../../engine/types'
+import { getBranchRelation, getStemRelation } from '../../engine/pillars'
 import { extraSals } from '../../myeongri/sal'
 import { consultPool } from '../consult'
 

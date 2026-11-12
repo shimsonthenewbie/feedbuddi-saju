@@ -8,7 +8,7 @@
  * 이 결과는 사건을 확정하는 것이 아니라 "가능성이 높은 주제"다. AI는 반드시
  * 가능성 어조로 쓰고, 사용자가 맞는지 확인할 수 있게 질문 형태로 제시해야 한다.
  */
-import type { SajuResult } from '@orrery/core/types'
+import type { SajuResult } from '../engine/types'
 import { GROUP_OF, type Analysis, type Group, type Sipsin } from './index'
 import { daewoonOverview, luckAt, yearLuck, type Hit, type Luck } from './timing'
 import { workProfileLines } from './domains'

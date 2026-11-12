@@ -1,7 +1,7 @@
 /** 올해 달별 흐름: 엔진이 정한 성격(kind)과 영역(areas)을 우리 문장으로 풀어 준다. */
 import { yearLuck, type Luck, type LuckKind, type AreaKey, type YearLuck } from '../../myeongri/timing'
 import { natalSals, yearSals, type SalKey } from '../../myeongri/sal'
-import type { SajuResult } from '@orrery/core/types'
+import type { SajuResult } from '../../engine/types'
 import type { Analysis } from '../../myeongri'
 export type Lang = 'ko' | 'en'
 

@@ -1,4 +1,4 @@
-import type { SajuResult } from '@orrery/core/types'
+import type { SajuResult } from './engine/types'
 import { analyze, analysisText } from './myeongri'
 import { art, catArt } from './art'
 import { ASK_CATS, consultCalc, type AskCat } from './myeongri/consult'
