@@ -10,6 +10,7 @@
  */
 import type { Element, SajuResult } from '@orrery/core/types'
 import { BRANCH_ELEMENT, JIJANGGAN, STEM_INFO } from '@orrery/core/constants'
+import { needStems, type StemName } from './gungtong'
 
 /* ───────── 조정 가능한 상수 ───────── */
 const STEM_W = { year: 1.0, month: 1.3, hour: 1.0, day: 1.0 }
@@ -112,6 +113,16 @@ export interface Yongsin {
   secondary: { element: Element; basis: string } | null
   note: string
 }
+export interface GungtongInfo {
+  /** 궁통보감이 이 일간·월지에서 꼽는 필요 천간(우선순위 순) */
+  need: string[]
+  /** 그중 원국 천간에 드러나 있는 것 */
+  present: string[]
+  /** 그중 지지 속(지장간)에만 숨어 있는 것 */
+  hidden: string[]
+  /** 아예 없는 것 */
+  absent: string[]
+}
 export interface Analysis {
   dayStem: string
   dayElement: Element
@@ -123,6 +134,7 @@ export interface Analysis {
   gyeokguk: Gyeokguk
   climate: Climate
   yongsin: Yongsin
+  gungtong: GungtongInfo
   signals: string[]
 }
 
@@ -293,6 +305,16 @@ export function analyze(r: SajuResult): Analysis {
   }
   const yongsin: Yongsin = { primary, basis, heesin, gisin, gusin, hansin, secondary, note: ynote }
 
+  /* 궁통보감 조후 용신 (일간×월지 표) */
+  const gtNeed = needStems(dayStem as StemName, monthBranch)
+  const allHidden = P.filter((_, i) => !(unk && i === 0)).flatMap((p) => hiddenStems(p.pillar.branch))
+  const gungtong: GungtongInfo = {
+    need: gtNeed,
+    present: gtNeed.filter((s) => visible.includes(s)),
+    hidden: gtNeed.filter((s) => !visible.includes(s) && allHidden.includes(s)),
+    absent: gtNeed.filter((s) => !visible.includes(s) && !allHidden.includes(s)),
+  }
+
   /* 구조 신호 (확정이 아닌 힌트) */
   const signals: string[] = []
   const visSip = visible.map((s) => sipsinOf(dayStem, s))
@@ -309,7 +331,7 @@ export function analyze(r: SajuResult): Analysis {
 
   return {
     dayStem, dayElement: dayEl, monthBranch, elements: el, groups: grp,
-    elementStatus, strength, gyeokguk, climate, yongsin, signals,
+    elementStatus, strength, gyeokguk, climate, yongsin, gungtong, signals,
   }
 }
 
@@ -331,6 +353,8 @@ export function analysisText(a: Analysis): string {
   const y = a.yongsin
   L.push(`용신 후보: ${KO[y.primary]} [${y.basis}] — ${y.note}`)
   L.push(`희신 ${KO[y.heesin]} / 기신 ${KO[y.gisin]} / 구신 ${KO[y.gusin]} / 한신 ${KO[y.hansin]}`)
+  const g = a.gungtong
+  if (g.need.length) L.push(`궁통보감 조후 용신(${a.dayStem}일간·${a.monthBranch}월): ${g.need.join('→')} 순으로 필요 — 천간에 있음 ${g.present.join('') || '없음'} / 지지 속에만 있음 ${g.hidden.join('') || '없음'} / 원국에 없음 ${g.absent.join('') || '없음'}`)
   if (a.signals.length) L.push('구조 신호: ' + a.signals.join(' | '))
   L.push('※ 위 판정은 자평명리 주류(억부+조후+격국) 기준의 후보이며, 유파에 따라 달라질 수 있음을 풀이에 신뢰도로 반영할 것.')
   return L.join('\n')

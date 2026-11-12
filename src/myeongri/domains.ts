@@ -298,6 +298,7 @@ function healthFacts(r: SajuResult, a: Analysis): string[] {
   for (const e of st.excess) F.push(`${KO[e]} 과다(${pct(a.elements[e])}) → 해당 계통(${ORGAN[e]})이 과로·과열/정체되기 쉬운 경향`)
   for (const e of st.lack) F.push(`${KO[e]} 부족(${pct(a.elements[e])}) → 해당 계통(${ORGAN[e]})이 약해지기 쉬운 경향`)
   for (const e of st.missing) F.push(`${KO[e]} 없음 → 해당 계통(${ORGAN[e]}) 관리 습관을 의식적으로 챙길 것`)
+  if (a.gungtong.need.length) F.push(`궁통보감(옛 조후 책): ${a.dayStem}일간이 ${a.monthBranch}월생이면 ${a.gungtong.need.join('·')} 기운이 필요 — 원국에 ${a.gungtong.present.join('') || (a.gungtong.hidden.join('') ? '드러난 것은 없고 지지 속에 ' + a.gungtong.hidden.join('') : '맞는 글자가 없음')}`)
   F.push(`조후: ${a.climate.note} (한열 지수 ${a.climate.heat}) ${a.climate.need === 'fire' ? '→ 몸을 차게 두지 않는 생활' : a.climate.need === 'water' ? '→ 열을 식히고 수분·휴식 관리' : ''}`.trim())
   const gi = a.yongsin.gisin
   F.push(`기신 ${SUBJ[gi]} 강해지는 해·달에는 해당 계통(${ORGAN[gi]}) 컨디션 관리가 필요`)
