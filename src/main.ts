@@ -34,6 +34,7 @@ import { tojeongOf } from './myeongri/tojeong'
 import { gungtongCard } from './myeongri/gungtong'
 import { composeTojeong } from './i18n/tojeong'
 import { dailyHexagram } from './i18n/iching'
+import { readName, WX_KO, type Wx } from './myeongri/name'
 import { gusungOf, STARS, STAR_TEXT, type DirRead } from './myeongri/gusung'
 import { CATS, pickDays, yearBranch, zodiacOf, type CatKey, type DayPick } from './myeongri/taegil'
 import { pickCalc } from './myeongri/pick'
@@ -42,7 +43,7 @@ import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from '
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'gusung' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'name' | 'gusung' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -580,6 +581,42 @@ function showGusung() {
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
 }
 
+function nameHtml(): string {
+  return `<section class="card tg"><h2>이름 풀이 · 작명 비교</h2>
+    <p class="meta">한글 이름의 발음오행과 획수로 원·형·이·정 네 가지 운을 봐요. 후보 이름을 여러 개 넣으면 비교해 줘요.</p>
+    <label class="lbl" for="nmf">성</label><input id="nmf" maxlength="2" placeholder="예: 김" autocomplete="off">
+    <label class="lbl" for="nmg">이름 (후보를 줄마다 하나씩, 최대 8개)</label>
+    <textarea id="nmg" rows="4" placeholder="서연&#10;하윤&#10;지안"></textarea>
+    <button class="go" id="nmgo" type="button">이름 풀이 보기</button></section>
+  <section id="nmout"></section>`
+}
+function initName() {
+  const go = document.getElementById('nmgo') as HTMLButtonElement
+  go.onclick = () => {
+    const fam = (document.getElementById('nmf') as HTMLInputElement).value.trim()
+    const gs = (document.getElementById('nmg') as HTMLTextAreaElement).value.split(/[\n,，、]+/).map((v) => v.trim()).filter(Boolean).slice(0, 8)
+    const out = document.getElementById('nmout')!
+    const pr = loadProfile()
+    let miss: Wx[] = []
+    if (pr) {
+      try {
+        const m: Record<string, Wx> = { tree: '木', fire: '火', earth: '土', metal: '金', water: '水' }
+        miss = analyze(resultOf(pr)).elementStatus.missing.map((e: string) => m[e]).filter(Boolean)
+      } catch { /* 사주 보완 없이 진행 */ }
+    }
+    const rs = gs.map((g) => readName(fam, g)).filter((r): r is NonNullable<typeof r> => !!r)
+    if (!fam || !rs.length) { out.innerHTML = '<article class="card"><p>성과 이름을 한글로 넣어 주세요. (성 1~2글자, 이름 1~3글자)</p></article>'; return }
+    const rank = [...rs].sort((a, b) => b.score - a.score)
+    out.innerHTML = `${rs.length > 1 ? `<article class="card"><h2>후보 비교</h2><ol class="rs">${rank.map((r) => `<li><b>${esc(r.name)}</b> — 점수 ${r.score} · ${esc(r.summary)}</li>`).join('')}</ol></article>` : ''}
+      ${rs.map((r) => `<article class="card"><h2>${esc(r.name)}</h2><p class="meta">발음오행 ${r.syls.map((s) => `${esc(s.ch)}(${WX_KO[s.wx]}·${s.strokes}획)`).join(' ')}</p>
+        <ul class="rs">${r.gyeok.map((g) => `<li><b>${g.key} ${g.n}수 · ${g.grade}</b> — ${esc(g.label)}: ${esc(g.text)}</li>`).join('')}</ul>
+        <p class="dbody">글자 흐름: ${r.flow.map((f) => `${esc(f.pair)} ${f.rel}`).join(' · ')}</p>
+        ${miss.length ? `<p class="dtip">✦ 내 사주에 부족한 기운(${miss.map((w) => WX_KO[w]).join('·')}) ${miss.some((w) => r.wxCount[w] > 0) ? '을 이름이 채워 줘요.' : '은 이 이름에 없어요.'}</p>` : ''}
+        <p class="dbody"><b>${esc(r.summary)}</b></p></article>`).join('')}
+      <article class="card"><p class="note">한글 이름의 초성 발음오행(ㄱㅋ 목, ㄴㄷㄹㅌ 화, ㅇㅎ 토, ㅅㅈㅊ 금, ㅁㅂㅍ 수)과 한글 획수로 보는 간단한 방식이에요. 전통 성명학은 한자 획수를 쓰고 유파마다 기준이 달라 결과가 다를 수 있어요. 이름은 부르기 좋고 뜻이 좋은 것이 가장 중요하니 참고용으로만 보세요.</p></article>`
+  }
+}
+
 let examDate = (() => { const t0 = new Date(); const iso = `${t0.getFullYear()}-${String(t0.getMonth() + 1).padStart(2, '0')}-${String(t0.getDate()).padStart(2, '0')}`; return iso <= EXAM_DATE ? EXAM_DATE : iso })()
 function showExam() {
   const x = t()
@@ -649,7 +686,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['name', '名', lang === 'ko' ? '이름 풀이·작명 비교' : 'Name reading'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -1156,6 +1193,7 @@ let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
 else if (location.hash === '#tojeong') mode = 'tojeong'
 else if (location.hash === '#iching') mode = 'iching'
+else if (location.hash === '#name') mode = 'name'
 else if (location.hash === '#gusung') mode = 'gusung'
 else if (location.hash === '#taegil') mode = 'taegil'
 else if (location.hash === '#face') mode = 'face'
@@ -1203,7 +1241,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
@@ -1266,6 +1304,7 @@ function bind() {
   if (mode === 'gusung' && loadProfile()) showGusung()
   if (mode === 'iching') showIching()
   if (mode === 'taegil') initTaegil()
+  if (mode === 'name') initName()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
 
