@@ -548,3 +548,6 @@ label:has(> input[name$=city]){position:relative}
 .tg input,.tg select,.tg textarea{width:100%;box-sizing:border-box;padding:12px 10px;border:1.5px solid var(--line);border-radius:16px;background:var(--card,var(--inset));color:var(--ink);font:inherit;font-size:16px;margin:.2rem 0 .5rem}
 .tg .lbl{display:block;margin-top:.5rem;font-size:.9rem}
 .tg .chk{display:flex;gap:.5rem;align-items:center;margin:.3rem 0 .6rem}.tg .chk input{width:auto;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:.3rem 0 .6rem}
+.chip{display:inline-flex;gap:.3rem;align-items:center;padding:6px 10px;border:1.5px solid var(--line);border-radius:999px;font-size:.9rem;background:var(--card,var(--inset))}
+.chip input{width:auto;margin:0}

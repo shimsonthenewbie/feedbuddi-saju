@@ -1,4 +1,4 @@
-import { aiConsentHtml, aiConsentOk } from './ai-consent'
+import { aiConsentHtml, aiConsentOk, looksSensitive, showSensitive } from './ai-consent'
 import { ticketBanner } from './ticket-banner'
 import './style.css'
 import { calculateSaju } from '@orrery/core/saju'
@@ -6,8 +6,9 @@ import { SEOUL, filterCities, formatCityName, type City } from '@orrery/core/cit
 import { BRANCH_ELEMENT, STEM_INFO } from '@orrery/core/constants'
 import type { SajuResult } from '@orrery/core/types'
 import tzlookup from '@photostructure/tz-lookup'
-import { buildPrompt, type Lang, type Person } from './prompt'
-import { analyze, GROUP_OF, mainStemOf, sipsinOf } from './myeongri'
+import { buildPrompt, chartText, type Lang, type Person } from './prompt'
+import { matchSymbols } from './i18n/dream'
+import { analyze, analysisText, GROUP_OF, mainStemOf, sipsinOf } from './myeongri'
 import { luckAt } from './myeongri/timing'
 import { freeCards, freePool } from './i18n/free'
 import { dailyFortune } from './myeongri/daily'
@@ -45,7 +46,7 @@ import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from '
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'tarot' | 'astro' | 'name' | 'gusung' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'dream' | 'tarot' | 'astro' | 'name' | 'gusung' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -662,6 +663,71 @@ function initTarot() {
   }
 }
 
+const FEELS = ['무서움', '불안', '기쁨', '설렘', '슬픔', '분노', '당황', '평온', '외로움', '그리움', '혼란', '답답함']
+function dreamHtml(): string {
+  const pr = loadProfile()
+  return `<section class="card tg"><h2>꿈해몽</h2>
+    <p class="meta">꿈의 장면과 그때 느낀 감정을 자세히 적을수록 풀이가 정확해져요. 자세한 AI 풀이는 질문권 1장으로 받아요.</p>
+    <label class="lbl" for="drm">꿈 내용 (20자 이상, 기억나는 대로)</label>
+    <textarea id="drm" rows="6" maxlength="1500" placeholder="예: 아주 큰 구렁이가 우리 집 마루에 누워 있었는데 도망가지 않고 가만히 저를 쳐다봤어요…"></textarea>
+    <label class="lbl" for="drs">가장 강하게 남은 장면 (선택)</label><input id="drs" maxlength="200" autocomplete="off">
+    <p class="lbl">꿈속에서 느낀 감정 (여러 개 선택)</p>
+    <div class="chips" id="drf">${FEELS.map((f) => `<label class="chip"><input type="checkbox" value="${f}"> ${f}</label>`).join('')}</div>
+    <label class="lbl" for="dra">깨어난 직후 느낌 (선택)</label><input id="dra" maxlength="120" placeholder="예: 가슴이 두근거렸어요 / 이상하게 개운했어요" autocomplete="off">
+    <label class="lbl" for="drsit">요즘 마음에 걸리는 일 (선택)</label><input id="drsit" maxlength="200" placeholder="예: 이직 고민, 시험 준비, 헤어진 사람" autocomplete="off">
+    ${pr ? '<label class="chk"><input type="checkbox" id="drchart" checked> 내 사주의 요즘 흐름도 함께 연결하기</label>' : ''}
+    <button class="go ghost" id="drfree" type="button">무료로 상징만 보기</button>
+    ${rpTicket() ? `${aiConsentHtml(lang, true)}<button class="go" id="drai" type="button">AI로 자세히 풀이받기 (질문권 1장)</button>` : '<p class="note">자세한 AI 풀이는 질문권이 있을 때 쓸 수 있어요. 질문권은 곧 판매를 시작해요.</p>'}
+    <p class="note" id="drmsg" role="status"></p></section>
+  <section id="drout"></section>`
+}
+function initDream() {
+  const root = document.querySelector('.tg') as HTMLElement
+  const val = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement).value.trim()
+  const msg = document.getElementById('drmsg')!
+  const out = document.getElementById('drout')!
+  const input = () => ({
+    dream: val('drm'), strongest: val('drs'), afterFeel: val('dra'), situation: val('drsit'),
+    feelings: [...document.querySelectorAll<HTMLInputElement>('#drf input:checked')].map((i) => i.value),
+  })
+  const all = () => { const i = input(); return `${i.dream} ${i.strongest} ${i.afterFeel} ${i.situation}` }
+  document.getElementById('drm')!.addEventListener('input', () => showSensitive(root, looksSensitive(all())))
+  document.getElementById('drfree')!.onclick = () => {
+    const i = input()
+    if (i.dream.length < 20) { msg.textContent = '꿈 내용을 20자 이상 적어 주세요.'; return }
+    const ss = matchSymbols(`${i.dream} ${i.strongest}`)
+    msg.textContent = ''
+    out.innerHTML = `<article class="card"><h2>꿈 속 상징 (무료)</h2><p class="meta">적어 주신 글에서 알아본 상징이에요. 감정과 상황까지 연결한 자세한 풀이는 AI 풀이로 받을 수 있어요.</p></article>
+      ${ss.length ? ss.map((s) => `<article class="card"><h3>${esc(s.name)}</h3><p class="dbody"><b>전통 해몽</b> ${esc(s.trad)}</p><p class="dbody"><b>마음으로 보면</b> ${esc(s.mind)}</p></article>`).join('') : '<article class="card"><p>사전에 있는 대표 상징은 찾지 못했어요. 이런 꿈은 장면과 감정을 연결해서 풀어야 해서, 자세한 풀이가 더 잘 맞아요.</p></article>'}
+      <article class="card"><p class="note">상징의 뜻은 꿈꾼 사람의 감정과 상황에 따라 달라져요. 재미와 참고용이에요.</p></article>`
+  }
+  const ai = document.getElementById('drai') as HTMLButtonElement | null
+  if (ai) ai.onclick = async () => {
+    const i = input()
+    if (i.dream.length < 20) { msg.textContent = '꿈 내용을 20자 이상 적어 주세요.'; return }
+    if (looksSensitive(all())) { showSensitive(root, true); msg.textContent = '번호나 이메일처럼 보이는 글이 있어요. 지우고 다시 눌러 주세요.'; return }
+    if (!aiConsentOk(root)) { msg.textContent = 'AI 풀이를 쓰려면 위의 동의 칸을 체크해 주세요.'; return }
+    const tk = rpTicket()
+    if (!tk) { msg.textContent = '질문권이 없어요.'; return }
+    let chart = ''
+    const pr = loadProfile()
+    if (pr && (document.getElementById('drchart') as HTMLInputElement | null)?.checked) {
+      try { const r = resultOf(pr); chart = chartText({ label: '나', placeName: pr.place, result: r }) + '\n' + analysisText(analyze(r)).slice(0, 2500) } catch { chart = '' }
+    }
+    ai.disabled = true; msg.textContent = '꿈을 읽고 있어요. 1분 정도 걸릴 수 있어요…'
+    try {
+      const res = await fetch('/api/dream', { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${tk}` }, body: JSON.stringify({ ...i, chart }) })
+      const j = await res.json() as { mode?: string; text?: string; reason?: string }
+      if (j.mode === 'ai' && j.text) {
+        try { localStorage.removeItem('fb-saju-ticket') } catch { /* 사용한 질문권은 지운다 */ }
+        msg.textContent = ''
+        out.innerHTML = `<article class="rcard rp">${mdLite(j.text)}</article><article class="card"><p class="note">AI가 쓴 글이에요. 꿈은 미래를 정하는 게 아니라 마음과 상황을 비추는 거울이에요. 재미와 참고용이에요.</p></article>`
+      } else msg.textContent = '지금은 AI 풀이를 받지 못했어요. 질문권은 차감되지 않았어요. 잠시 뒤 다시 시도해 주세요.'
+    } catch { msg.textContent = '연결에 문제가 있어요. 질문권은 차감되지 않았어요.' }
+    ai.disabled = false
+  }
+}
+
 let examDate = (() => { const t0 = new Date(); const iso = `${t0.getFullYear()}-${String(t0.getMonth() + 1).padStart(2, '0')}-${String(t0.getDate()).padStart(2, '0')}`; return iso <= EXAM_DATE ? EXAM_DATE : iso })()
 function showExam() {
   const x = t()
@@ -731,7 +797,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['tarot', '🂠', lang === 'ko' ? '타로 (오늘의 카드·3장)' : 'Tarot'], ['astro', '☉', lang === 'ko' ? '별자리 출생차트 (서양 점성술)' : 'Birth chart (Western astrology)'], ['name', '名', lang === 'ko' ? '이름 풀이·작명 비교' : 'Name reading'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['dream', '夢', lang === 'ko' ? '꿈해몽 (AI 자세히)' : 'Dream reading'], ['tarot', '🂠', lang === 'ko' ? '타로 (오늘의 카드·3장)' : 'Tarot'], ['astro', '☉', lang === 'ko' ? '별자리 출생차트 (서양 점성술)' : 'Birth chart (Western astrology)'], ['name', '名', lang === 'ko' ? '이름 풀이·작명 비교' : 'Name reading'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -1238,6 +1304,7 @@ let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
 else if (location.hash === '#tojeong') mode = 'tojeong'
 else if (location.hash === '#iching') mode = 'iching'
+else if (location.hash === '#dream') mode = 'dream'
 else if (location.hash === '#tarot') mode = 'tarot'
 else if (location.hash === '#astro') mode = 'astro'
 else if (location.hash === '#name') mode = 'name'
@@ -1288,7 +1355,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'astro') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'dream' ? dreamHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'astro') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
@@ -1354,6 +1421,7 @@ function bind() {
   if (mode === 'taegil') initTaegil()
   if (mode === 'name') initName()
   if (mode === 'tarot') initTarot()
+  if (mode === 'dream') initDream()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
 

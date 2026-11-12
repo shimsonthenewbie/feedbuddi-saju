@@ -6,6 +6,7 @@
  */
 import { D1Store, MemoryStore, DAILY_CAP, SOON_MS, effective, isTicketId, type D1, type Store, type View, type Sort } from './tickets'
 import { buildReportRequest, type Part, type Tone } from '../src/report-prompt'
+import { buildDreamRequest, type DreamInput } from '../src/dream-prompt'
 
 interface Env {
   DB?: D1
@@ -19,6 +20,8 @@ interface Env {
   ASSETS: { fetch(req: Request): Promise<Response> }
   GEMINI_API_KEY?: string
   GEMINI_MODEL?: string
+  /** 선택: 꿈해몽처럼 글 품질이 중요한 풀이에 쓸 모델(없으면 GEMINI_MODEL). */
+  DREAM_MODEL?: string
 }
 interface Card { kind: string; title: string; paras: string[]; list?: string[] }
 interface AskBody { lang: string; cat: string; question: string; date?: string; facts: string; cards: Card[] }
@@ -95,8 +98,8 @@ async function rewrite(b: AskBody, env: Env): Promise<Card[] | null> {
 }
 
 /** 종합 리포트: 4개 파트를 차례로 만들어 줄 단위(JSON)로 흘려 보낸다. 질문권 1장 = 리포트 1건. */
-async function geminiText(env: Env, system: string, user: string, ms: number): Promise<string | null> {
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash'
+async function geminiText(env: Env, system: string, user: string, ms: number, opt: { model?: string; thinking?: number; temp?: number } = {}): Promise<string | null> {
+  const model = opt.model || env.GEMINI_MODEL || 'gemini-2.5-flash'
   const ctl = new AbortController()
   const timer = setTimeout(() => ctl.abort(), ms)
   try {
@@ -106,7 +109,7 @@ async function geminiText(env: Env, system: string, user: string, ms: number): P
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: 'user', parts: [{ text: user }] }],
-        generationConfig: { temperature: 0.6, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: 0 } },
+        generationConfig: { temperature: opt.temp ?? 0.6, maxOutputTokens: 8192, thinkingConfig: { thinkingBudget: opt.thinking ?? 0 } },
       }),
     })
     if (!res.ok) return null
@@ -255,6 +258,31 @@ export default {
       const res = reportStream({ data: b.data, tone }, env, () => store.release(ticket, now)) as Response & { _run: Promise<void> }
       if (ctx) ctx.waitUntil(res._run)
       return res
+    }
+
+    if (url.pathname === '/api/dream') {
+      let b: any
+      try { b = await req.json() } catch { return json({ error: 'json' }, 400) }
+      const cut = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
+      const dream = cut(b?.dream, 1500)
+      if (dream.length < 20) return json({ error: 'too_short' }, 400)
+      const input: DreamInput = {
+        dream, strongest: cut(b?.strongest, 300), afterFeel: cut(b?.afterFeel, 200), situation: cut(b?.situation, 400), chart: cut(b?.chart, 3000),
+        feelings: Array.isArray(b?.feelings) ? b.feelings.filter((f: unknown) => typeof f === 'string').slice(0, 8).map((f: string) => f.slice(0, 20)) : [],
+      }
+      const auth = req.headers.get('authorization') ?? ''
+      const ticket = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+      if (!ticket) return json({ mode: 'engine', reason: 'no_ticket' })
+      if (!env.GEMINI_API_KEY) return json({ mode: 'engine', reason: 'no_ai' })
+      const cap = Number(env.DAILY_CAP) > 0 ? Number(env.DAILY_CAP) : DAILY_CAP
+      const deny = await store.consume(ticket, now, cap)
+      if (deny) return json({ mode: 'engine', reason: deny })
+      const rq = buildDreamRequest(input)
+      const opt = { model: env.DREAM_MODEL, thinking: 1024, temp: 0.7 }
+      let text = await geminiText(env, rq.system, rq.user, 100_000, opt)
+      if (!text) text = await geminiText(env, rq.system, rq.user, 100_000, opt)
+      if (!text) { await store.release(ticket, now); return json({ mode: 'engine', reason: 'ai_failed', refunded: true }) }
+      return json({ mode: 'ai', text })
     }
 
     if (url.pathname !== '/api/ask') return json({ error: 'not_found' }, 404)
