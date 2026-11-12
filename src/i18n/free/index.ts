@@ -1,6 +1,7 @@
 import type { Analysis } from '../../myeongri'
 import type { SajuResult } from '@orrery/core/types'
 import { getBranchRelation, getStemRelation } from '@orrery/core/pillars'
+import { extraSals } from '../../myeongri/sal'
 import { consultPool } from '../consult'
 
 type L = 'ko' | 'en'
@@ -89,6 +90,12 @@ const ko: FreeText = {
     yangin: ['승부욕의 별 (양인살)', '추진력과 승부욕이 강한 별이에요. 날카로워지지 않게 조절하면 큰 힘이 돼요.'],
     baekho: ['결단의 별 (백호살)', '결단력과 강한 에너지의 별이에요. 급한 마음만 다스리면 좋아요.'],
     goegang: ['카리스마의 별 (괴강살)', '카리스마와 고집이 강한 별이에요. 자기 기준이 분명해요.'],
+    hakdang: ['배움의 별 (학당귀인)','배우고 익히는 데 복이 있는 별이에요. 공부와 기술을 쌓기에 좋아요.'],
+    amrok: ['숨은 도움의 별 (암록)','드러나지 않게 도움과 먹을 복이 따르는 별이에요.'],
+    hyeonchim: ['날카로움의 별 (현침살)','예리한 눈과 말솜씨가 있는 별이에요. 말을 한 번 다듬으면 큰 강점이 돼요.'],
+    cheonra: ['얽힘의 별 (천라지망)','일이 얽힌 느낌이 들 수 있는 별이에요. 서두르지 않고 돌아가면 풀려요.'],
+    wonjin: ['밀당의 별 (원진살)','가까운 사람과 괜히 서운해지기 쉬운 별이에요. 마음을 말로 표현하면 좋아요.'],
+    gwimun: ['예민한 감각의 별 (귀문관살)','생각이 깊고 직관이 예민한 별이에요. 쉬는 시간을 꼭 챙기세요.'],
   },
   starNone: '눈에 띄는 별은 없어요. 별보다 사주의 바탕이 더 중요하니 걱정하지 않으셔도 돼요.',
   starNote: '별(신살)은 보조로만 참고하세요. 하나만으로 판단하지 않아요.',
@@ -160,6 +167,12 @@ const en: FreeText = {
     yangin: ['Drive star (Goat Blade)', 'Strong drive and competitiveness. Tempered, it becomes real power.'],
     baekho: ['Decision star (White Tiger)', 'Decisiveness and strong energy. Just calm the rush.'],
     goegang: ['Charisma star (Kuigang)', 'Strong charisma and stubbornness. You have clear standards.'],
+    hakdang: ['Learning star (Hakdang)','Luck in study and skills.'],
+    amrok: ['Hidden help (Amrok)','Quiet support follows you.'],
+    hyeonchim: ['Sharp star (Hyeonchim)','Sharp eye and tongue; polish your words.'],
+    cheonra: ['Tangle star (Cheonra-jimang)','Things feel tangled; go around, do not rush.'],
+    wonjin: ['Push-pull star (Wonjin)','Easily hurt feelings with close people; say what you feel.'],
+    gwimun: ['Sensitive star (Gwimun)','Deep, intuitive mind; protect your rest.'],
   },
   starNone: 'No notable stars here. The base of your chart matters more, so do not worry.',
   starNote: 'Treat stars only as a side reference. They are never judged alone.',
@@ -205,6 +218,7 @@ export function freeCards(r: SajuResult, a: Analysis, lang: string, dayBranchGro
   const keys: [string, boolean][] = [
     ['cheonul', ss.cheonul.length > 0], ['cheonduk', ss.cheonduk.length > 0], ['wolduk', ss.wolduk.length > 0], ['munchang', ss.munchang.length > 0], ['geumyeo', ss.geumyeo.length > 0],
     ['dohwa', ss.dohwa.length > 0], ['hongyeom', ss.hongyeom], ['yangin', ss.yangin.length > 0], ['baekho', ss.baekho], ['goegang', ss.goegang],
+    ...(extraSals(r) as string[]).map((k) => [k, true] as [string, boolean]),
   ]
   const starLines = keys.filter(([, on]) => on).map(([k]) => `${t.starName[k][0]} — ${t.starName[k][1]}`)
   const topGroup = (Object.entries(a.groups) as [string, number][]).sort((p, q) => q[1] - p[1])[0][0]
