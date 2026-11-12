@@ -34,13 +34,14 @@ import { tojeongOf } from './myeongri/tojeong'
 import { gungtongCard } from './myeongri/gungtong'
 import { composeTojeong } from './i18n/tojeong'
 import { dailyHexagram } from './i18n/iching'
+import { CATS, pickDays, yearBranch, zodiacOf, type CatKey, type DayPick } from './myeongri/taegil'
 import { pickCalc } from './myeongri/pick'
 import { composePick } from './i18n/pick'
 import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from './share'
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'tojeong' | 'iching' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -505,6 +506,53 @@ function showIching() {
   document.getElementById('icback')!.onclick = () => { mode = 'home'; render() }
 }
 
+const WD = ['일', '월', '화', '수', '목', '금', '토']
+function taegilHtml(): string {
+  const pr = loadProfile()
+  const yNow = new Date().getFullYear()
+  const def = pr ? yearBranch(pr.y) : ''
+  const ZB = '子丑寅卯辰巳午未申酉戌亥'
+  return `<section class="card tg"><h2>택일 — 좋은 날 고르기</h2>
+    <p class="meta">이사, 결혼, 개업처럼 날짜가 중요한 일의 좋은 날을 옛 책력 규칙과 내 띠로 골라 드려요.</p>
+    <label class="lbl" for="tgcat">무슨 일인가요?</label>
+    <select id="tgcat">${(Object.keys(CATS) as CatKey[]).map((k) => `<option value="${k}">${esc(CATS[k].name)} — ${esc(CATS[k].hint)}</option>`).join('')}</select>
+    <label class="lbl" for="tgper">언제부터 언제까지?</label>
+    <select id="tgper"><option value="30">앞으로 30일</option><option value="90" selected>앞으로 3개월</option><option value="180">앞으로 6개월</option><option value="365">앞으로 1년</option></select>
+    <label class="lbl" for="tgzod">내 띠 (충이 되는 날을 피해 줘요)</label>
+    <select id="tgzod"><option value="">모름·선택 안 함</option>${ZB.split('').map((b) => `<option value="${b}"${b === def ? ' selected' : ''}>${esc(zodiacOf(b))}띠 (${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((k) => yNow - k).find((yy) => yearBranch(yy) === b)}·${[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((k) => yNow - 12 - k).find((yy) => yearBranch(yy) === b)}년생…)</option>`).join('')}</select>
+    <label class="chk"><input type="checkbox" id="tgwk"> 주말만 보기</label>
+    <button class="go" id="tggo" type="button">좋은 날 찾기</button></section>
+  <section id="tgout"></section>`
+}
+const GRADE_CLS: Record<DayPick['grade'], string> = { 대길: 'good', 길: 'good', 보통: 'mid', 조심: 'care', 피하세요: 'care' }
+function tgCard(p: DayPick, bad = false): string {
+  const d = p.date
+  return `<article class="rcard ym k-${GRADE_CLS[p.grade]}"><div class="yh"><b>${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} (${WD[d.getDay()]})</b><span class="yk">${esc(p.grade)}</span></div>
+    <p class="meta">${esc(p.lunar)} · ${esc(p.ganji)}일</p>
+    ${(bad ? p.cautions : p.reasons).map((r) => `<p>${bad ? '✕' : '✓'} ${esc(r)}</p>`).join('')}
+    ${!bad && p.cautions.length ? `<p class="meta">조심: ${esc(p.cautions.join(' · '))}</p>` : ''}
+    ${p.note ? `<p class="dtip">✦ ${esc(p.note)}</p>` : ''}</article>`
+}
+function initTaegil() {
+  const go = document.getElementById('tggo') as HTMLButtonElement
+  const run = () => {
+    const cat = (document.getElementById('tgcat') as HTMLSelectElement).value as CatKey
+    const per = +(document.getElementById('tgper') as HTMLSelectElement).value
+    const zod = (document.getElementById('tgzod') as HTMLSelectElement).value
+    const wk = (document.getElementById('tgwk') as HTMLInputElement).checked
+    const pr = loadProfile()
+    let dayBranch: string | undefined
+    if (pr) { try { dayBranch = resultOf(pr).pillars[1].pillar.branch } catch { /* 일지 없이 진행 */ } }
+    const r = pickDays(cat, new Date(), per, { yearBranch: zod || undefined, dayBranch }, wk)
+    const out = document.getElementById('tgout')!
+    out.innerHTML = `<article class="card"><h2>${esc(CATS[cat].name)} 좋은 날</h2><p class="meta">${r.total}일을 살펴 좋은 날 ${r.best.length}일을 골랐어요.${zod ? ` 내 띠(${esc(zodiacOf(zod))})${dayBranch ? '와 일지' : ''}를 반영했어요.` : ' 띠를 고르면 나와 충이 되는 날을 더 정확히 피해요.'}</p></article>
+      ${r.best.length ? r.best.map((p) => tgCard(p)).join('') : '<article class="card"><p>이 기간에는 뚜렷하게 좋은 날이 없어요. 기간을 늘려 보세요.</p></article>'}
+      ${r.worst.length ? `<article class="card"><h3>가능하면 피할 날</h3><p class="meta">꺼리는 요소가 겹친 날이에요.</p></article>${r.worst.map((p) => tgCard(p, true)).join('')}` : ''}
+      <article class="card"><p class="note">손 없는 날, 건제 12신, 황도·흑도, 의기(옛 책력의 일 별 길흉)와 내 띠·일지와의 충·합을 합산한 용용사주의 간단한 규칙이에요. 유파에 따라 기준이 달라 같은 날도 평가가 다를 수 있어요. 예식장·계약 일정·가족 사정이 우선이고, 재미와 참고용으로 봐 주세요.</p></article>`
+  }
+  go.onclick = run
+}
+
 let examDate = (() => { const t0 = new Date(); const iso = `${t0.getFullYear()}-${String(t0.getMonth() + 1).padStart(2, '0')}-${String(t0.getDate()).padStart(2, '0')}`; return iso <= EXAM_DATE ? EXAM_DATE : iso })()
 function showExam() {
   const x = t()
@@ -574,7 +622,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -602,7 +650,7 @@ function homeHtml(): string {
       <button class="go" type="submit">${esc(x.freeGo)}</button>
     </form>
   </section>
-  ${lang === 'ko' ? `<section class="card classics"><h2>옛 책을 연구해서 더 자세하게</h2><p class="meta">용용사주는 사주 고전의 방식을 하나씩 공부해 풀이에 넣고 있어요.</p><ul><li><b>『궁통보감』</b> — 태어난 계절에 맞춰 내게 필요한 기운을 짚어요. (무료 사주 풀이에 적용)</li><li><b>『주역』</b> — 64괘 중 오늘의 한 괘를 뽑아요. <button type="button" class="linkbtn" data-mode="iching">오늘의 괘 보기</button></li><li><b>『토정비결』</b> — 원전 방식으로 괘를 계산해 올해 12개월을 봐요. <button type="button" class="linkbtn" data-mode="tojeong">올해의 운세 보기</button></li></ul><p class="note">풀이 글은 오늘 말로 새로 쓴 거예요. 재미와 참고용이에요.</p></section>` : ''}
+  ${lang === 'ko' ? `<section class="card classics"><h2>옛 책을 연구해서 더 자세하게</h2><p class="meta">용용사주는 사주 고전의 방식을 하나씩 공부해 풀이에 넣고 있어요.</p><ul><li><b>『궁통보감』</b> — 태어난 계절에 맞춰 내게 필요한 기운을 짚어요. (무료 사주 풀이에 적용)</li><li><b>택일</b> — 옛 책력과 내 띠로 이사·결혼·개업 같은 좋은 날을 골라요. <button type="button" class="linkbtn" data-mode="taegil">좋은 날 찾기</button></li><li><b>『주역』</b> — 64괘 중 오늘의 한 괘를 뽑아요. <button type="button" class="linkbtn" data-mode="iching">오늘의 괘 보기</button></li><li><b>『토정비결』</b> — 원전 방식으로 괘를 계산해 올해 12개월을 봐요. <button type="button" class="linkbtn" data-mode="tojeong">올해의 운세 보기</button></li></ul><p class="note">풀이 글은 오늘 말로 새로 쓴 거예요. 재미와 참고용이에요.</p></section>` : ''}
   <section class="lockcard" aria-label="${esc(x.todayLockT)}">
     <div class="lk1"><img class="lockic" src="${art('ui-lock')}" alt="" width="52" height="52"><div><b>${esc(x.todayLockT)}</b><span>${esc(x.todayLockD)}</span></div></div>
     <div class="dim" aria-hidden="true">★★★★☆</div>
@@ -1081,6 +1129,7 @@ let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
 else if (location.hash === '#tojeong') mode = 'tojeong'
 else if (location.hash === '#iching') mode = 'iching'
+else if (location.hash === '#taegil') mode = 'taegil'
 else if (location.hash === '#face') mode = 'face'
 else if (location.hash === '#hand') mode = 'hand'
 let lastMatch: { people: Person[]; m: ReturnType<typeof matchReading> } | null = null
@@ -1126,7 +1175,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
@@ -1187,6 +1236,7 @@ function bind() {
   if (mode === 'exam' && loadProfile()) showExam()
   if (mode === 'tojeong' && loadProfile()) showTojeong()
   if (mode === 'iching') showIching()
+  if (mode === 'taegil') initTaegil()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
 
