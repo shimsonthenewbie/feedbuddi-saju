@@ -436,6 +436,9 @@ img.lockic{width:52px;height:52px;border:0;background:none;object-fit:contain;fi
 .ym.k-event .yk{background:#6a2623;color:#fff}
 .ym.k-mind .yk,.ym.k-work .yk{background:#e9cfc9;color:#5a1d1a}
 .ym.k-chance .yk{background:#d9e6cf;color:#2f4a22}
+.ym.k-good .yk{background:#d9e6cf;color:#2f4a22}
+.ym.k-care .yk{background:#6a2623;color:#fff}
+.ym.k-mid .yk{background:#efe3c4;color:#4a3a1f}
 .ym.now{outline:2.5px solid #6a2623}
 .ym .ynow{margin-left:auto;font-style:normal;font-size:.8em;background:#6a2623;color:#fff;border-radius:999px;padding:2px 9px}
 .rs{margin:6px 0 10px;padding-left:1.2em;line-height:1.7}

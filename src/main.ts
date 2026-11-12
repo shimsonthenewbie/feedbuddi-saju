@@ -30,13 +30,15 @@ import { yearLuck } from './myeongri/timing'
 import { composePage } from './i18n/year'
 import { legalDoc, type LegalDoc } from './legal'
 import { composeExam, examText, EXAM_DATE } from './i18n/exam'
+import { tojeongOf } from './myeongri/tojeong'
+import { composeTojeong } from './i18n/tojeong'
 import { pickCalc } from './myeongri/pick'
 import { composePick } from './i18n/pick'
 import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from './share'
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'tojeong' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -88,7 +90,7 @@ const T = {
     pickName: '나와 잘 맞는 사주', examName: '시험 날 사주 (수능)',
     quick: [['today', '運', '오늘의 운세'], ['solo', '命', '내 사주'], ['ask', '問', '고민 상담'], ['match', '緣', '궁합'], ['shop', '籤', '풀이 목록']],
     newTitle: '새로 나온 운세',
-    newItems: [['NEW', '관상', '사진 한 장으로 얼굴 읽기', '베타 무료', 'face'], ['NEW', '2027 신년운세', '정미년 한 해 흐름을 월별로', '베타 무료', 'newyear'], ['NEW', '두 사람의 궁합', '서로 끌리는 이유와 부딪히는 점', '베타 무료', 'match']],
+    newItems: [['NEW', '토정비결', '원전 방식으로 올해 총운과 12개월', '베타 무료', 'tojeong'], ['NEW', '관상', '사진 한 장으로 얼굴 읽기', '베타 무료', 'face'], ['NEW', '2027 신년운세', '정미년 한 해 흐름을 월별로', '베타 무료', 'newyear'], ['NEW', '두 사람의 궁합', '서로 끌리는 이유와 부딪히는 점', '베타 무료', 'match']],
     hotTitle: '지금 많이 보는 운세',
     hotItems: [['시험 날 사주 (수능 D-3)', '베타 무료', 'exam'], ['오늘의 운세', '무료', 'today'], ['무료 사주 풀이', '무료', 'solo'], ['고민 상담 (시기 짚기)', '베타 무료', 'ask'], ['사주 궁합', '베타 무료', 'match'], ['올해 흐름 (월별)', '베타 무료', 'year'], ['재물·직업 풀이', '990원', 'shop'], ['종합 풀이 리포트', '9,900원', 'report']],
     pieceTitle: '사주 한 조각',
@@ -465,6 +467,23 @@ function showYear() {
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
 }
 
+function showTojeong() {
+  const pr = loadProfile()!
+  const out = document.getElementById('out')!
+  const yr = new Date().getFullYear() + (new Date().getMonth() >= 10 ? 1 : 0)
+  const v = composeTojeong(tojeongOf(pr.y, pr.m, pr.d, yr))
+  out.innerHTML = `
+  <article class="card yr"><h2>${esc(v.title)}</h2><p class="meta">괘 번호 ${esc(v.code)}</p>
+    <p class="dbody"><b>${esc(v.summary)}</b></p>
+    <p class="dbody"><b>${esc(v.flow[0])}</b> ${esc(v.flow[1])}</p>
+    <p class="dbody"><b>${esc(v.advice[0])}</b> ${esc(v.advice[1])}</p></article>
+  <article class="card"><h2>${yr}년 12개월 (음력 기준)</h2></article>
+  ${v.months.map((m) => `<article class="rcard ym k-${m.tone === 'good' ? 'good' : m.tone === 'care' ? 'care' : 'mid'}"><div class="yh"><b>음력 ${m.n}월</b><span class="yk">${esc(m.label)}</span></div><p>${esc(m.line)}</p><p class="dtip">✦ ${esc(m.tip)}</p></article>`).join('')}
+  <article class="card"><ul class="rs">${v.facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul><p class="note">${esc(v.note)}</p></article>
+  <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${t().change}</button></p>`
+  document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
+}
+
 let examDate = (() => { const t0 = new Date(); const iso = `${t0.getFullYear()}-${String(t0.getMonth() + 1).padStart(2, '0')}-${String(t0.getDate()).padStart(2, '0')}`; return iso <= EXAM_DATE ? EXAM_DATE : iso })()
 function showExam() {
   const x = t()
@@ -534,7 +553,7 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -1037,6 +1056,7 @@ let lang: Lang = (navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'
 let mode: Mode = 'home'
 let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
+else if (location.hash === '#tojeong') mode = 'tojeong'
 else if (location.hash === '#face') mode = 'face'
 else if (location.hash === '#hand') mode = 'hand'
 let lastMatch: { people: Person[]; m: ReturnType<typeof matchReading> } | null = null
@@ -1082,12 +1102,12 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
-    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
+    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
   </form>
   <section id="out"></section>`}
   ${navHtml()}
@@ -1141,6 +1161,7 @@ function bind() {
   if (mode === 'report' && loadProfile()) showReport()
   if (mode === 'pick' && loadProfile()) showPick()
   if (mode === 'exam' && loadProfile()) showExam()
+  if (mode === 'tojeong' && loadProfile()) showTojeong()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
 
@@ -1178,7 +1199,7 @@ function onSubmit(e: Event) {
   const a = readPerson('a', x.me)
   if (typeof a === 'string') { err.textContent = a; return }
   people.push(a)
-  if (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam') {
+  if (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong') {
     saveProfile(a)
     dayOffset = 0
     render()

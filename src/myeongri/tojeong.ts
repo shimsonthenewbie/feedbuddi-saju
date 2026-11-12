@@ -40,3 +40,45 @@ export function tojeongKwae(i: TojeongInput) {
   const low = wrap(i.lunarDay + iljin(i.dayGanji), 3)
   return { up, mid, low, code: `${up}${mid}${low}` }
 }
+
+/* ───────── 생년월일 → 괘 (음력 변환·간지) ───────── */
+import { Solar, Lunar, LunarMonth } from 'lunar-javascript'
+
+const mkGanji = (s: string): Ganji => ({ stem: s[0], branch: s[1] })
+
+export interface TojeongResult {
+  year: number
+  yearGanji: string
+  age: number
+  /** "음력 1996년 9월 17일" 같은 출생 표기 */
+  lunarBirth: { y: number; m: number; d: number; leap: boolean }
+  up: number
+  mid: number
+  low: number
+  code: string
+  monthBig: boolean
+  dayClamped: boolean
+}
+
+/** 양력 생년월일로 보려는 해(year)의 토정비결 괘를 구한다. 시간은 쓰지 않는다. */
+export function tojeongOf(y: number, m: number, d: number, year: number): TojeongResult {
+  const bl = Solar.fromYmd(y, m, d).getLunar()
+  const leap = bl.getMonth() < 0
+  const lm = Math.abs(bl.getMonth())
+  const size = LunarMonth.fromYm(year, lm).getDayCount()
+  const day = Math.min(bl.getDay(), size)
+  const target = Lunar.fromYmd(year, lm, day)
+  const yg = ganjiOfYear(year)
+  // 월건: 해당 해 음력 n월의 간지 (오호둔: 그 해 1월=寅월의 천간을 연간으로 정함)
+  const firstStem = (STEMS.indexOf(yg.stem) % 5) * 2 + 2 // 甲己→丙(2), 乙庚→戊(4)…
+  const mg: Ganji = { stem: STEMS[(firstStem + lm - 1) % 10], branch: BRANCHES[(2 + lm - 1) % 12] }
+  const k = tojeongKwae({
+    year, birthLunarYear: bl.getYear(), monthIsBig: size === 30, monthGanji: mg,
+    lunarDay: day, dayGanji: mkGanji(target.getDayInGanZhi()),
+  })
+  return {
+    year, yearGanji: yg.stem + yg.branch, age: year - bl.getYear() + 1,
+    lunarBirth: { y: bl.getYear(), m: lm, d: bl.getDay(), leap },
+    up: k.up, mid: k.mid, low: k.low, code: k.code, monthBig: size === 30, dayClamped: day !== bl.getDay(),
+  }
+}
