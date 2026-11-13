@@ -23,7 +23,7 @@ function getMesh(): Promise<FM> {
     if (!(globalThis as { FaceMesh?: unknown }).FaceMesh) await loadScript(base() + 'face_mesh.js')
     const FaceMesh = (globalThis as unknown as { FaceMesh: new (o: unknown) => FM }).FaceMesh
     const m = new FaceMesh({ locateFile: (f: string) => base() + f + (/\.(binarypb|data)$/.test(f) ? ((globalThis as { __MP_SUFFIX?: string }).__MP_SUFFIX ?? '') : '') })
-    m.setOptions({ maxNumFaces: 2, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 })
+    m.setOptions({ maxNumFaces: 2, refineLandmarks: true, minDetectionConfidence: 0.3, minTrackingConfidence: 0.5 })
     m.onResults((r: { multiFaceLandmarks?: Pt[][] }) => { pending?.(r) })
     await m.initialize()
     return m
@@ -31,17 +31,59 @@ function getMesh(): Promise<FM> {
   return meshP
 }
 
-/** 사진 한 장에서 얼굴을 찾는다. 얼굴이 없으면 'none', 둘 이상이면 'many'. */
-export async function findFace(src: HTMLCanvasElement): Promise<Found | 'none' | 'many'> {
-  const m = await getMesh()
+async function detect(m: FM, src: HTMLCanvasElement): Promise<Pt[][]> {
   const r = await new Promise<{ multiFaceLandmarks?: Pt[][] }>((res, rej) => {
     pending = res
     m.send({ image: src }).catch(rej)
   })
-  const faces = r.multiFaceLandmarks ?? []
-  if (!faces.length) return 'none'
-  if (faces.length > 1) return 'many'
-  return { pts: faces[0], w: src.width, h: src.height }
+  return r.multiFaceLandmarks ?? []
+}
+const faceSize = (f: Pt[]) => {
+  let x0 = 1, x1 = 0, y0 = 1, y1 = 0
+  for (const p of f) { if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x; if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y }
+  return { w: x1 - x0, h: y1 - y0 }
+}
+
+/** 시도 하나: 사진의 일부(crop)를 잘라 θ도 돌려서 찾고, 찾은 점을 원래 사진 좌표로 되돌린다. */
+async function attempt(m: FM, src: HTMLCanvasElement, crop: [number, number, number, number], deg: number): Promise<Pt[][]> {
+  const W = src.width, H = src.height
+  const [cx0, cy0, cw, ch] = [crop[0] * W, crop[1] * H, crop[2] * W, crop[3] * H]
+  const th = (deg * Math.PI) / 180
+  const sc = Math.min(2.5, Math.max(1, 640 / Math.max(cw, ch)))
+  const rw = cw * sc, rh = ch * sc
+  const bw = Math.ceil(Math.abs(rw * Math.cos(th)) + Math.abs(rh * Math.sin(th)))
+  const bh = Math.ceil(Math.abs(rw * Math.sin(th)) + Math.abs(rh * Math.cos(th)))
+  const c = document.createElement('canvas'); c.width = bw; c.height = bh
+  const g = c.getContext('2d')!
+  g.fillStyle = '#808080'; g.fillRect(0, 0, bw, bh)
+  g.translate(bw / 2, bh / 2); g.rotate(th); g.scale(sc, sc)
+  g.drawImage(src, cx0, cy0, cw, ch, -cw / 2, -ch / 2, cw, ch)
+  const faces = await detect(m, c)
+  const cos = Math.cos(-th), sin = Math.sin(-th)
+  return faces.map((f) => f.map((p) => {
+    const dx = p.x * bw - bw / 2, dy = p.y * bh - bh / 2
+    const ux = (dx * cos - dy * sin) / sc + cw / 2, uy = (dx * sin + dy * cos) / sc + ch / 2
+    return { x: (cx0 + ux) / W, y: (cy0 + uy) / H, z: p.z }
+  }))
+}
+
+/** 사진 한 장에서 얼굴을 찾는다. 못 찾으면 돌리고 확대해 가며 다시 찾는다. 얼굴이 없으면 'none', 비슷한 크기로 둘 이상이면 'many'. */
+export async function findFace(src: HTMLCanvasElement): Promise<Found | 'none' | 'many'> {
+  const m = await getMesh()
+  const full: [number, number, number, number] = [0, 0, 1, 1]
+  const tries: Array<[[number, number, number, number], number]> = [
+    [full, 0], [full, -20], [full, 20], [full, -40], [full, 40],
+    [[0.15, 0, 0.7, 0.7], 0], [[0.2, 0.05, 0.6, 0.6], 0], [[0, 0, 0.65, 0.65], 0], [[0.35, 0, 0.65, 0.65], 0],
+    [[0, 0.3, 0.65, 0.65], 0], [[0.35, 0.3, 0.65, 0.65], 0], [[0.25, 0.25, 0.5, 0.5], 0],
+  ]
+  for (const [crop, deg] of tries) {
+    const faces = await (crop === full && deg === 0 ? detect(m, src) : attempt(m, src, crop, deg))
+    if (!faces.length) continue
+    const sorted = faces.map((f) => ({ f, a: faceSize(f).w * faceSize(f).h })).sort((p, q) => q.a - p.a)
+    if (sorted.length > 1 && sorted[1].a > sorted[0].a * 0.5) return 'many'
+    return { pts: sorted[0].f, w: src.width, h: src.height }
+  }
+  return 'none'
 }
 
 /** 사진 파일을 줄여서 캔버스에 그린다(사진 방향 자동 보정, 긴 변 최대 960px). */
