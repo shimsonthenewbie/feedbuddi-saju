@@ -15,3 +15,13 @@ for (const f of ['face_mesh.js', 'face_mesh.binarypb', 'face_mesh_solution_packe
       if (existsSync(`${hs}/${f}`)) cpSync(`${hs}/${f}`, `${hd}/${f}`)
   }
 }
+
+// 신형 얼굴 인식(Tasks Vision, Apache-2.0): 실행 파일(wasm)을 사이트에 같이 싣는다. 모델은 public/models/face_landmarker.task.
+{
+  const ts = 'node_modules/@mediapipe/tasks-vision/wasm', td = 'public/mediapipe/tasks'
+  if (existsSync(ts)) {
+    mkdirSync(td, { recursive: true })
+    for (const f of ['vision_wasm_internal.js', 'vision_wasm_internal.wasm', 'vision_wasm_nosimd_internal.js', 'vision_wasm_nosimd_internal.wasm'])
+      cpSync(`${ts}/${f}`, `${td}/${f}`)
+  }
+}

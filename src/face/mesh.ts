@@ -2,41 +2,31 @@
 export type Pt = { x: number; y: number; z: number }
 export type Found = { pts: Pt[]; w: number; h: number }
 
+import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type FM = any
 let meshP: Promise<FM> | null = null
-let pending: ((r: { multiFaceLandmarks?: Pt[][] }) => void) | null = null
 
-const base = () => (globalThis as { __MP_BASE?: string }).__MP_BASE ?? `${import.meta.env.BASE_URL}mediapipe/face_mesh/`
-
-function loadScript(src: string): Promise<void> {
-  return new Promise((res, rej) => {
-    const s = document.createElement('script')
-    s.src = src; s.onload = () => res(); s.onerror = () => rej(new Error('load'))
-    document.head.append(s)
-  })
-}
+const root = () => (globalThis as { __MP_ROOT?: string }).__MP_ROOT ?? import.meta.env.BASE_URL
 
 function getMesh(): Promise<FM> {
   if (meshP) return meshP
   meshP = (async () => {
-    if (!(globalThis as { FaceMesh?: unknown }).FaceMesh) await loadScript(base() + 'face_mesh.js')
-    const FaceMesh = (globalThis as unknown as { FaceMesh: new (o: unknown) => FM }).FaceMesh
-    const m = new FaceMesh({ locateFile: (f: string) => base() + f + (/\.(binarypb|data)$/.test(f) ? ((globalThis as { __MP_SUFFIX?: string }).__MP_SUFFIX ?? '') : '') })
-    m.setOptions({ maxNumFaces: 2, refineLandmarks: true, minDetectionConfidence: 0.3, minTrackingConfidence: 0.5 })
-    m.onResults((r: { multiFaceLandmarks?: Pt[][] }) => { pending?.(r) })
-    await m.initialize()
-    return m
+    const fileset = await FilesetResolver.forVisionTasks(root() + 'mediapipe/tasks')
+    const mk = (delegate: 'CPU' | 'GPU') => FaceLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: root() + 'models/face_landmarker.task', delegate },
+      runningMode: 'IMAGE', numFaces: 2,
+      minFaceDetectionConfidence: 0.3, minFacePresenceConfidence: 0.3,
+    })
+    return mk('CPU') // 폰 GPU마다 결과가 달라서 CPU로 돌린다
   })().catch((e) => { meshP = null; throw e })
   return meshP
 }
 
 async function detect(m: FM, src: HTMLCanvasElement): Promise<Pt[][]> {
-  const r = await new Promise<{ multiFaceLandmarks?: Pt[][] }>((res, rej) => {
-    pending = res
-    m.send({ image: src }).catch(rej)
-  })
-  return r.multiFaceLandmarks ?? []
+  const r = m.detect(src) as { faceLandmarks?: Pt[][] }
+  return r.faceLandmarks ?? []
 }
 const faceSize = (f: Pt[]) => {
   let x0 = 1, x1 = 0, y0 = 1, y1 = 0
@@ -117,12 +107,11 @@ function shrink(src: HTMLCanvasElement, max: number): HTMLCanvasElement {
 
 /** 사진 한 장에서 얼굴을 찾는다. 못 찾거나 점이 이상하면 설정·크기를 바꿔 가며 다시 찾는다. 얼굴이 없으면 'none', 비슷한 크기로 둘 이상이면 'many'. */
 export async function findFace(src: HTMLCanvasElement): Promise<Found | 'none' | 'many'> {
-  const variants: Array<[boolean, number]> = [[true, 960], [false, 960], [false, 512], [true, 512], [false, 320]]
+  const variants: Array<[boolean, number]> = [[true, 960], [false, 512], [false, 320]]
   let many = false
-  for (const [refine, size] of variants) {
+  for (const [, size] of variants) {
     try {
       const m = await getMesh()
-      m.setOptions({ refineLandmarks: refine })
       const c = shrink(src, size)
       const r = await findFaceOnce(m, c)
       if (r === 'many') { many = true; continue }
