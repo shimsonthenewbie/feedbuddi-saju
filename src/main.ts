@@ -1207,7 +1207,7 @@ async function onFacePair(file: File) {
     if (found === 'none') { box.innerHTML = ''; err.textContent = x.faceNone; return }
     if (found === 'many') { box.innerHTML = ''; err.textContent = x.faceMany; return }
     const m = measure(found)
-    if (m.yaw > 0.24 || m.yawDeg > 34 || m.pitchDeg > 30) { box.innerHTML = ''; err.textContent = x.faceAngle(Math.round(m.yawDeg), Math.round(m.pitchDeg), Math.round(Math.abs(m.roll))); return }
+    if (m.yaw > 0.24 || m.yawDeg > 55 || m.pitchDeg > 50) { box.innerHTML = ''; err.textContent = x.faceAngle(Math.round(m.yawDeg), Math.round(m.pitchDeg), Math.round(Math.abs(m.roll))); return }
     const r = readFace(m, lang), an = animalOf(m, r.axes, lang), wu = wuxingOf(m), wn = EL_NAME[lang] ?? EL_NAME.en
     const other: Side = { key: an.key, emoji: an.emoji, name: an.name, tags: an.tags, el: wu[0].el, elName: wn[wu[0].el][0] }
     const pr = pairOf(lastFace, other, lang)
@@ -1253,7 +1253,7 @@ async function onFacePick(file: File) {
     if (found === 'many') { out.innerHTML = ''; err.textContent = x.faceMany; return }
     const m = measure(found)
     const yw = Math.round(m.yawDeg), pt = Math.round(m.pitchDeg), rl = Math.round(Math.abs(m.roll))
-    if (m.yaw > 0.24 || yw > 34 || pt > 30) {
+    if (m.yaw > 0.24 || yw > 55 || pt > 50) {
       // 벗어난 정도를 알려주고, 인식된 얼굴 위치를 사진 위에 박스로 보여 준다
       const xs = found.pts.map((p) => p.x), ys = found.pts.map((p) => p.y)
       const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys)
@@ -1263,7 +1263,7 @@ async function onFacePick(file: File) {
       const w2 = document.createElement('div'); w2.className = 'fwrap'; w2.append(cv, box)
       out.innerHTML = '<article class="card scan"><div class="fphoto"></div></article>'
       out.querySelector('.fphoto')!.append(w2)
-      err.textContent = x.faceAngle(Math.max(yw, m.yaw > 0.24 && yw < 34 ? 35 : 0), pt, rl)
+      err.textContent = x.faceAngle(Math.max(yw, m.yaw > 0.24 && yw < 55 ? 56 : 0), pt, rl)
       return
     }
     wrapEl.classList.remove('scanning')

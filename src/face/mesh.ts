@@ -69,6 +69,13 @@ async function attempt(m: FM, src: HTMLCanvasElement, crop: [number, number, num
 
 /** 사진 한 장에서 얼굴을 찾는다. 못 찾으면 돌리고 확대해 가며 다시 찾는다. 얼굴이 없으면 'none', 비슷한 크기로 둘 이상이면 'many'. */
 export async function findFace(src: HTMLCanvasElement): Promise<Found | 'none' | 'many'> {
+  try { return await findFaceOnce(src) } catch {
+    // 폰에서 가끔 처음 한 번 실패한다 → 모델을 새로 불러와 한 번 더
+    meshP = null
+    return findFaceOnce(src)
+  }
+}
+async function findFaceOnce(src: HTMLCanvasElement): Promise<Found | 'none' | 'many'> {
   const m = await getMesh()
   const full: [number, number, number, number] = [0, 0, 1, 1]
   const tries: Array<[[number, number, number, number], number]> = [
