@@ -4,6 +4,7 @@
  * 같은 괘면 언제나 같은 글이 나온다.
  */
 import type { TojeongResult } from '../myeongri/tojeong'
+import { CELL, LOWX } from './tojeong-cells'
 
 const UP: Array<[string, string]> = [
   ['씨앗을 심는 해', '새로 시작하기 좋은 흐름이에요. 이것저것 벌이기보다 한 가지를 정해 꾸준히 가면 연말에 눈에 띄는 열매가 달려요.'],
@@ -66,10 +67,20 @@ export interface TojeongView {
 }
 
 const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) } return h >>> 0 }
+/** 달(1~12)마다 그 해 흐름에서 얼마나 힘이 센가(0~1) */
+const GOOD_AT: Array<(n: number) => number> = [
+  (n) => 1 - (n - 1) / 11, // 앞이 힘이 센 흐름
+  (n) => (n - 1) / 11, // 뒤늦게 올라가는 흐름
+  (n) => Math.max(0, 1 - Math.abs(n - 7.5) / 5), // 여름·가을 중심
+  (n) => (n % 2 === 0 ? 0.8 : 0.2), // 물결
+  (n) => 0.3 + (n - 1) / 22, // 꾸준히 오르는 흐름
+  (n) => (n >= 9 ? 0.95 : n >= 6 ? 0.4 : 0.15), // 늦게 피는 흐름
+]
 const LABEL = { good: '좋은 달', mid: '무난한 달', care: '조심할 달' }
 
 export function composeTojeong(r: TojeongResult): TojeongView {
   const u = UP[r.up - 1]
+  const cell = CELL[r.up - 1][r.mid - 1]
   const m = MID[r.mid - 1]
   const l = LOW[r.low - 1]
   const months: TojeongMonth[] = []
@@ -77,18 +88,23 @@ export function composeTojeong(r: TojeongResult): TojeongView {
   for (let n = 1; n <= 12; n++) {
     const h = hash(`${r.code}-${n}`)
     const p = h % 100
-    const tone: TojeongMonth['tone'] = p < 28 ? 'good' : p < 76 ? 'mid' : 'care'
+    // 중괘의 흐름(앞이 센가, 뒤가 센가…)에 따라 좋은 달이 몰리는 위치를 달리한다
+    const g = GOOD_AT[r.mid - 1](n)
+    const goodCut = Math.round(10 + g * 34)
+    const careCut = goodCut + Math.round(44 - g * 24)
+    const tone: TojeongMonth['tone'] = p < goodCut ? 'good' : p < careCut ? 'mid' : 'care'
     const [line, tip] = MONTH_LINES[tone][((h >>> 8) + used[tone]++) % 5] // 같은 종류 달이 연달아 같은 문장이 되지 않게 돌려 씀
     months.push({ n, tone, label: LABEL[tone], line: `${SEASON[n]} ${line}`, tip })
   }
   return {
     title: `${r.year}년 ${r.yearGanji}년 토정비결`,
     code: r.code,
-    summary: `${u[0]} — ${u[1]}`,
+    summary: `${cell[0]} — ${cell[1]}`,
     flow: m,
-    advice: l,
+    advice: [l[0], `${l[1]} ${LOWX[r.low - 1][r.up - 1]}`],
     months,
     facts: [
+      `한 해의 큰 주제: ${u[0]} — ${u[1]}`,
       `음력 생일: ${r.lunarBirth.y}년 ${r.lunarBirth.leap ? '윤' : ''}${r.lunarBirth.m}월 ${r.lunarBirth.d}일 (한국 나이 ${r.age}세)`,
       `괘 번호 ${r.code} (상괘 ${r.up} · 중괘 ${r.mid} · 하괘 ${r.low}) — 144가지 중 하나`,
       ...(r.lunarBirth.leap ? ['윤달생은 평달로 보고 계산했어요.'] : []),
