@@ -41,6 +41,7 @@ import { makeKoName, type Gender } from './i18n/koname'
 import { readName, WX_KO, type Wx } from './myeongri/name'
 import type { TaegilCand } from './taegil-prompt'
 import { gusungOf, STARS, STAR_TEXT, type DirRead } from './myeongri/gusung'
+import { DIR_EN, VERDICT_EN, EL_EN, STAR_NAME_EN, WHY_EN, STAR_TEXT_EN } from './i18n/gusung-en'
 import { CATS, pickDays, yearBranch, zodiacOf, type CatKey, type DayPick } from './myeongri/taegil'
 import { pickCalc } from './myeongri/pick'
 import { composePick } from './i18n/pick'
@@ -591,19 +592,36 @@ function initTaegil() {
 
 function compass(rs: DirRead[], center: number): string {
   const by = Object.fromEntries(rs.map((r) => [r.dir, r])) as Record<string, DirRead>
+  const dn = (d: string) => (lang === 'en' ? DIR_EN[d] : d)
+  const sn = (n: number) => (lang === 'en' ? `${n}${EL_EN[STARS[n].el].slice(0, 2)}` : `${STARS[n].hanja.slice(0, 2)}${STARS[n].el}`)
   const cell = (d: string) => {
     const r = by[d]
-    return r ? `<div class="cgc v-${r.verdict === '대길' || r.verdict === '길' ? 'good' : r.verdict === '보통' ? 'mid' : 'care'}"><b>${d}</b><span>${STARS[r.star].hanja.slice(0, 2)}${STARS[r.star].el}</span><i>${r.verdict}</i></div>` : ''
+    return r ? `<div class="cgc v-${r.verdict === '대길' || r.verdict === '길' ? 'good' : r.verdict === '보통' ? 'mid' : 'care'}"><b>${dn(d)}</b><span>${sn(r.star)}</span><i>${lang === 'en' ? VERDICT_EN[r.verdict] : r.verdict}</i></div>` : ''
   }
-  return `<div class="cg">${['북서', '북', '북동', '서', null, '동', '남서', '남', '남동'].map((d) => d ? cell(d) : `<div class="cgc ctr"><b>중앙</b><span>${STARS[center].hanja.slice(0, 2)}${STARS[center].el}</span></div>`).join('')}</div>`
+  return `<div class="cg">${['북서', '북', '북동', '서', null, '동', '남서', '남', '남동'].map((d) => d ? cell(d) : `<div class="cgc ctr"><b>${dn('중앙')}</b><span>${sn(center)}</span></div>`).join('')}</div>`
 }
 function showGusung() {
   const pr = loadProfile()!
   const out = document.getElementById('out')!
+  const en = lang === 'en'
   const g = gusungOf(pr.y, pr.m, pr.d, pr.gender)
   const st = STARS[g.mine]
-  const tx = STAR_TEXT[g.mine]
-  const list = (rs: DirRead[]) => rs.filter((r) => r.verdict !== '보통').map((r) => `<li><b>${r.dir}쪽 · ${r.verdict}</b> — ${esc(r.why)}</li>`).join('')
+  const tx = en ? STAR_TEXT_EN[g.mine] : STAR_TEXT[g.mine]
+  const dn = (d: string) => (en ? DIR_EN[d] : d)
+  const list = (rs: DirRead[]) => rs.filter((r) => r.verdict !== '보통').map((r) => en
+    ? `<li><b>${dn(r.dir)} · ${VERDICT_EN[r.verdict]}</b> — ${esc(WHY_EN[r.why] || r.why)}</li>`
+    : `<li><b>${r.dir}쪽 · ${r.verdict}</b> — ${esc(r.why)}</li>`).join('')
+  if (en) {
+    out.innerHTML = `
+  <article class="card yr"><h2>My Life Star: ${esc(STAR_NAME_EN[g.mine])}</h2><p class="meta">Born in ${g.ey} (Lichun-based year) · ${pr.gender === 'M' ? 'Male' : 'Female'} · Home direction: ${esc(dn(st.dir))}</p>
+    <p class="dbody"><b>${esc(tx[0])}</b> ${esc(tx[1])}</p></article>
+  <article class="card"><h2>${g.yearLabel} directions (Lichun-based)</h2><p class="meta">This year's center star is ${esc(STAR_NAME_EN[g.yearStar])}. Use it as a reference when choosing the direction of a move, trip or big undertaking.</p>${compass(g.year, g.yearStar)}<ul class="rs">${list(g.year)}</ul></article>
+  <article class="card"><h2>This month's directions (${esc(g.monthLabel.replace('월(절기 기준)', ''))} solar-term month)</h2>${compass(g.month, g.monthStar)}<ul class="rs">${list(g.month)}</ul></article>
+  <article class="card"><p class="note">Nine Star Ki compares the star of your birth year with the stars that move through the directions each year and month. The Five-Yellow, Hidden Blade, Self-Strike and Self-Opposed directions are avoided; the rest are judged by how the elements feed or suppress yours. For entertainment and reference only.</p></article>
+  <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${t().change}</button></p>`
+    document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
+    return
+  }
   out.innerHTML = `
   <article class="card yr"><h2>내 본명성: ${esc(st.name)} (${esc(st.hanja)})</h2><p class="meta">${g.ey}년생(입춘 기준) · ${pr.gender === 'M' ? '남' : '여'} · 기본 방위 ${esc(st.dir)}</p>
     <p class="dbody"><b>${esc(tx[0])}</b> ${esc(tx[1])}</p></article>
@@ -614,6 +632,10 @@ function showGusung() {
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
 }
 
+const koOnly = () => lang === 'en' && (mode === 'taegil' || mode === 'name' || mode === 'dream')
+function koOnlyHtml(): string {
+  return `<section class="card"><h2>Korean only for now</h2><p class="meta">This reading (auspicious dates, name reading, dream interpretation) is currently available in Korean only. Try Tarot, Tojeong, I Ching, Nine Star Ki, the birth chart or "Get your Korean name" instead.</p></section>`
+}
 function nameHtml(): string {
   return `<section class="card tg"><h2>이름 풀이 · 작명 비교</h2>
     <p class="meta">한글 이름의 발음오행과 획수로 원·형·이·정 네 가지 운을 봐요. 후보 이름을 여러 개 넣으면 비교해 줘요.</p>
@@ -876,6 +898,7 @@ function homeHtml(): string {
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
   const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['koname', '韓', lang === 'ko' ? '내 한국 이름 만들기' : 'Get your Korean name'], ['dream', '夢', lang === 'ko' ? '꿈해몽 (AI 자세히)' : 'Dream reading'], ['tarot', '🂠', lang === 'ko' ? '타로 (오늘의 카드·3장)' : 'Tarot'], ['astro', '☉', lang === 'ko' ? '별자리 출생차트 (서양 점성술)' : 'Birth chart (Western astrology)'], ['name', '名', lang === 'ko' ? '이름 풀이·작명 비교' : 'Name reading'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+    .filter(([go]) => lang === 'ko' || !['taegil', 'name', 'dream'].includes(go as string))
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -1434,7 +1457,7 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'dream' ? dreamHtml() : mode === 'koname' ? konameHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'astro') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : koOnly() ? koOnlyHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'dream' ? dreamHtml() : mode === 'koname' ? konameHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'astro') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
@@ -1497,10 +1520,10 @@ function bind() {
   if (mode === 'gusung' && loadProfile()) showGusung()
   if (mode === 'astro' && loadProfile()) void showAstro()
   if (mode === 'iching') showIching()
-  if (mode === 'taegil') initTaegil()
-  if (mode === 'name') initName()
+  if (mode === 'taegil' && !koOnly()) initTaegil()
+  if (mode === 'name' && !koOnly()) initName()
   if (mode === 'tarot') initTarot()
-  if (mode === 'dream') initDream()
+  if (mode === 'dream' && !koOnly()) initDream()
   if (mode === 'koname') initKoname()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
 }
