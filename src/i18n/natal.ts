@@ -1,8 +1,9 @@
 /** 서양 점성술 출생차트 풀이 글(용용사주가 새로 쓴 문장). */
 import { SIGNS, type Natal } from '../myeongri/natal'
+import { SIGNS_EN, T_EN } from './natal-en'
 
 // [핵심 성향, 감정 방식(달), 첫인상(상승), 연애(금성), 행동(화성), 말투(수성)]
-const T: Array<[string, string, string, string, string, string]> = [
+const TKO: Array<[string, string, string, string, string, string]> = [
   ['먼저 뛰어드는 개척자예요. 솔직하고 에너지가 넘치고, 승부욕이 있어요.', '감정이 빠르게 올라왔다 빠르게 풀려요. 속에 담아 두지 않아요.', '당당하고 활기차서 첫인상이 시원해요.', '마음에 들면 먼저 다가가는 직진형이에요.', '결정하면 바로 움직여요. 속도가 큰 무기예요.', '핵심부터 짧고 직접적으로 말해요.'],
   ['느리지만 확실한 안정파예요. 감각이 좋고 한번 정하면 끝까지 가요.', '안정과 익숙함에서 마음이 편해져요. 서두르면 불안해해요.', '차분하고 믿음직한 인상이에요.', '천천히 깊게 사랑해요. 신뢰와 스킨십이 중요해요.', '꾸준히 밀고 가요. 시작은 느려도 끈기가 있어요.', '느긋하고 신중하게, 확실한 말만 해요.'],
   ['호기심 많고 재치 있는 이야기꾼이에요. 다양한 것에 관심이 가요.', '기분을 말로 풀어야 시원해져요. 변화가 있어야 지루하지 않아요.', '말이 많고 밝아서 가볍게 다가가기 쉬운 인상이에요.', '대화가 통하는 사람에게 끌려요. 유머가 매력 포인트예요.', '여러 가지를 동시에 해내는 순발력이 있어요.', '빠르고 재치 있게, 화제를 넘나들며 말해요.'],
@@ -18,18 +19,22 @@ const T: Array<[string, string, string, string, string, string]> = [
 ]
 
 export interface AstroView { title: string; summary: string; cards: Array<{ title: string; head: string; body: string }>; note: string }
-export function composeAstro(n: Natal): AstroView {
+export function composeAstro(n: Natal, lang: 'ko' | 'en' = 'ko'): AstroView {
+  const en = lang === 'en'
   const by = Object.fromEntries(n.placements.map((p) => [p.body, p]))
-  const nm = (i: number) => SIGNS[i]
+  const nm = (i: number) => (en ? SIGNS_EN : SIGNS)[i]
+  const T = en ? T_EN : TKO
+  const L = en ? ['Sun — your core self', 'Moon — inner feelings', 'Rising — first impression', 'Venus — how you love', 'Mars — how you act', 'Mercury — how you speak and think'] : ['태양 — 타고난 나', '달 — 속마음과 감정', '상승점 — 첫인상', '금성 — 사랑하는 방식', '화성 — 행동하는 방식', '수성 — 말하고 생각하는 방식']
   const cards: AstroView['cards'] = [
-    { title: '태양 — 타고난 나', head: nm(by.sun.sign), body: T[by.sun.sign][0] },
-    { title: '달 — 속마음과 감정', head: nm(by.moon.sign), body: T[by.moon.sign][1] },
-    ...(n.asc ? [{ title: '상승점 — 첫인상', head: nm(n.asc.sign), body: T[n.asc.sign][2] }] : []),
-    { title: '금성 — 사랑하는 방식', head: nm(by.venus.sign), body: T[by.venus.sign][3] },
-    { title: '화성 — 행동하는 방식', head: nm(by.mars.sign), body: T[by.mars.sign][4] },
-    { title: '수성 — 말하고 생각하는 방식', head: nm(by.mercury.sign), body: T[by.mercury.sign][5] },
+    { title: L[0], head: nm(by.sun.sign), body: T[by.sun.sign][0] },
+    { title: L[1], head: nm(by.moon.sign), body: T[by.moon.sign][1] },
+    ...(n.asc ? [{ title: L[2], head: nm(n.asc.sign), body: T[n.asc.sign][2] }] : []),
+    { title: L[3], head: nm(by.venus.sign), body: T[by.venus.sign][3] },
+    { title: L[4], head: nm(by.mars.sign), body: T[by.mars.sign][4] },
+    { title: L[5], head: nm(by.mercury.sign), body: T[by.mercury.sign][5] },
   ]
-  const summary = `태양 ${nm(by.sun.sign)} · 달 ${nm(by.moon.sign)}${n.asc ? ` · 상승 ${nm(n.asc.sign)}` : ''}`
+  const summary = en ? `Sun ${nm(by.sun.sign)} · Moon ${nm(by.moon.sign)}${n.asc ? ` · Rising ${nm(n.asc.sign)}` : ''}` : `태양 ${nm(by.sun.sign)} · 달 ${nm(by.moon.sign)}${n.asc ? ` · 상승 ${nm(n.asc.sign)}` : ''}`
+  if (en) return { title: 'My birth chart', summary, cards, note: 'Sun, Moon and planet positions are computed astronomically for the moment of birth. If you do not know your birth time, the Rising sign is left out. The wording is newly written by Yongyong Saju. For fun and reference only.' }
   return {
     title: '내 출생차트', summary, cards,
     note: '태양·달·행성의 위치는 태어난 순간의 하늘을 천문 계산(한국 표준시 기준)으로 구한 값이에요. 태어난 시간을 모르면 상승점은 빼요. 풀이 글은 용용사주가 새로 쓴 거예요. 재미와 참고용이에요.',

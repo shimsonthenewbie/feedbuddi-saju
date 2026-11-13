@@ -653,9 +653,9 @@ function initName() {
 async function showAstro() {
   const pr = loadProfile()!
   const out = document.getElementById('out')!
-  out.innerHTML = '<article class="card"><p>하늘의 위치를 계산하는 중이에요…</p></article>'
+  out.innerHTML = `<article class="card"><p>${lang === 'en' ? 'Calculating the sky…' : '하늘의 위치를 계산하는 중이에요…'}</p></article>`
   const { natalChart } = await import('./myeongri/natal')
-  const v = composeAstro(natalChart(pr.y, pr.m, pr.d, pr.hh, pr.mm, pr.unk, pr.lat, pr.lon))
+  const v = composeAstro(natalChart(pr.y, pr.m, pr.d, pr.hh, pr.mm, pr.unk, pr.lat, pr.lon), lang)
   out.innerHTML = `<article class="card yr"><h2>${esc(v.title)}</h2><p class="meta">${esc(v.summary)}</p></article>
   ${v.cards.map((c) => `<article class="card"><h3>${esc(c.title)}</h3><p class="dbody"><b>${esc(c.head)}</b> ${esc(c.body)}</p></article>`).join('')}
   <article class="card"><p class="note">${esc(v.note)}</p></article>
