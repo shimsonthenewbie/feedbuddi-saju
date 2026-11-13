@@ -4,32 +4,44 @@ import type { Pt } from '../face/mesh'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type HS = any
 let hp: Promise<HS> | null = null
-let pending: ((r: { multiHandLandmarks?: Pt[][] }) => void) | null = null
-const base = () => (globalThis as { __MP_HBASE?: string }).__MP_HBASE ?? `${import.meta.env.BASE_URL}mediapipe/hands/`
-const load = (src: string) => new Promise<void>((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = () => res(); s.onerror = () => rej(new Error('load')); document.head.append(s) })
+const root = () => (globalThis as { __MP_ROOT?: string }).__MP_ROOT ?? import.meta.env.BASE_URL
 
 function getHands(): Promise<HS> {
   if (hp) return hp
   hp = (async () => {
-    if (!(globalThis as { Hands?: unknown }).Hands) await load(base() + 'hands.js')
-    const Hands = (globalThis as unknown as { Hands: new (o: unknown) => HS }).Hands
-    const h = new Hands({ locateFile: (f: string) => base() + f })
-    h.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 })
-    h.onResults((r: { multiHandLandmarks?: Pt[][] }) => { pending?.(r) })
-    await h.initialize()
-    return h
+    const { HandLandmarker, FilesetResolver } = await import('@mediapipe/tasks-vision')
+    const fileset = await FilesetResolver.forVisionTasks(root() + 'mediapipe/tasks')
+    // 폰 GPU마다 결과가 달라서 CPU로 돌린다
+    return HandLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: root() + 'models/hand_landmarker.task', delegate: 'CPU' },
+      runningMode: 'IMAGE', numHands: 2, minHandDetectionConfidence: 0.3, minHandPresenceConfidence: 0.3,
+    })
   })().catch((e) => { hp = null; throw e })
   return hp
 }
 
 export type HandFound = { pts: Pt[]; w: number; h: number }
+const handSane = (p: Pt[]) => p.length === 21 && p.every((q) => Number.isFinite(q.x) && Number.isFinite(q.y) && q.x > -0.3 && q.x < 1.3 && q.y > -0.3 && q.y < 1.3) && Math.hypot(p[9].x - p[0].x, p[9].y - p[0].y) > 1e-3
+function shrink(src: HTMLCanvasElement, max: number): HTMLCanvasElement {
+  const k = Math.min(1, max / Math.max(src.width, src.height))
+  if (k >= 1) return src
+  const c = document.createElement('canvas')
+  c.width = Math.round(src.width * k); c.height = Math.round(src.height * k)
+  c.getContext('2d')!.drawImage(src, 0, 0, c.width, c.height)
+  return c
+}
 export async function findHand(src: HTMLCanvasElement): Promise<HandFound | 'none' | 'many'> {
-  const h = await getHands()
-  const r = await new Promise<{ multiHandLandmarks?: Pt[][] }>((res, rej) => { pending = res; h.send({ image: src }).catch(rej) })
-  const hs = r.multiHandLandmarks ?? []
-  if (!hs.length) return 'none'
-  if (hs.length > 1) return 'many'
-  return { pts: hs[0], w: src.width, h: src.height }
+  let many = false
+  for (const size of [960, 512, 320]) {
+    try {
+      const h = await getHands()
+      const r = h.detect(shrink(src, size)) as { landmarks?: Pt[][] }
+      const hs = (r.landmarks ?? []).filter(handSane)
+      if (hs.length > 1) { many = true; continue }
+      if (hs.length === 1) return { pts: hs[0], w: src.width, h: src.height }
+    } catch { hp = null }
+  }
+  return many ? 'many' : 'none'
 }
 
 export interface HandM { mid: number; aspect: number; idxRing: number; thumb: number; pinky: number; slender: number }
