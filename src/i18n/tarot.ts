@@ -1,4 +1,5 @@
 /** 타로 78장 풀이 글(용용사주가 새로 쓴 문장). 카드 그림은 쓰지 않고 이름·기호로만 보여 준다. */
+import { MAJOR_EN, RANKS_EN, SUIT_EN } from './tarot-en'
 export interface Card { id: number; name: string; en: string; mark: string; key: string; up: string; rev: string }
 
 const MAJOR: Array<[string, string, string, string, string]> = [
@@ -59,16 +60,22 @@ SUITS.forEach((s, si) => RANKS.forEach((r, ri) => DECK.push({
   up: r[3].replace('{a}', s[3]), rev: r[4].replace('{a}', s[3]),
 })))
 
+export const DECK_EN: Card[] = []
+MAJOR.forEach((m, i) => DECK_EN.push({ id: i, name: m[1], en: m[1], mark: ROMAN[i], key: MAJOR_EN[i][0], up: MAJOR_EN[i][1], rev: MAJOR_EN[i][2] }))
+SUITS.forEach((s, si) => RANKS_EN.forEach((r, ri) => DECK_EN.push({
+  id: 22 + si * 14 + ri, name: `${r[0]} of ${SUIT_EN[si][0]}`, en: `${r[0]} of ${SUIT_EN[si][0]}`, mark: s[2], key: `${SUIT_EN[si][3]} · ${r[1]}`,
+  up: r[2].replace('{a}', SUIT_EN[si][1]), rev: r[3].replace('{a}', SUIT_EN[si][1]),
+})))
 export interface Drawn { card: Card; reversed: boolean }
 const rnd = (n: number) => { const b = new Uint32Array(1); crypto.getRandomValues(b); return b[0] % n }
-export function draw(n: number): Drawn[] {
-  const pool = [...DECK]
+export function draw(n: number, lang: 'ko' | 'en' = 'ko'): Drawn[] {
+  const pool = [...(lang === 'en' ? DECK_EN : DECK)]
   const out: Drawn[] = []
   for (let i = 0; i < n; i++) { const c = pool.splice(rnd(pool.length), 1)[0]; out.push({ card: c, reversed: rnd(3) === 0 }) }
   return out
 }
 const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) } return h >>> 0 }
-export function dailyCard(dateKey: string, seed = ''): Drawn {
+export function dailyCard(dateKey: string, seed = '', lang: 'ko' | 'en' = 'ko'): Drawn {
   const h = hash(`${dateKey}|${seed}|tarot`)
-  return { card: DECK[h % 78], reversed: (h >>> 8) % 3 === 0 }
+  return { card: (lang === 'en' ? DECK_EN : DECK)[h % 78], reversed: (h >>> 8) % 3 === 0 }
 }

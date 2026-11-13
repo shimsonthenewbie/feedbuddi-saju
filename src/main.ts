@@ -664,32 +664,37 @@ async function showAstro() {
 }
 
 function tarotHtml(): string {
-  return `<section class="card tg"><h2>타로</h2>
-    <p class="meta">마음속으로 질문을 하나 떠올리고 카드를 뽑아 보세요. 질문은 적어도 되고 안 적어도 돼요.</p>
-    <label class="lbl" for="trq">질문 (선택)</label><input id="trq" maxlength="80" placeholder="예: 이번 달 이직을 준비해도 될까요?" autocomplete="off">
-    <div class="trbtns"><button class="go" id="trd" type="button">오늘의 카드 1장</button><button class="go" id="tr3" type="button">3장 뽑기 (상황·걸림돌·조언)</button></div></section>
+  const en = lang === 'en'
+  return `<section class="card tg"><h2>${en ? 'Tarot' : '타로'}</h2>
+    <p class="meta">${en ? 'Hold one question in mind and draw. Writing the question is optional.' : '마음속으로 질문을 하나 떠올리고 카드를 뽑아 보세요. 질문은 적어도 되고 안 적어도 돼요.'}</p>
+    <label class="lbl" for="trq">${en ? 'Question (optional)' : '질문 (선택)'}</label><input id="trq" maxlength="80" placeholder="${en ? 'e.g. Should I prepare for a job change this month?' : '예: 이번 달 이직을 준비해도 될까요?'}" autocomplete="off">
+    <div class="trbtns"><button class="go" id="trd" type="button">${en ? 'Card of the day (1 card)' : '오늘의 카드 1장'}</button><button class="go" id="tr3" type="button">${en ? 'Draw 3 (situation · obstacle · advice)' : '3장 뽑기 (상황·걸림돌·조언)'}</button></div></section>
   <section id="trout"></section>`
 }
 function trCard(d: Drawn, label: string): string {
   const c = d.card
+  const en = lang === 'en'
   return `<article class="card trc"><p class="meta">${esc(label)}</p>
     <div class="tcard${d.reversed ? ' rev' : ''}" role="img" aria-label="${esc(c.name)}"><span class="tm">${esc(c.mark)}</span><b>${esc(c.name)}</b><small>${esc(c.en)}</small></div>
-    <h3>${esc(c.name)} ${d.reversed ? '(거꾸로)' : ''} — ${esc(c.key)}</h3><p class="dbody">${esc(d.reversed ? c.rev : c.up)}</p></article>`
+    <h3>${esc(c.name)} ${d.reversed ? (en ? '(reversed)' : '(거꾸로)') : ''} — ${esc(c.key)}</h3><p class="dbody">${esc(d.reversed ? c.rev : c.up)}</p></article>`
 }
 function initTarot() {
   const out = document.getElementById('trout')!
+  const en = lang === 'en'
   const q = () => (document.getElementById('trq') as HTMLInputElement).value.trim()
-  const head = () => (q() ? `<article class="card"><p class="meta">질문</p><p class="dbody">${esc(q())}</p></article>` : '')
-  const note = '<article class="card"><p class="note">카드 풀이는 용용사주가 새로 쓴 글이에요. 타로는 답을 정해 주기보다 생각을 돕는 도구예요. 건강·법률·투자처럼 중요한 결정은 전문가와 상의하세요. 재미와 참고용이에요.</p></article>'
+  const head = () => (q() ? `<article class="card"><p class="meta">${en ? 'Question' : '질문'}</p><p class="dbody">${esc(q())}</p></article>` : '')
+  const note = en
+    ? '<article class="card"><p class="note">Card readings are newly written by Yongyong Saju. Tarot helps you think rather than deciding for you. For health, legal or investment matters, consult a professional. For fun and reference only.</p></article>'
+    : '<article class="card"><p class="note">카드 풀이는 용용사주가 새로 쓴 글이에요. 타로는 답을 정해 주기보다 생각을 돕는 도구예요. 건강·법률·투자처럼 중요한 결정은 전문가와 상의하세요. 재미와 참고용이에요.</p></article>'
   ;(document.getElementById('trd') as HTMLButtonElement).onclick = () => {
     const n = new Date()
     const pr = loadProfile()
-    const d = dailyCard(`${n.getFullYear()}-${n.getMonth() + 1}-${n.getDate()}`, pr ? `${pr.y}-${pr.m}-${pr.d}` : '')
-    out.innerHTML = trCard(d, '오늘의 카드 (하루 동안 같은 카드예요)') + note
+    const d = dailyCard(`${n.getFullYear()}-${n.getMonth() + 1}-${n.getDate()}`, pr ? `${pr.y}-${pr.m}-${pr.d}` : '', lang)
+    out.innerHTML = trCard(d, en ? 'Card of the day (the same card all day)' : '오늘의 카드 (하루 동안 같은 카드예요)') + note
   }
   ;(document.getElementById('tr3') as HTMLButtonElement).onclick = () => {
-    const ds = draw(3)
-    out.innerHTML = head() + ['지금의 상황', '걸림돌 또는 숨은 변수', '조언'].map((l, i) => trCard(ds[i], l)).join('') + note
+    const ds = draw(3, lang)
+    out.innerHTML = head() + (en ? ['Current situation', 'Obstacle or hidden factor', 'Advice'] : ['지금의 상황', '걸림돌 또는 숨은 변수', '조언']).map((l, i) => trCard(ds[i], l)).join('') + note
   }
 }
 
