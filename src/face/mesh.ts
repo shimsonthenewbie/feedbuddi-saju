@@ -67,16 +67,28 @@ async function attempt(m: FM, src: HTMLCanvasElement, crop: [number, number, num
   }))
 }
 
-/** 사진 한 장에서 얼굴을 찾는다. 못 찾으면 돌리고 확대해 가며 다시 찾는다. 얼굴이 없으면 'none', 비슷한 크기로 둘 이상이면 'many'. */
-export async function findFace(src: HTMLCanvasElement): Promise<Found | 'none' | 'many'> {
-  try { return await findFaceOnce(src) } catch {
-    // 폰에서 가끔 처음 한 번 실패한다 → 모델을 새로 불러와 한 번 더
-    meshP = null
-    return findFaceOnce(src)
-  }
+/** 찾은 점들이 사람 얼굴 모양인지 확인한다(일부 폰 GPU는 엉뚱한 점을 돌려준다). */
+function sane(f: Pt[]): boolean {
+  if (f.length < 455) return false
+  const a = f[33], b = f[263], nose = f[1], chin = f[152], top = f[10]
+  const ok = (p: Pt) => Number.isFinite(p.x) && Number.isFinite(p.y) && p.x > -0.3 && p.x < 1.3 && p.y > -0.3 && p.y < 1.3
+  if (![a, b, nose, chin, top].every(ok)) return false
+  const eye = Math.hypot(b.x - a.x, b.y - a.y), face = Math.hypot(chin.x - top.x, chin.y - top.y)
+  if (eye < 1e-4 || face < 1e-4) return false
+  const rollEye = Math.abs((Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI)
+  const rollFace = Math.abs((Math.atan2(chin.y - top.y, chin.x - top.x) * 180) / Math.PI - 90)
+  if (rollEye > 55 && rollEye < 125) return false
+  if (rollFace > 60) return false
+  const r = eye / face
+  if (r < 0.25 || r > 0.9) return false
+  // 눈 → 코 → 턱 순서로 얼굴 축 위에 있어야 한다
+  const ux = (chin.x - top.x) / face, uy = (chin.y - top.y) / face
+  const proj = (p: Pt) => (p.x - top.x) * ux + (p.y - top.y) * uy
+  const ey = (proj(a) + proj(b)) / 2
+  return ey < proj(nose) && proj(nose) < proj(chin)
 }
-async function findFaceOnce(src: HTMLCanvasElement): Promise<Found | 'none' | 'many'> {
-  const m = await getMesh()
+
+async function findFaceOnce(m: FM, src: HTMLCanvasElement): Promise<Found | 'none' | 'many'> {
   const full: [number, number, number, number] = [0, 0, 1, 1]
   const tries: Array<[[number, number, number, number], number]> = [
     [full, 0], [full, -20], [full, 20], [full, -40], [full, 40],
@@ -84,13 +96,42 @@ async function findFaceOnce(src: HTMLCanvasElement): Promise<Found | 'none' | 'm
     [[0, 0.3, 0.65, 0.65], 0], [[0.35, 0.3, 0.65, 0.65], 0], [[0.25, 0.25, 0.5, 0.5], 0],
   ]
   for (const [crop, deg] of tries) {
-    const faces = await (crop === full && deg === 0 ? detect(m, src) : attempt(m, src, crop, deg))
+    const raw = await (crop === full && deg === 0 ? detect(m, src) : attempt(m, src, crop, deg))
+    const faces = raw.filter(sane)
     if (!faces.length) continue
     const sorted = faces.map((f) => ({ f, a: faceSize(f).w * faceSize(f).h })).sort((p, q) => q.a - p.a)
     if (sorted.length > 1 && sorted[1].a > sorted[0].a * 0.5) return 'many'
     return { pts: sorted[0].f, w: src.width, h: src.height }
   }
   return 'none'
+}
+
+function shrink(src: HTMLCanvasElement, max: number): HTMLCanvasElement {
+  const k = Math.min(1, max / Math.max(src.width, src.height))
+  if (k >= 1) return src
+  const c = document.createElement('canvas')
+  c.width = Math.round(src.width * k); c.height = Math.round(src.height * k)
+  c.getContext('2d')!.drawImage(src, 0, 0, c.width, c.height)
+  return c
+}
+
+/** 사진 한 장에서 얼굴을 찾는다. 못 찾거나 점이 이상하면 설정·크기를 바꿔 가며 다시 찾는다. 얼굴이 없으면 'none', 비슷한 크기로 둘 이상이면 'many'. */
+export async function findFace(src: HTMLCanvasElement): Promise<Found | 'none' | 'many'> {
+  const variants: Array<[boolean, number]> = [[true, 960], [false, 960], [false, 512], [true, 512], [false, 320]]
+  let many = false
+  for (const [refine, size] of variants) {
+    try {
+      const m = await getMesh()
+      m.setOptions({ refineLandmarks: refine })
+      const c = shrink(src, size)
+      const r = await findFaceOnce(m, c)
+      if (r === 'many') { many = true; continue }
+      if (r !== 'none') return { pts: r.pts, w: src.width, h: src.height }
+    } catch {
+      meshP = null // 폰에서 가끔 처음 한 번 실패한다 → 모델을 새로 불러온다
+    }
+  }
+  return many ? 'many' : 'none'
 }
 
 /** 사진 파일을 줄여서 캔버스에 그린다(사진 방향 자동 보정, 긴 변 최대 960px). */
