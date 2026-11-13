@@ -481,14 +481,15 @@ function showTojeong() {
   const pr = loadProfile()!
   const out = document.getElementById('out')!
   const yr = new Date().getFullYear() + (new Date().getMonth() >= 10 ? 1 : 0)
-  const v = composeTojeong(tojeongOf(pr.y, pr.m, pr.d, yr))
+  const v = composeTojeong(tojeongOf(pr.y, pr.m, pr.d, yr), lang)
+  const en = lang === 'en'
   out.innerHTML = `
-  <article class="card yr"><h2>${esc(v.title)}</h2><p class="meta">괘 번호 ${esc(v.code)}</p>
+  <article class="card yr"><h2>${esc(v.title)}</h2><p class="meta">${en ? 'Hexagram code' : '괘 번호'} ${esc(v.code)}</p>
     <p class="dbody"><b>${esc(v.summary)}</b></p>
     <p class="dbody"><b>${esc(v.flow[0])}</b> ${esc(v.flow[1])}</p>
     <p class="dbody"><b>${esc(v.advice[0])}</b> ${esc(v.advice[1])}</p></article>
-  <article class="card"><h2>${yr}년 12개월 (음력 기준)</h2></article>
-  ${v.months.map((m) => `<article class="rcard ym k-${m.tone === 'good' ? 'good' : m.tone === 'care' ? 'care' : 'mid'}"><div class="yh"><b>음력 ${m.n}월</b><span class="yk">${esc(m.label)}</span></div><p>${esc(m.line)}</p><p class="dtip">✦ ${esc(m.tip)}</p></article>`).join('')}
+  <article class="card"><h2>${en ? `${yr}: 12 lunar months` : `${yr}년 12개월 (음력 기준)`}</h2></article>
+  ${v.months.map((m) => `<article class="rcard ym k-${m.tone === 'good' ? 'good' : m.tone === 'care' ? 'care' : 'mid'}"><div class="yh"><b>${en ? `Lunar month ${m.n}` : `음력 ${m.n}월`}</b><span class="yk">${esc(m.label)}</span></div><p>${esc(m.line)}</p><p class="dtip">✦ ${esc(m.tip)}</p></article>`).join('')}
   <article class="card"><ul class="rs">${v.facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul><p class="note">${esc(v.note)}</p></article>
   <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${t().change}</button></p>`
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
@@ -499,17 +500,18 @@ function showIching() {
   const pr = loadProfile()
   const now = new Date()
   const key = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`
-  const h = dailyHexagram(key, pr ? `${pr.y}-${pr.m}-${pr.d}` : '')
+  const en = lang === 'en'
+  const h = dailyHexagram(key, pr ? `${pr.y}-${pr.m}-${pr.d}` : '', lang)
   const lines = [...h.lines].reverse().map((y) => `<i class="yl ${y ? 'yang' : 'yin'}"></i>`).join('')
   out.innerHTML = `<article class="card ic">
-    <h2>오늘의 한 괘</h2><p class="meta">${esc(`${now.getMonth() + 1}월 ${now.getDate()}일`)} · 주역 64괘 중 하나</p>
-    <div class="hex" role="img" aria-label="${esc(h.name)}괘">${lines}</div>
-    <h3 class="icn">제${h.no}괘 ${esc(h.name)}(${esc(h.hanja)}) — ${esc(h.keyword)}</h3>
-    <p class="meta">위 ${esc(h.upper)} · 아래 ${esc(h.lower)}</p>
+    <h2>${en ? 'Hexagram of the day' : '오늘의 한 괘'}</h2><p class="meta">${esc(en ? now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : `${now.getMonth() + 1}월 ${now.getDate()}일`)} · ${en ? 'one of the 64 I Ching hexagrams' : '주역 64괘 중 하나'}</p>
+    <div class="hex" role="img" aria-label="${esc(h.name)}">${lines}</div>
+    <h3 class="icn">${en ? `No. ${h.no}` : `제${h.no}괘`} ${esc(h.name)}(${esc(h.hanja)}) — ${esc(h.keyword)}</h3>
+    <p class="meta">${en ? 'Upper' : '위'} ${esc(h.upper)} · ${en ? 'Lower' : '아래'} ${esc(h.lower)}</p>
     <p class="dbody">${esc(h.message)}</p>
     <p class="dtip">✦ ${esc(h.tip)}</p>
-    <p class="note">괘의 모양(상괘·하괘)은 주역 그대로고, 풀이 글은 용용사주가 오늘 말로 새로 쓴 거예요. 하루 한 번, 오늘 날짜로 정해져요(내 생일을 입력해 두었다면 사람마다 달라요). 재미와 참고용이에요.</p></article>
-  <button class="go ghost" id="icback" type="button">홈으로</button>`
+    <p class="note">${en ? 'The hexagram shape (upper/lower trigram) is as in the I Ching; the wording is newly written by Yongyong Saju. One hexagram per day, set by today’s date (different per person if you saved your birthday). For fun and reference only.' : '괘의 모양(상괘·하괘)은 주역 그대로고, 풀이 글은 용용사주가 오늘 말로 새로 쓴 거예요. 하루 한 번, 오늘 날짜로 정해져요(내 생일을 입력해 두었다면 사람마다 달라요). 재미와 참고용이에요.'}</p></article>
+  <button class="go ghost" id="icback" type="button">${en ? 'Home' : '홈으로'}</button>`
   document.getElementById('icback')!.onclick = () => { mode = 'home'; render() }
 }
 

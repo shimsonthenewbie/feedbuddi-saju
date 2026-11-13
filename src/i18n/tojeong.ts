@@ -5,6 +5,7 @@
  */
 import type { TojeongResult } from '../myeongri/tojeong'
 import { CELL, LOWX } from './tojeong-cells'
+import { CELL_EN, LABEL_EN, LOWX_EN, LOW_EN, MID_EN, MONTH_LINES_EN, SEASON_EN, UP_EN } from './tojeong-en'
 
 const UP: Array<[string, string]> = [
   ['씨앗을 심는 해', '새로 시작하기 좋은 흐름이에요. 이것저것 벌이기보다 한 가지를 정해 꾸준히 가면 연말에 눈에 띄는 열매가 달려요.'],
@@ -78,11 +79,12 @@ const GOOD_AT: Array<(n: number) => number> = [
 ]
 const LABEL = { good: '좋은 달', mid: '무난한 달', care: '조심할 달' }
 
-export function composeTojeong(r: TojeongResult): TojeongView {
-  const u = UP[r.up - 1]
-  const cell = CELL[r.up - 1][r.mid - 1]
-  const m = MID[r.mid - 1]
-  const l = LOW[r.low - 1]
+export function composeTojeong(r: TojeongResult, lang: 'ko' | 'en' = 'ko'): TojeongView {
+  const en = lang === 'en'
+  const u = (en ? UP_EN : UP)[r.up - 1]
+  const cell = (en ? CELL_EN : CELL)[r.up - 1][r.mid - 1]
+  const m = (en ? MID_EN : MID)[r.mid - 1]
+  const l = (en ? LOW_EN : LOW)[r.low - 1]
   const months: TojeongMonth[] = []
   const used: Record<string, number> = { good: 0, mid: 0, care: 0 }
   for (let n = 1; n <= 12; n++) {
@@ -93,15 +95,33 @@ export function composeTojeong(r: TojeongResult): TojeongView {
     const goodCut = Math.round(10 + g * 34)
     const careCut = goodCut + Math.round(44 - g * 24)
     const tone: TojeongMonth['tone'] = p < goodCut ? 'good' : p < careCut ? 'mid' : 'care'
-    const [line, tip] = MONTH_LINES[tone][((h >>> 8) + used[tone]++) % 5] // 같은 종류 달이 연달아 같은 문장이 되지 않게 돌려 씀
-    months.push({ n, tone, label: LABEL[tone], line: `${SEASON[n]} ${line}`, tip })
+    const [line, tip] = (en ? MONTH_LINES_EN : MONTH_LINES)[tone][((h >>> 8) + used[tone]++) % 5] // 같은 종류 달이 연달아 같은 문장이 되지 않게 돌려 씀
+    months.push({ n, tone, label: (en ? LABEL_EN : LABEL)[tone], line: `${(en ? SEASON_EN : SEASON)[n]} ${line}`, tip })
+  }
+  if (en) {
+    return {
+      title: `Tojeong Bigyeol ${r.year} (${r.yearGanji} year)`,
+      code: r.code,
+      summary: `${cell[0]} — ${cell[1]}`,
+      flow: m,
+      advice: [l[0], `${l[1]} ${LOWX_EN[r.low - 1][r.up - 1]}`],
+      months,
+      facts: [
+        `Theme of the year: ${u[0]} — ${u[1]}`,
+        `Lunar birthday: ${r.lunarBirth.y}-${r.lunarBirth.leap ? 'leap ' : ''}${r.lunarBirth.m}-${r.lunarBirth.d} (Korean age ${r.age})`,
+        `Hexagram code ${r.code} (upper ${r.up} · middle ${r.mid} · lower ${r.low}) — one of 144`,
+        ...(r.lunarBirth.leap ? ['Leap-month births are calculated as a regular month.'] : []),
+        ...(r.dayClamped ? ['That lunar month has only 29 days this year, so your birthday was treated as the 29th.'] : []),
+      ],
+      note: 'The three-part code follows the classic Tojeong Bigyeol method; the wording is newly written by Yongyong Saju and does not reproduce the classic’s verses. For fun and reference only.',
+    }
   }
   return {
     title: `${r.year}년 ${r.yearGanji}년 토정비결`,
     code: r.code,
     summary: `${cell[0]} — ${cell[1]}`,
     flow: m,
-    advice: [l[0], `${l[1]} ${LOWX[r.low - 1][r.up - 1]}`],
+    advice: [l[0], `${l[1]} ${(en ? LOWX_EN : LOWX)[r.low - 1][r.up - 1]}`],
     months,
     facts: [
       `한 해의 큰 주제: ${u[0]} — ${u[1]}`,

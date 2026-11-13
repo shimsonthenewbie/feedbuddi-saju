@@ -2,6 +2,7 @@
  * 주역 64괘 "오늘의 한 괘". 괘의 구조(상괘·하괘)는 주역 그대로이고,
  * 풀이 글은 용용사주가 오늘 말로 새로 쓴 것이다. (원전 괘사·효사를 옮기지 않음)
  */
+import { H64_EN, TRI_EN } from './iching-en'
 const TRI = ['乾', '兌', '離', '震', '巽', '坎', '艮', '坤'] as const
 const TRI_KO = ['하늘', '못(연못)', '불', '우레', '바람', '물', '산', '땅']
 // 아래→위 효 (1=양, 0=음)
@@ -92,9 +93,19 @@ export interface IchingView {
 const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) } return h >>> 0 }
 
 /** 날짜(+선택: 생년월일)로 그날의 한 괘를 정한다. 같은 사람·같은 날은 늘 같은 괘. */
-export function dailyHexagram(dateKey: string, seed = ''): IchingView {
+export function dailyHexagram(dateKey: string, seed = '', lang: 'ko' | 'en' = 'ko'): IchingView {
   const no = hash(`${dateKey}|${seed}|iching`) % 64
   const [up, lo, name, hanja, keyword, message, tip] = H64[no]
+  if (lang === 'en') {
+    const e = H64_EN[no]
+    return {
+      no: no + 1, name: e[0], hanja, keyword: e[1],
+      upper: `${TRI_EN[TRI.indexOf(up as (typeof TRI)[number])]} (${up})`,
+      lower: `${TRI_EN[TRI.indexOf(lo as (typeof TRI)[number])]} (${lo})`,
+      lines: [...TRI_LINES[lo], ...TRI_LINES[up]].map((v) => v === 1),
+      message: e[2], tip: e[3],
+    }
+  }
   return {
     no: no + 1, name, hanja, keyword,
     upper: `${TRI_KO[TRI.indexOf(up as (typeof TRI)[number])]}(${up})`,
