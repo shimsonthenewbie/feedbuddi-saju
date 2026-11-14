@@ -1136,8 +1136,9 @@ function handHtml(): string {
   return `<section class="card" aria-label="hand">
     <div class="freehead"><div><h2>${ko ? '손 모양으로 보는 관상' : 'Hand-shape reading'}</h2><p class="meta">${ko ? '손바닥이 보이게 손가락을 활짝 펴고 한 장만 찍어 주세요. 사진은 내 기기 안에서만 분석해요.' : 'Spread your fingers with the palm facing the camera. One photo, analysed on your device only.'}</p></div><img class="fmascot" src="${art('dragon-think')}" alt="" width="92" height="92"></div>
     <ul class="tips">${(ko ? ['밝은 곳에서 손바닥이 정면으로', '손가락은 활짝 펴고 붙이지 않기', '한 손만, 배경은 단순하게'] : ['Bright light, palm facing the camera', 'Spread your fingers apart', 'One hand, plain background']).map((v) => `<li>${esc(v)}</li>`).join('')}</ul>
-    <div class="faceact"><input type="file" id="handalb" accept="image/*" hidden>
-      <button type="button" class="go filebtn" data-faceask="handalb">${ko ? '손 사진 고르기' : 'Choose hand photo'}</button></div>
+    <div class="faceact"><input type="file" id="handcam" accept="image/*" capture="environment" hidden><input type="file" id="handalb" accept="image/*" hidden>
+      <button type="button" class="go filebtn" data-faceask="handcam">${ko ? '카메라로 찍기' : 'Take a photo'}</button>
+      <button type="button" class="go filebtn ghost" data-faceask="handalb">${ko ? '앨범에서 고르기' : 'Choose from album'}</button></div>
     <p class="note">${esc(x.faceKept)} <button type="button" class="linkbtn" data-legal="privacy">${esc(x.legalPrivacy)}</button> · <button type="button" class="linkbtn" data-legal="terms">${esc(x.legalTerms)}</button></p>
     <p class="err" id="faceerr" role="alert"></p>
   </section>
@@ -1500,6 +1501,7 @@ function bind() {
   app.querySelectorAll<HTMLElement>('[data-faceask]').forEach((b) => (b.onclick = () => askFaceConsent(b.dataset.faceask!)))
   app.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => (b.onclick = () => { legalKind = b.dataset.legal as LegalDoc; legalFrom = mode === 'legal' ? legalFrom : mode; mode = 'legal'; window.scrollTo(0, 0); render() }))
   document.getElementById('form')?.addEventListener('submit', onSubmit)
+  document.getElementById('handcam')?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onHandPick(f) })
   document.getElementById('handalb')?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onHandPick(f) })
   ;['facecam', 'facealb'].forEach((id) => document.getElementById(id)?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePick(f) }))
   document.getElementById('facepair')?.addEventListener('change', (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) void onFacePair(f); (e.target as HTMLInputElement).value = '' })
