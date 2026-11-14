@@ -32,6 +32,7 @@ import { composePage } from './i18n/year'
 import { legalDoc, type LegalDoc } from './legal'
 import { composeExam, examText, EXAM_DATE } from './i18n/exam'
 import { tojeongOf } from './myeongri/tojeong'
+import { mbtiOf } from './myeongri/mbti'
 import { gungtongCard } from './myeongri/gungtong'
 import { composeTojeong } from './i18n/tojeong'
 import { dailyHexagram } from './i18n/iching'
@@ -49,7 +50,7 @@ import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from '
 import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
-type Mode = 'home' | 'koname' | 'dream' | 'tarot' | 'astro' | 'name' | 'gusung' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
+type Mode = 'home' | 'koname' | 'dream' | 'tarot' | 'astro' | 'name' | 'gusung' | 'mbti' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
 const EL = ['tree', 'fire', 'earth', 'metal', 'water'] as const
 type El = (typeof EL)[number]
 const EL_CLASS: Record<El, string> = { tree: 'wood', fire: 'fire', earth: 'earth', metal: 'metal', water: 'water' }
@@ -600,6 +601,21 @@ function compass(rs: DirRead[], center: number): string {
   }
   return `<div class="cg">${['북서', '북', '북동', '서', null, '동', '남서', '남', '남동'].map((d) => d ? cell(d) : `<div class="cgc ctr"><b>${dn('중앙')}</b><span>${sn(center)}</span></div>`).join('')}</div>`
 }
+function showMbti() {
+  const pr = loadProfile()!
+  const out = document.getElementById('out')!
+  const m = mbtiOf(analyze(resultOf(pr)))
+  const card = (r: { type: string; line: string; reason: string }, k: string) => `<article class="rcard ym k-${k}"><div class="yh"><b>${esc(r.type)}</b></div><p class="dbody"><b>${esc(r.line)}</b></p><p class="dbody">${esc(r.reason)}</p></article>`
+  out.innerHTML = `
+  <article class="card yr"><h2>내 사주와 잘 맞는 MBTI</h2><p class="dbody">${esc(m.head)}</p></article>
+  <article class="card"><h2>잘 맞는 유형</h2></article>
+  ${m.best.map((r) => card(r, 'good')).join('')}
+  <article class="card"><h2>서로 신경 써야 하는 유형</h2></article>
+  ${m.worst.map((r) => card(r, 'care')).join('')}
+  <article class="card"><p class="note">재미로 보는 풀이예요. MBTI와 사주는 서로 다른 체계라 정해진 대응 관계는 없어요. 각 유형의 성향을 오행으로 어림 환산해서 내 사주의 필요한 기운과 견준 거예요. 맞지 않는 유형과도 잘 지내는 사람은 아주 많아요. MBTI는 해당 상표권자의 공식 검사와 관계가 없어요.</p></article>
+  <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${t().change}</button></p>`
+  document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
+}
 function showGusung() {
   const pr = loadProfile()!
   const out = document.getElementById('out')!
@@ -632,7 +648,7 @@ function showGusung() {
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
 }
 
-const koOnly = () => lang === 'en' && (mode === 'taegil' || mode === 'name' || mode === 'dream')
+const koOnly = () => lang === 'en' && (mode === 'taegil' || mode === 'name' || mode === 'dream' || mode === 'mbti')
 function koOnlyHtml(): string {
   return `<section class="card"><h2>Korean only for now</h2><p class="meta">This reading (auspicious dates, name reading, dream interpretation) is currently available in Korean only. Try Tarot, Tojeong, I Ching, Nine Star Ki, the birth chart or "Get your Korean name" instead.</p></section>`
 }
@@ -897,8 +913,8 @@ function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
-  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['koname', '韓', lang === 'ko' ? '내 한국 이름 만들기' : 'Get your Korean name'], ['dream', '夢', lang === 'ko' ? '꿈해몽 (AI 자세히)' : 'Dream reading'], ['tarot', '🂠', lang === 'ko' ? '타로 (오늘의 카드·3장)' : 'Tarot'], ['astro', '☉', lang === 'ko' ? '별자리 출생차트 (서양 점성술)' : 'Birth chart (Western astrology)'], ['name', '名', lang === 'ko' ? '이름 풀이·작명 비교' : 'Name reading'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
-    .filter(([go]) => lang === 'ko' || !['taegil', 'name', 'dream'].includes(go as string))
+  const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['koname', '韓', lang === 'ko' ? '내 한국 이름 만들기' : 'Get your Korean name'], ['dream', '夢', lang === 'ko' ? '꿈해몽 (AI 자세히)' : 'Dream reading'], ['tarot', '🂠', lang === 'ko' ? '타로 (오늘의 카드·3장)' : 'Tarot'], ['astro', '☉', lang === 'ko' ? '별자리 출생차트 (서양 점성술)' : 'Birth chart (Western astrology)'], ['name', '名', lang === 'ko' ? '이름 풀이·작명 비교' : 'Name reading'], ['mbti', '性', lang === 'ko' ? '내 사주와 잘 맞는 MBTI' : 'MBTI match'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
+    .filter(([go]) => lang === 'ko' || !['taegil', 'name', 'dream', 'mbti'].includes(go as string))
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
@@ -1405,6 +1421,7 @@ let mode: Mode = 'home'
 let invite: Invite | null = readInvite(location.hash)
 if (invite) mode = 'invite'
 else if (location.hash === '#tojeong') mode = 'tojeong'
+else if (location.hash === '#mbti') mode = 'mbti'
 else if (location.hash === '#iching') mode = 'iching'
 else if (location.hash === '#koname') mode = 'koname'
 else if (location.hash === '#dream') mode = 'dream'
@@ -1458,12 +1475,12 @@ function render() {
     ${mode === 'home' ? `<p class="sub">${esc(x.sub).replace(/\n/g, '<br>')}</p>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : koOnly() ? koOnlyHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'dream' ? dreamHtml() : mode === 'koname' ? konameHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'astro') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : koOnly() ? koOnlyHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'dream' ? dreamHtml() : mode === 'koname' ? konameHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'mbti' || mode === 'astro') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
     ${personForm('a', x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
-    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'astro' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
+    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'mbti' || mode === 'astro' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
   </form>
   <section id="out"></section>`}
   ${navHtml()}
@@ -1519,6 +1536,7 @@ function bind() {
   if (mode === 'pick' && loadProfile()) showPick()
   if (mode === 'exam' && loadProfile()) showExam()
   if (mode === 'tojeong' && loadProfile()) showTojeong()
+  if (mode === 'mbti' && loadProfile()) showMbti()
   if (mode === 'gusung' && loadProfile()) showGusung()
   if (mode === 'astro' && loadProfile()) void showAstro()
   if (mode === 'iching') showIching()
@@ -1564,7 +1582,7 @@ function onSubmit(e: Event) {
   const a = readPerson('a', x.me)
   if (typeof a === 'string') { err.textContent = a; return }
   people.push(a)
-  if (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'astro') {
+  if (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'mbti' || mode === 'astro') {
     saveProfile(a)
     dayOffset = 0
     render()
