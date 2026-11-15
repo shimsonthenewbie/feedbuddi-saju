@@ -1520,26 +1520,6 @@ function render() {
     <p><button type="button" class="linkbtn" data-legal="privacy">${x.legalPrivacy}</button> · <button type="button" class="linkbtn" data-legal="terms">${x.legalTerms}</button></p>
   </footer>`
   bind()
-  fillShareBar()
-}
-
-/** 결과 아래 공유 버튼: 폰의 공유창이 열려 카카오톡·오픈채팅·단톡방으로 바로 보낼 수 있다(내 생년월일은 담지 않는다) */
-const SHARE_MODES = ['mbti', 'tojeong', 'iching', 'tarot', 'gusung', 'astro', 'koname', 'year', 'today', 'newyear', 'dream', 'taegil', 'name']
-function fillShareBar() {
-  document.getElementById('sharebar')?.remove()
-  if (!SHARE_MODES.includes(mode) || koOnly()) return
-  const bar = document.createElement('div'); bar.id = 'sharebar'
-  const foot = app.querySelector('footer')
-  if (foot) foot.before(bar); else app.append(bar)
-  const ko = lang === 'ko'
-  bar.innerHTML = `<article class="card share"><div class="row"><button class="go" type="button" id="shgo">${ko ? '카카오톡·단톡방에 공유하기' : 'Share with friends'}</button></div><p class="ok" id="shgook" role="status"></p></article>`
-  document.getElementById('shgo')!.onclick = async () => {
-    const h = document.querySelector('#out h2')?.textContent?.trim() || ''
-    const url = `${location.origin}${location.pathname}#${mode}`
-    const text = ko ? `${h ? `[${h}] ` : ''}용용사주에서 재미로 봐 봐요! 생년월일만 넣으면 돼요.` : `${h ? `[${h}] ` : ''}Try it on Yongyong Saju, just for fun!`
-    try { if (navigator.share) { await navigator.share({ title: '용용사주', text, url }); return } } catch (e) { if ((e as Error).name === 'AbortError') return }
-    try { await navigator.clipboard.writeText(`${text}\n${url}`); document.getElementById('shgook')!.textContent = ko ? '복사했어요. 단톡방에 붙여 넣어 보세요.' : 'Copied. Paste it into a chat.' } catch { /* 복사 못 하면 무시 */ }
-  }
 }
 
 function bind() {
