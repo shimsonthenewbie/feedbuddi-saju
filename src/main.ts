@@ -812,6 +812,8 @@ function konameHtml(): string {
     <p class="meta">${ko ? '외국인 친구 이름을 넣으면 한국 이름이 나와요. 친구에게 보내 주세요!' : 'Type your name and get a Korean name with a meaning behind it — just for fun.'}</p>
     <label class="lbl" for="knn">${ko ? '이름 (영문)' : 'Your name (English letters)'}</label>
     <input id="knn" maxlength="30" placeholder="e.g. Emily" autocomplete="off">
+    <label class="lbl" for="knb">${ko ? '생년월일 (선택) — 내 사주에 필요한 기운에 맞춰 줘요' : 'Birth date (optional): matches the name to what your birth chart needs'}</label>
+    <input id="knb" type="date" min="1920-01-01" max="2030-12-31" autocomplete="off">
     <p class="lbl">${ko ? '어떤 느낌의 이름?' : 'Style'}</p>
     <div class="chips" id="kng"><label class="chip"><input type="radio" name="kg" value="F"> ${ko ? '여성스러운' : 'Feminine'}</label><label class="chip"><input type="radio" name="kg" value="M"> ${ko ? '남성스러운' : 'Masculine'}</label><label class="chip"><input type="radio" name="kg" value="N" checked> ${ko ? '상관없음' : 'Any'}</label></div>
     <button class="go" id="kngo" type="button">${ko ? '한국 이름 만들기' : 'Make my Korean name'}</button></section>
@@ -823,14 +825,28 @@ function initKoname() {
   const make = () => {
     const nm = (document.getElementById('knn') as HTMLInputElement).value.trim()
     const g = (document.querySelector('input[name=kg]:checked') as HTMLInputElement)?.value as Gender
-    const k = makeKoName(nm, g || 'N', variant)
+    // 생년월일을 넣으면 내 사주에 필요한 오행(용신·희신)에 맞는 글자를 우선 고른다(시간은 몰라도 됨)
+    const bd = (document.getElementById('knb') as HTMLInputElement | null)?.value
+    let need: Array<'木' | '火' | '土' | '金' | '水'> = []
+    let needTxt = ''
+    if (bd && /^\d{4}-\d{2}-\d{2}$/.test(bd)) {
+      try {
+        const [by, bm, bdd] = bd.split('-').map(Number)
+        const a = analyze(resultOf({ y: by, m: bm, d: bdd, hh: 12, mm: 0, gender: g === 'M' ? 'M' : 'F', unk: true, lat: SEOUL.lat, lon: SEOUL.lon, place: '' }))
+        const W = { tree: '木', fire: '火', earth: '土', metal: '金', water: '水' } as const
+        const NM = { tree: ['Wood', '목'], fire: ['Fire', '화'], earth: ['Earth', '토'], metal: ['Metal', '금'], water: ['Water', '수'] } as const
+        need = [W[a.yongsin.primary], W[a.yongsin.heesin]]
+        needTxt = lang === 'ko' ? `내 사주에 필요한 ${NM[a.yongsin.primary][1]}·${NM[a.yongsin.heesin][1]} 기운의 글자를 우선 골랐어요.` : `Characters were chosen to favor ${NM[a.yongsin.primary][0]} and ${NM[a.yongsin.heesin][0]}, the energies your birth chart needs.`
+      } catch { need = [] }
+    }
+    const k = makeKoName(nm, g || 'N', variant, need)
     if (!k) { out.innerHTML = `<article class="card"><p>${lang === 'ko' ? '영문 이름을 2글자 이상 넣어 주세요.' : 'Please type at least 2 English letters.'}</p></article>`; return }
     const share = `${nm} → ${k.full} (${k.rom})\n${k.story[0]}\n#용용사주`
     out.innerHTML = `<article class="card ic"><p class="meta">${esc(nm)}</p>
       <h2 class="kbig">${esc(k.full)}</h2><p class="icn">${esc(k.rom)}</p>
       <ul class="rs"><li><b>${esc(k.family)}</b> — ${esc(k.surnameGloss[0])}${lang === 'ko' ? ` (${esc(k.surnameGloss[1])})` : ''}</li>
       ${k.parts.map((p) => `<li><b>${esc(p.h)}</b> ${esc(p.r)} — ${esc(lang === 'ko' ? p.ko : p.en)}</li>`).join('')}</ul>
-      <p class="dbody">${esc(k.story[1])}</p>
+      <p class="dbody">${esc(k.story[1])}</p>${needTxt ? `<p class="meta">${esc(needTxt)}</p>` : ''}
       <div class="trbtns"><button class="go" id="knshare" type="button">${lang === 'ko' ? '복사해서 공유하기' : 'Copy to share'}</button><button class="go ghost" id="knagain" type="button">${lang === 'ko' ? '다른 이름으로 다시' : 'Try another'}</button></div>
       <p class="note" id="knmsg" role="status"></p>
       <p class="note">${lang === 'ko' ? '재미로 만든 이름이에요. 글자 뜻은 흔히 쓰는 한자 하나를 기준으로 한 예시예요.' : 'Just for fun. Meanings are examples based on one commonly used Hanja for each syllable.'}</p></article>`
