@@ -89,7 +89,10 @@ export function scoreDay(date: Date, cat: CatKey, me: Me = {}): DayPick {
   if (bads.length) { sc -= 4; cautions.push(`전통 책력에서 ${c.name.split('·')[0]} 일을 꺼리는 날`) }
   if (yi.includes('诸事不宜') || ji.includes('诸事不宜')) { sc -= 4; cautions.push('모든 일에 좋지 않다고 보는 날') }
   const lk = lu.getDayTianShenType() === '黄道'
-  if (lk) { sc += 1; reasons.push('황도일(길한 신이 드는 날)') } else { sc -= 1; cautions.push('흑도일(흉한 신이 드는 날)') }
+  // 흑도일은 전통 택일에서 큰일(개업·이사·혼인·계약 등)을 피하는 날이라 크게 깎고, 아무리 다른 조건이 좋아도 '보통' 이상으로 올리지 않는다
+  const BIG: CatKey[] = ['open', 'wedding', 'move', 'contract', 'build', 'car', 'burial', 'rite']
+  const blackBig = !lk && BIG.includes(cat)
+  if (lk) { sc += 1; reasons.push('황도일(길한 신이 드는 날)') } else { sc -= blackBig ? 4 : 1; cautions.push(blackBig ? '흑도일(흉한 신이 드는 날) — 큰일은 피하는 날' : '흑도일(흉한 신이 드는 날)') }
   const zx: string = lu.getZhiXing()
   const zs = ZX_SCORE[zx] ?? 0
   if (cat === 'burial') { /* 장례는 건제 가점 없음 */ } else if (zs) { sc += zs; (zs > 0 ? reasons : cautions).push(`건제 12신: ${ZX_KO[zx]}`) }
@@ -111,6 +114,7 @@ export function scoreDay(date: Date, cat: CatKey, me: Me = {}): DayPick {
     }
     if (w) { sc += w; (w > 0 ? reasons : cautions).push(`내 일간 기준 ${SS_NOTE[ss]}`) }
   }
+  if (blackBig) sc = Math.min(sc, 2)
   const grade: DayPick['grade'] = sc >= 6 ? '대길' : sc >= 3 ? '길' : sc >= 1 ? '보통' : sc >= -2 ? '조심' : '피하세요'
   const sha = DIR[lu.getDaySha()]
   return {
