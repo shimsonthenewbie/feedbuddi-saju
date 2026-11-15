@@ -41,6 +41,7 @@ import { composeTojeong } from './i18n/tojeong'
 import { dailyHexagram } from './i18n/iching'
 import { draw, dailyCard, type Drawn } from './i18n/tarot'
 import { composeAstro } from './i18n/natal'
+import { plainRead } from './myeongri/plain'
 import { makeKoName, type Gender } from './i18n/koname'
 import { readName, WX_KO, type Wx } from './myeongri/name'
 import type { TaegilCand } from './taegil-prompt'
@@ -1060,7 +1061,7 @@ function showFree() {
   const gt = lang === 'ko' ? gungtongCard(a.dayStem, a.monthBranch, a.gungtong) : null
   const cards = [base[0], ...(gt ? [{ title: gt.title, head: '', body: gt.paras }] : []), { title: ac.title, head: '', body: ac.paras }, ...base.slice(1)] as typeof base
   const fp = freePool(lang)
-  out.innerHTML = `${chartHtml(freePerson)}
+  out.innerHTML = `${chartHtml(freePerson)}${plainHtml(r)}
   ${cards.map((c, i) => `<article class="rcard${i === 0 ? ' lead' : ''}"><h3>${esc(c.title)}</h3>${c.head ? `<p class="fhead">${esc(c.head)}</p>` : ''}${c.body.map((b) => `<p>${esc(b)}</p>`).join('')}</article>`).join('')}
   <article class="card"><h3>${esc(fp.t.next)}</h3><div class="row"><button class="go" data-mode="today" type="button">${esc(fp.t.todayCta)}</button><button class="go ghost" data-mode="ask" type="button">${esc(fp.t.askCta)}</button></div></article>
   <p class="note demo">${esc(fp.t.free)}</p>
@@ -1693,6 +1694,10 @@ function onSubmit(e: Event) {
 const stemEl = (s: string): El | null => (STEM_INFO[s]?.element as El) ?? null
 const branchEl = (b: string): El | null => (BRANCH_ELEMENT[b] as El) ?? null
 
+function plainHtml(r: SajuResult): string {
+  if (lang !== 'ko') return ''
+  try { const c = plainRead(r); return `<article class="rcard"><h3>${esc(c.title)}</h3>${c.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}<p class="meta">${esc(c.note)}</p></article>` } catch { return '' }
+}
 function chartHtml(p: Person): string {
   const x = t()
   const r: SajuResult = p.result
