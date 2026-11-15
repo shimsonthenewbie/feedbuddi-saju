@@ -32,7 +32,7 @@ import { composePage } from './i18n/year'
 import { legalDoc, type LegalDoc } from './legal'
 import { composeExam, examText, EXAM_DATE } from './i18n/exam'
 import { tojeongOf } from './myeongri/tojeong'
-import { mbtiOf } from './myeongri/mbti'
+import { mbtiOf, myTypeRead, pairRead, TYPE_LIST, TYPES } from './myeongri/mbti'
 import { gungtongCard } from './myeongri/gungtong'
 import { composeTojeong } from './i18n/tojeong'
 import { dailyHexagram } from './i18n/iching'
@@ -612,9 +612,20 @@ function showMbti() {
   ${m.best.map((r) => card(r, 'good')).join('')}
   <article class="card"><h2>서로 신경 써야 하는 유형</h2></article>
   ${m.worst.map((r) => card(r, 'care')).join('')}
+  <article class="card"><h2>내 MBTI와 비교해 보기</h2><p class="meta">내 MBTI를 고르면 내 사주와 겹치는 점, 어긋나는 점을 알려 줘요.</p>
+    <div class="chips" id="mbtipick">${TYPE_LIST.map((x) => `<label class="chip"><input type="radio" name="mt" value="${x}"> ${x}</label>`).join('')}</div></article>
+  <div id="mbtiown"></div>
   <article class="card"><p class="note">재미로 보는 풀이예요. MBTI와 사주는 서로 다른 체계라 정해진 대응 관계는 없어요. 각 유형의 성향을 오행으로 어림 환산해서 내 사주의 필요한 기운과 견준 거예요. 맞지 않는 유형과도 잘 지내는 사람은 아주 많아요. MBTI는 해당 상표권자의 공식 검사와 관계가 없어요.</p></article>
   <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${t().change}</button></p>`
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
+  const an = analyze(resultOf(pr))
+  const showOwn = (ty: string) => {
+    const o = myTypeRead(an, ty)
+    document.getElementById('mbtiown')!.innerHTML = `<article class="rcard ym k-mid"><div class="yh"><b>${esc(ty)}</b></div><p class="dbody"><b>${esc(o.head)}</b></p>${o.lines.map((l) => `<p class="dbody">${esc(l)}</p>`).join('')}</article>`
+    try { localStorage.setItem('fb-mbti', ty) } catch { /* 저장 못 해도 됨 */ }
+  }
+  out.querySelectorAll<HTMLInputElement>('input[name=mt]').forEach((r) => (r.onchange = () => showOwn(r.value)))
+  try { const sv = localStorage.getItem('fb-mbti'); const r = sv && out.querySelector<HTMLInputElement>(`input[name=mt][value=${sv}]`); if (r) { r.checked = true; showOwn(r.value) } } catch { /* 무시 */ }
 }
 function showGusung() {
   const pr = loadProfile()!
@@ -1677,6 +1688,10 @@ function matchHtml(people: Person[]): string {
     <ul class="chips2">${m.chips.map((c) => `<li><small>${esc(c.k)}</small>${esc(c.v)}</li>`).join('')}</ul>
   </article>
   ${rest.map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}${c.list ? `<ul>${c.list.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}</article>`).join('')}
+  ${lang === 'ko' ? `<article class="card" id="mbtipair"><h3>MBTI까지 같이 보기 (재미)</h3><p class="meta">두 사람 MBTI를 고르면 서로의 사주가 상대 유형을 어떻게 보는지 알려 줘요.</p>
+    <div class="row"><select id="mtA" aria-label="첫 번째 사람의 MBTI">${['<option value="">첫 번째 사람 MBTI</option>', ...TYPE_LIST.map((x) => `<option>${x}</option>`)].join('')}</select>
+    <select id="mtB" aria-label="두 번째 사람의 MBTI">${['<option value="">두 번째 사람 MBTI</option>', ...TYPE_LIST.map((x) => `<option>${x}</option>`)].join('')}</select></div>
+    <div id="mtout"></div></article>` : ''}
   <p class="note">${esc(mp.ui.note)}</p>
   <article class="card share"><h3>${esc(t().shT)}</h3>
     ${invite ? `<div class="row"><button class="go" type="button" id="again">${esc(t().again)}</button></div>` : ''}
@@ -1719,7 +1734,20 @@ function showResult(people: Person[], lead = '') {
   document.getElementById('copy')!.onclick = copy
   out.querySelectorAll<HTMLAnchorElement>('.ais a').forEach((a) => a.addEventListener('click', copy))
   bindShare()
+  bindMbtiPair(people)
   out.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+function bindMbtiPair(people: Person[]) {
+  const a = document.getElementById('mtA') as HTMLSelectElement | null, b = document.getElementById('mtB') as HTMLSelectElement | null
+  if (!a || !b || people.length < 2) return
+  const go = () => {
+    const o = document.getElementById('mtout')!
+    if (!a.value || !b.value) { o.innerHTML = ''; return }
+    const r = pairRead(analyze(people[0].result), analyze(people[1].result), a.value, b.value)
+    o.innerHTML = `<p class="dbody"><b>${esc(r.head)} · MBTI까지 보면 ${r.score}점</b></p>${r.lines.map((l) => `<p class="dbody">${esc(l)}</p>`).join('')}<p class="note">재미용 참고값이에요. 사주 궁합 점수와는 따로 계산해요.</p>`
+  }
+  a.onchange = go; b.onchange = go
 }
 
 function bindShare() {

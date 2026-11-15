@@ -62,3 +62,53 @@ export function mbtiOf(a: Analysis): MbtiOut {
     head: `내 사주에서 가장 필요한 기운은 ${EL_KO[yongEl]}이고, 넘치기 쉬워 조심할 기운은 ${EL_KO[careEl]}이에요.`,
   }
 }
+
+export const TYPE_LIST = Object.keys(TYPES)
+const scoreOf = (a: Analysis, t: string): number => {
+  const p = profileOf(t)
+  return ELS.reduce((s, e) => s + p[e] * ROLE_W[roleOf(a, e)], 0)
+}
+const rankOf = (a: Analysis, t: string): number => {
+  const sc = scoreOf(a, t)
+  return TYPE_LIST.filter((x) => scoreOf(a, x) > sc + 1e-9).length + 1
+}
+const tierOf = (rank: number) => (rank <= 4 ? '잘 맞는 편' : rank <= 12 ? '무난한 편' : '신경 써야 하는 편')
+
+/** 내가 고른 유형과 내 사주를 견준 글 */
+export function myTypeRead(a: Analysis, t: string): { head: string; lines: string[] } {
+  const rank = rankOf(a, t)
+  const g = a.groups
+  const out = g.식상 + g.비겁, inn = g.인성 + g.관성
+  const lines: string[] = []
+  const E = t[0] === 'E'
+  if (E && out < 0.4) lines.push('겉으로는 활발한 편인데, 사주에는 안쪽으로 모으는 기운이 더 많아요. 사람을 만난 뒤 혼자 쉬는 시간이 꼭 필요한 사람이에요.')
+  else if (!E && out > 0.55) lines.push('겉으로는 조용한 편인데, 사주에는 표현하고 내보내는 기운이 많아요. 가까운 사람 앞에서는 말이 많아지는 숨은 외향형일 수 있어요.')
+  else lines.push(E ? '활발한 성향이 사주의 표현하는 기운과 잘 맞물려요. 나서는 일이 어색하지 않아요.' : '조용한 성향이 사주의 모으는 기운과 잘 맞물려요. 혼자 깊이 생각하는 시간이 힘이 돼요.')
+  const J = t[3] === 'J'
+  if (J && g.식상 > 0.3) lines.push('계획을 세우는 성향인데 사주에는 즉흥적으로 튀어나오는 기운도 있어요. 계획표에 여유 칸을 두면 훨씬 편해요.')
+  else if (!J && g.관성 > 0.3) lines.push('자유로운 성향인데 사주에는 책임감과 규율의 기운이 있어요. 마감이 다가오면 오히려 집중력이 올라가는 타입일 수 있어요.')
+  else lines.push(J ? '계획하는 성향이 사주의 질서 잡는 기운과 잘 맞아요.' : '유연한 성향이 사주의 흐름과 잘 맞아요.')
+  const reads = ELS.map((e) => ({ e, p: profileOf(t)[e], r: roleOf(a, e) })).sort((x, y) => y.p - x.p)[0]
+  lines.push(reads.r === '용신' || reads.r === '희신'
+    ? `이 유형의 중심 기운인 ${EL_KO[reads.e]}은 내 사주에 필요한 기운이에요. 타고난 성향을 살릴수록 운이 따라오기 쉬워요.`
+    : reads.r === '기신' || reads.r === '구신'
+      ? `이 유형의 중심 기운인 ${EL_KO[reads.e]}은 내 사주에서 넘치기 쉬운 쪽이에요. 성향이 강하게 나올 때 한 템포 쉬어 가면 좋아요.`
+      : `이 유형의 중심 기운인 ${EL_KO[reads.e]}은 내 사주에서 큰 부담도 도움도 아닌 무난한 기운이에요.`)
+  return { head: `${t} (${TYPES[t]}) — 내 사주와는 16유형 중 ${rank}위, ${tierOf(rank)}이에요.`, lines }
+}
+
+/** 두 사람의 사주가 서로의 유형을 어떻게 보는지 */
+export function pairRead(aA: Analysis, aB: Analysis, tA: string, tB: string): { score: number; head: string; lines: string[] } {
+  const ra = rankOf(aA, tB), rb = rankOf(aB, tA)
+  const raw = (17 - ra + (17 - rb)) / 32 // 0.06~1
+  const score = Math.round(45 + raw * 50)
+  const same = [0, 1, 2, 3].filter((i) => tA[i] === tB[i]).length
+  const lines = [
+    `첫 번째 사람의 사주는 두 번째 사람의 유형(${tB})을 16유형 중 ${ra}위로, ${tierOf(ra)}으로 봐요.`,
+    `두 번째 사람의 사주는 첫 번째 사람의 유형(${tA})을 16유형 중 ${rb}위로, ${tierOf(rb)}으로 봐요.`,
+    same === 4 ? '두 사람은 같은 유형이라 말하지 않아도 통하는 대신, 같은 부분에서 같이 넘어지기 쉬워요.'
+      : same === 0 ? '네 글자가 모두 달라서 서로 다른 점이 신선하게 느껴지는 조합이에요. 대신 같은 상황을 전혀 다르게 받아들일 수 있어서 설명이 필요해요.'
+        : `네 글자 중 ${same}개가 같아서 통하는 부분이 있고, 다른 글자 쪽에서 서로 배울 점이 생겨요.`,
+  ]
+  return { score, head: `${tA} × ${tB}`, lines }
+}
