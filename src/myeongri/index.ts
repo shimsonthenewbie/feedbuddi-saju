@@ -224,6 +224,9 @@ export function analyze(r: SajuResult): Analysis {
   }
 
   /* 격국 (월지 기준 내격) */
+  // 월지가 일간의 록지(甲寅·乙卯·丙巳·丁午·戊巳·己午·庚申·辛酉·壬亥·癸子)일 때만 건록격, 그 밖에 월지 본기가 비견이면 비견격
+  const ROK: Record<string, string> = { 甲: '寅', 乙: '卯', 丙: '巳', 丁: '午', 戊: '巳', 己: '午', 庚: '申', 辛: '酉', 壬: '亥', 癸: '子' }
+  const branchIsRok = (ds: string, mb: string) => ROK[ds] === mb
   const hs = hiddenStems(monthBranch)
   const visible = [P[3].pillar.stem, P[2].pillar.stem, ...(unk ? [] : [P[0].pillar.stem])]
   // 투출: 월지 지장간이 천간에 드러났는지. 정기 → 중기 → 여기 순으로 우선
@@ -232,7 +235,7 @@ export function analyze(r: SajuResult): Analysis {
   const monthSip = sipsinOf(dayStem, chosenStem)
   const revealed = visible.includes(chosenStem)
   let gName: string = `${monthSip}격`
-  if (monthSip === '비견') gName = '건록격'
+  if (monthSip === '비견') gName = branchIsRok(dayStem, monthBranch) ? '건록격' : '비견격'
   if (monthSip === '겁재') gName = STEM_INFO[dayStem].yinyang === '+' ? '양인격' : '월겁격'
   if (monthSip === '편관') gName = '편관격(칠살격)'
   const gyeokguk: Gyeokguk = {
@@ -262,7 +265,7 @@ export function analyze(r: SajuResult): Analysis {
   const groupToEl = (g: Group): Element =>
     g === '비겁' ? dayEl : g === '식상' ? GEN[dayEl] : g === '재성' ? CTRL[dayEl] : g === '관성' ? ELEMENTS.find((e) => CTRL[e] === dayEl)! : ELEMENTS.find((e) => GEN[e] === dayEl)!
   const ranked = candGroups
-    .map((g) => ({ g, need: ideal - grp[g] }))
+    .map((g) => ({ g, need: ideal - grp[g] - (strongSide && g === '관성' ? 0.5 * grp['인성'] : 0) }))
     .sort((a, b) => b.need - a.need)
   const eokbuEl = groupToEl(ranked[0].g)
   let primary = eokbuEl
