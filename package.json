@@ -8,7 +8,8 @@
     "dev": "node scripts/gen-fonts.mjs && node scripts/copy-mediapipe.mjs && vite",
     "build": "node scripts/gen-fonts.mjs && node scripts/gen-seo.mjs && node scripts/copy-mediapipe.mjs && tsc --noEmit && vite build",
     "preview": "vite preview",
-    "verify:engine": "tsx scripts/verify-engine.ts 3000"
+    "verify:engine": "tsx scripts/verify-engine.ts 3000",
+    "verify:analysis": "tsx scripts/verify-analysis.ts"
   },
   "dependencies": {
     "@mediapipe/hands": "^0.4.1675469240",
