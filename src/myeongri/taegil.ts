@@ -116,6 +116,18 @@ export function scoreDay(date: Date, cat: CatKey, me: Me = {}): DayPick {
   }
   if (blackBig) sc = Math.min(sc, 2)
   const grade: DayPick['grade'] = sc >= 6 ? '대길' : sc >= 3 ? '길' : sc >= 1 ? '보통' : sc >= -2 ? '조심' : '피하세요'
+  // 황도일인데 점수가 낮을 때: 왜 낮은지 한 줄로 먼저 보여 준다(같은 이유의 세부 줄은 뺀다)
+  if (lk && grade !== '대길' && grade !== '길') {
+    const nm = c.name.split('·')[0]
+    const zxTxt = `건제 12신: ${ZX_KO[zx]}`
+    const bdTxt = `전통 책력에서 ${nm} 일을 꺼리는 날`
+    const verdict = grade === '보통' ? '보통이에요' : grade === '조심' ? '조심하는 편이에요' : '피하는 게 좋아요'
+    let why = '', drop = ''
+    if (zs < 0) { why = `건제 12신이 '${ZX_KO[zx]}'라서`; drop = zxTxt }
+    else if (bads.length) { why = `전통 책력에서 ${nm}을 꺼리는 날이라서`; drop = bdTxt }
+    else if (cautions[0]) { why = `${cautions[0]}${cautions[0].endsWith('날') ? '이라서' : ' 때문에'}`; drop = cautions[0] }
+    if (why) cautions.splice(0, cautions.length, `황도일이지만 ${why} ${nm}에는 ${verdict}`, ...cautions.filter((x) => x !== drop))
+  }
   const sha = DIR[lu.getDaySha()]
   return {
     date: new Date(date), lunar: `음력 ${Math.abs(lu.getMonth())}월 ${lu.getDay()}일`, ganji: lu.getDayInGanZhi(),
