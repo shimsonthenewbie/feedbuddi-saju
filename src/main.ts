@@ -33,6 +33,7 @@ import { composePage } from './i18n/year'
 import { legalDoc, type LegalDoc } from './legal'
 import { composeExam, examText, EXAM_DATE } from './i18n/exam'
 import { tojeongOf } from './myeongri/tojeong'
+import { readDreamEn, FEELS_EN } from './i18n/dreamfree-en'
 import { CAT_EN, ZODIAC_EN, GRADE_EN, reasonEn, noteEn, lunarEn } from './i18n/taegil-en'
 import { mbtiOf, myTypeRead, pairRead, TYPE_LIST, TYPES } from './myeongri/mbti'
 import { gungtongCard } from './myeongri/gungtong'
@@ -687,7 +688,7 @@ function showGusung() {
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
 }
 
-const koOnly = () => lang === 'en' && (mode === 'name' || mode === 'dream' || mode === 'mbti')
+const koOnly = () => lang === 'en' && (mode === 'name' || mode === 'mbti')
 function koOnlyHtml(): string {
   return `<section class="card"><h2>Korean only for now</h2><p class="meta">This reading (name reading, dream interpretation, MBTI match) is currently available in Korean only. Try Auspicious Dates, Tarot, Tojeong, I Ching, Nine Star Ki, the birth chart or "Get your Korean name" instead.</p></section>`
 }
@@ -778,6 +779,18 @@ function initTarot() {
 const FEELS = ['무서움', '불안', '기쁨', '설렘', '슬픔', '분노', '당황', '평온', '외로움', '그리움', '혼란', '답답함']
 function dreamHtml(): string {
   const pr = loadProfile()
+  if (lang === 'en') {
+    return `<section class="card tg"><h2>Dream interpretation</h2>
+    <p class="meta">Describe the dream and how it felt. The reading looks for classic symbols and the feelings you had. Nothing you type leaves your device.</p>
+    <label class="lbl" for="drm">Your dream (at least 20 characters)</label>
+    <textarea id="drm" rows="6" maxlength="1500" placeholder="e.g. A huge snake was lying on the floor of my house and it just looked at me without moving…"></textarea>
+    <p class="lbl">How did you feel in the dream? (pick any)</p>
+    <div class="chips" id="drf">${FEELS_EN.map((f) => `<label class="chip"><input type="checkbox" value="${f}"> ${f}</label>`).join('')}</div>
+    <label class="lbl" for="drsit">Anything on your mind lately? (optional)</label><input id="drsit" maxlength="200" placeholder="e.g. a job change, exams, a breakup" autocomplete="off">
+    <button class="go" id="drfree" type="button">Read my dream</button>
+    <p class="note" id="drmsg" role="status"></p></section>
+  <section id="drout"></section>`
+  }
   return `<section class="card tg"><h2>꿈해몽</h2>
     <p class="meta">꿈의 장면과 그때 느낀 감정을 자세히 적을수록 풀이가 정확해져요. 자세한 AI 풀이는 질문권 1장으로 받아요.</p>
     <label class="lbl" for="drm">꿈 내용 (20자 이상, 기억나는 대로)</label>
@@ -795,7 +808,7 @@ function dreamHtml(): string {
 }
 function initDream() {
   const root = document.querySelector('.tg') as HTMLElement
-  const val = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement).value.trim()
+  const val = (id: string) => ((document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement | null)?.value ?? '').trim()
   const msg = document.getElementById('drmsg')!
   const out = document.getElementById('drout')!
   const input = () => ({
@@ -806,6 +819,20 @@ function initDream() {
   document.getElementById('drm')!.addEventListener('input', () => showSensitive(root, looksSensitive(all())))
   document.getElementById('drfree')!.onclick = () => {
     const i = input()
+    if (lang === 'en') {
+      if (i.dream.length < 20) { msg.textContent = 'Please write at least 20 characters about the dream.'; return }
+      msg.textContent = ''
+      const r = readDreamEn({ dream: i.dream, feelings: i.feelings, situation: i.situation })
+      const TAGE: Record<string, string> = { good: 'Leaning good', warn: 'A check-in signal', change: 'A sign of change', mixed: 'Depends on your feelings' }
+      out.innerHTML = `<article class="card"><h2>${esc(r.headline)}</h2><p class="meta"><b>${esc(TAGE[r.tone])}</b> · ${esc(r.toneLine)}</p></article>
+      <article class="card"><h3>How this dream reads</h3>${r.story.map((p) => `<p class="dbody">${esc(p)}</p>`).join('')}</article>
+      ${r.symbols.length ? `<article class="card"><h3>Symbols in your dream</h3>${r.symbols.map((x) => `<p class="dbody"><b>${esc(x.name)}</b><br>Traditional lore: ${esc(x.trad)}<br>Psychologically: ${esc(x.mind)}</p>`).join('')}</article>` : ''}
+      ${r.feelLines.length ? `<article class="card"><h3>What your feelings say</h3>${r.feelLines.slice(0, 4).map(([f, l]) => `<p class="dbody"><b>${esc(f)}</b> ${esc(l)}</p>`).join('')}</article>` : ''}
+      ${r.context.length ? `<article class="card"><h3>Connecting it to your life right now</h3>${r.context.map((c) => `<p class="dbody">${esc(c)}</p>`).join('')}</article>` : ''}
+      <article class="card"><h3>One thing to try today</h3><p class="dbody">${esc(r.action)}</p><h3>A question to ask yourself</h3><p class="dbody">${esc(r.ask)}</p></article>
+      <article class="card"><p class="note">This reading matches scenes and feelings against common dream symbols. Dreams do not decide the future; they mirror your state of mind. For entertainment and reference only.</p></article>`
+      return
+    }
     if (i.dream.length < 20) { msg.textContent = '꿈 내용을 20자 이상 적어 주세요.'; return }
     msg.textContent = ''
     const r = readDreamFree(i)
@@ -969,7 +996,7 @@ function homeHtml(): string {
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
   const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['koname', '韓', lang === 'ko' ? '내 한국 이름 만들기' : 'Get your Korean name'], ['dream', '夢', lang === 'ko' ? '꿈해몽 (AI 자세히)' : 'Dream reading'], ['tarot', '🂠', lang === 'ko' ? '타로 (오늘의 카드·3장)' : 'Tarot'], ['astro', '☉', lang === 'ko' ? '별자리 출생차트 (서양 점성술)' : 'Birth chart (Western astrology)'], ['name', '名', lang === 'ko' ? '이름 풀이·작명 비교' : 'Name reading'], ['mbti', '性', lang === 'ko' ? '내 사주와 잘 맞는 MBTI' : 'MBTI match'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
-    .filter(([go]) => lang === 'ko' || !['name', 'dream', 'mbti'].includes(go as string))
+    .filter(([go]) => lang === 'ko' || !['name', 'mbti'].includes(go as string))
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
