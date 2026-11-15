@@ -33,6 +33,7 @@ import { composePage } from './i18n/year'
 import { legalDoc, type LegalDoc } from './legal'
 import { composeExam, examText, EXAM_DATE } from './i18n/exam'
 import { tojeongOf } from './myeongri/tojeong'
+import { CAT_EN, ZODIAC_EN, GRADE_EN, reasonEn, noteEn, lunarEn } from './i18n/taegil-en'
 import { mbtiOf, myTypeRead, pairRead, TYPE_LIST, TYPES } from './myeongri/mbti'
 import { gungtongCard } from './myeongri/gungtong'
 import { composeTojeong } from './i18n/tojeong'
@@ -521,6 +522,22 @@ function showIching() {
 const WD = ['일', '월', '화', '수', '목', '금', '토']
 function taegilHtml(): string {
   const pr = loadProfile()
+  if (lang === 'en') {
+    const ZBe = '子丑寅卯辰巳午未申酉戌亥'
+    const yN = new Date().getFullYear()
+    const defe = pr ? yearBranch(pr.y) : ''
+    return `<section class="card tg"><h2>Auspicious dates</h2>
+    <p class="meta">Pick good days for moves, weddings, openings and more, using the traditional almanac and your zodiac sign.</p>
+    <label class="lbl" for="tgcat">What is it for?</label>
+    <select id="tgcat">${(Object.keys(CATS) as CatKey[]).map((k) => `<option value="${k}">${esc(CAT_EN[k].name)}: ${esc(CAT_EN[k].hint)}</option>`).join('')}</select>
+    <label class="lbl" for="tgper">How far ahead?</label>
+    <select id="tgper"><option value="30">Next 30 days</option><option value="90" selected>Next 3 months</option><option value="180">Next 6 months</option><option value="365">Next year</option></select>
+    <label class="lbl" for="tgzod">Your zodiac sign (we avoid clashing days)</label>
+    <select id="tgzod"><option value="">Not sure / skip</option>${ZBe.split('').map((b) => `<option value="${b}"${b === defe ? ' selected' : ''}>${ZODIAC_EN[b]} (e.g. ${Array.from({ length: 72 }, (_, k) => yN - k).filter((yy) => yearBranch(yy) === b).slice(0, 4).join(', ')})</option>`).join('')}</select>
+    <label class="chk"><input type="checkbox" id="tgwk"> Weekends only</label>
+    <button class="go" id="tggo" type="button">Find good days</button></section>
+  <section id="tgout"></section>`
+  }
   const yNow = new Date().getFullYear()
   const def = pr ? yearBranch(pr.y) : ''
   const ZB = '子丑寅卯辰巳午未申酉戌亥'
@@ -537,13 +554,16 @@ function taegilHtml(): string {
   <section id="tgout"></section>`
 }
 const GRADE_CLS: Record<DayPick['grade'], string> = { 대길: 'good', 길: 'good', 보통: 'mid', 조심: 'care', 피하세요: 'care' }
+const WD_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 function tgCard(p: DayPick, bad = false): string {
-  const d = p.date
-  return `<article class="rcard ym k-${GRADE_CLS[p.grade]}"><div class="yh"><b>${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} (${WD[d.getDay()]})</b><span class="yk">${esc(p.grade)}</span></div>
-    <p class="meta">${esc(p.lunar)} · ${esc(p.ganji)}일</p>
-    ${(bad ? p.cautions : p.reasons).map((r) => `<p>${bad ? '✕' : '✓'} ${esc(r)}</p>`).join('')}
-    ${!bad && p.cautions.length ? `<p class="meta">조심: ${esc(p.cautions.join(' · '))}</p>` : ''}
-    ${p.note ? `<p class="dtip">✦ ${esc(p.note)}</p>` : ''}</article>`
+  const d = p.date, en = lang === 'en'
+  const catShort = (ko: string) => (Object.values(CAT_EN).find((_, i) => (CATS[Object.keys(CATS)[i] as CatKey].name.split('·')[0] === ko))?.short ?? ko)
+  const tr = (r: string) => (en ? reasonEn(r, catShort) : r)
+  return `<article class="rcard ym k-${GRADE_CLS[p.grade]}"><div class="yh"><b>${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} (${en ? WD_EN[d.getDay()] : WD[d.getDay()]})</b><span class="yk">${esc(en ? GRADE_EN[p.grade] : p.grade)}</span></div>
+    <p class="meta">${esc(en ? lunarEn(p.lunar) : p.lunar)} · ${esc(p.ganji)}${en ? '' : '일'}</p>
+    ${(bad ? p.cautions : p.reasons).map((r) => `<p>${bad ? '✕' : '✓'} ${esc(tr(r))}</p>`).join('')}
+    ${!bad && p.cautions.length ? `<p class="meta">${en ? 'Watch out' : '조심'}: ${esc(p.cautions.map(tr).join(' · '))}</p>` : ''}
+    ${p.note ? `<p class="dtip">✦ ${esc(en ? noteEn(p.note) : p.note)}</p>` : ''}</article>`
 }
 function initTaegil() {
   const go = document.getElementById('tggo') as HTMLButtonElement
@@ -558,6 +578,13 @@ function initTaegil() {
     if (pr) { try { const dp = resultOf(pr).pillars[1].pillar; dayBranch = dp.branch; dayStem = dp.stem } catch { /* 일지 없이 진행 */ } }
     const r = pickDays(cat, new Date(), per, { yearBranch: zod || undefined, dayBranch, dayStem, gender: pr?.gender === 'F' ? 'F' : pr?.gender === 'M' ? 'M' : undefined }, wk)
     const out = document.getElementById('tgout')!
+    if (lang === 'en') {
+      out.innerHTML = `<article class="card"><h2>Good days for: ${esc(CAT_EN[cat].name)}</h2><p class="meta">We looked at ${r.total} days and picked ${r.best.length} good ones.${zod ? ` Your zodiac sign (${esc(ZODIAC_EN[zod])})${dayBranch ? ' and day branch' : ''} is taken into account.` : ' Choose your zodiac sign to avoid clashing days more precisely.'}</p></article>
+      ${r.best.length ? r.best.map((p) => tgCard(p)).join('') : '<article class="card"><p>No clearly good days in this period. Try a longer range.</p></article>'}
+      ${r.worst.length ? `<article class="card"><h3>Days to avoid if you can</h3><p class="meta">Several unfavorable factors overlap on these days.</p></article>${r.worst.map((p) => tgCard(p, true)).join('')}` : ''}
+      <article class="card"><p class="note">A simple scoring of the traditional almanac (no-evil-spirits days, the Twelve Day Officers, auspicious/inauspicious days, daily advice) plus clashes and harmonies with your zodiac sign and day branch. Schools differ, so the same day can be rated differently. For entertainment and reference only.</p></article>`
+      return
+    }
     out.innerHTML = `<article class="card"><h2>${esc(CATS[cat].name)} 좋은 날</h2><p class="meta">${r.total}일을 살펴 좋은 날 ${r.best.length}일을 골랐어요.${zod ? ` 내 띠(${esc(zodiacOf(zod))})${dayBranch ? '·일주' : ''}를 반영했어요.` : ' 띠를 고르면 나와 충이 되는 날을 더 정확히 피해요.'}</p></article>
       ${r.best.length ? r.best.map((p) => tgCard(p)).join('') : '<article class="card"><p>이 기간에는 뚜렷하게 좋은 날이 없어요. 기간을 늘려 보세요.</p></article>'}
       ${r.worst.length ? `<article class="card"><h3>가능하면 피할 날</h3><p class="meta">꺼리는 요소가 겹친 날이에요.</p></article>${r.worst.map((p) => tgCard(p, true)).join('')}` : ''}
@@ -660,9 +687,9 @@ function showGusung() {
   document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
 }
 
-const koOnly = () => lang === 'en' && (mode === 'taegil' || mode === 'name' || mode === 'dream' || mode === 'mbti')
+const koOnly = () => lang === 'en' && (mode === 'name' || mode === 'dream' || mode === 'mbti')
 function koOnlyHtml(): string {
-  return `<section class="card"><h2>Korean only for now</h2><p class="meta">This reading (auspicious dates, name reading, dream interpretation) is currently available in Korean only. Try Tarot, Tojeong, I Ching, Nine Star Ki, the birth chart or "Get your Korean name" instead.</p></section>`
+  return `<section class="card"><h2>Korean only for now</h2><p class="meta">This reading (name reading, dream interpretation, MBTI match) is currently available in Korean only. Try Auspicious Dates, Tarot, Tojeong, I Ching, Nine Star Ki, the birth chart or "Get your Korean name" instead.</p></section>`
 }
 function nameHtml(): string {
   return `<section class="card tg"><h2>이름 풀이 · 작명 비교</h2>
@@ -942,7 +969,7 @@ function homeHtml(): string {
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
   const hot = x.hotItems.map(([name, price, go], i) => `<li><button type="button" data-mode="${go}"><span class="rk">${i + 1}</span><span class="nm">${esc(name)}</span><span class="pr ${/무료|Free/.test(price) ? 'free' : ''}">${esc(price)}</span></button></li>`).join('')
   const svc = [['today', '運', x.quick[0][2]], ['solo', '命', x.quick[1][2]], ['ask', '問', x.quick[2][2]], ['match', '緣', x.quick[3][2]], ['year', '歲', x.shopItems[1][1]], ['tojeong', '卦', lang === 'ko' ? '토정비결 (올해의 운세)' : 'Tojeong Bigyeol (yearly)'], ['koname', '韓', lang === 'ko' ? '내 한국 이름 만들기' : 'Get your Korean name'], ['dream', '夢', lang === 'ko' ? '꿈해몽 (AI 자세히)' : 'Dream reading'], ['tarot', '🂠', lang === 'ko' ? '타로 (오늘의 카드·3장)' : 'Tarot'], ['astro', '☉', lang === 'ko' ? '별자리 출생차트 (서양 점성술)' : 'Birth chart (Western astrology)'], ['name', '名', lang === 'ko' ? '이름 풀이·작명 비교' : 'Name reading'], ['mbti', '性', lang === 'ko' ? '내 사주와 잘 맞는 MBTI' : 'MBTI match'], ['gusung', '星', lang === 'ko' ? '구성기학 (본명성·방위)' : 'Nine Star Ki'], ['taegil', '擇', lang === 'ko' ? '택일 (좋은 날 고르기)' : 'Auspicious dates'], ['iching', '易', lang === 'ko' ? '주역 오늘의 한 괘' : 'I Ching: hexagram of the day'], ['exam', '試', x.examName], ['pick', '合', x.pickName], ['face', '相', x.faceName], ['hand', '手', lang === 'ko' ? '손 모양 관상' : 'Hand-shape reading'], ['report', '書', x.shopItems[5][1]], ...x.shopItems.slice(2).filter((_, i) => i !== 3).map(([, name]) => ['shop', '籤', name])]
-    .filter(([go]) => lang === 'ko' || !['taegil', 'name', 'dream', 'mbti'].includes(go as string))
+    .filter(([go]) => lang === 'ko' || !['name', 'dream', 'mbti'].includes(go as string))
     .map(([go, hj, name]) => `<li><button type="button" data-mode="${go}"><span class="hj">${hj}</span><span class="nm">${esc(name)}</span><span class="chev">›</span></button></li>`).join('')
   const pieces = x.pieces.map((p) => `<li>${esc(p)}</li>`).join('')
   const promo = lang === 'ko'
