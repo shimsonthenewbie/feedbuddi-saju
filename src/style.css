@@ -552,3 +552,6 @@ label:has(> input[name$=city]){position:relative}
 .chip{display:inline-flex;gap:.3rem;align-items:center;padding:6px 10px;border:1.5px solid var(--line);border-radius:999px;font-size:.9rem;background:var(--card,var(--inset))}
 .chip input{width:auto;margin:0}
 .kbig{font-size:2.6rem;text-align:center;margin:.4rem 0 0;letter-spacing:.1em}
+details.learn{margin:10px 0 0;padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:10px}
+details.learn summary{cursor:pointer;font-weight:600}
+details.learn .mrow{margin-top:8px}

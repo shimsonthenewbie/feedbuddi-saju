@@ -1696,7 +1696,7 @@ const branchEl = (b: string): El | null => (BRANCH_ELEMENT[b] as El) ?? null
 
 function plainHtml(r: SajuResult): string {
   if (lang !== 'ko') return ''
-  try { const c = plainRead(r); return `<article class="rcard"><h3>${esc(c.title)}</h3>${c.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}<p class="meta">${esc(c.note)}</p></article>` } catch { return '' }
+  try { const c = plainRead(r); return `<article class="rcard"><h3>${esc(c.title)}</h3>${c.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}<details class="learn"><summary>용신이 뭐예요? (종류별 설명)</summary>${c.learn.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}</details><p class="meta">${esc(c.note)}</p></article>` } catch { return '' }
 }
 function chartHtml(p: Person): string {
   const x = t()

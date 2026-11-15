@@ -38,7 +38,17 @@ const GK: Record<string, string> = {
 }
 const gk = (n: string) => GK[n] ?? GK[n.replace(/\(.*\)/, '')] ?? ''
 
-export interface PlainCard { title: string; rows: [string, string][]; note: string }
+export interface PlainCard { title: string; rows: [string, string][]; note: string; learn: [string, string][] }
+const LEARN: [string, string][] = [
+  ['용신(用神)이란', '사주의 균형을 맞춰 주는 가장 중요한 기운이에요. 이 기운을 가까이 하면 문제가 풀리고 가진 힘이 잘 나와요.'],
+  ['희신(喜神)', '용신을 도와주는 보조 기운이에요.'],
+  ['기신(忌神)', '균형을 더 무너뜨려서 답답함이나 어려움을 키우는 기운이에요.'],
+  ['억부용신', '내 기운이 너무 세면 눌러 주고, 너무 약하면 북돋아 주는 방식이에요.'],
+  ['조후용신', '태어난 계절의 날씨(춥다·덥다·마르다·축축하다)를 맞춰 주는 방식이에요. 한겨울생에게 따뜻한 불이 필요한 경우가 그 예예요.'],
+  ['통관용신', '서로 부딪히는 두 기운 사이에서 다리 역할을 해 주는 방식이에요.'],
+  ['병약용신', '사주에 문제를 일으키는 기운(병)을 없애 주는 글자(약)를 찾는 방식이에요.'],
+  ['격국용신', '태어난 달을 중심으로 사회에서 어떤 쓰임새를 가진 사주인지 보고 정하는 방식이에요.'],
+]
 
 export function plainRead(r: SajuResult, a: Analysis = analyze(r)): PlainCard {
   const dm = a.dayStem
@@ -59,6 +69,7 @@ export function plainRead(r: SajuResult, a: Analysis = analyze(r)): PlainCard {
     rows.push(['지금 10년 흐름', `${now.age}세부터 ${now.ganzi} 흐름이에요. ${has ? `필요한 ${ELS[y.primary]} 기운이 들어 있어서, 가진 것을 밖으로 꺼내 쓰기 좋은 때예요.` : `필요한 ${ELS[y.primary]} 기운은 이 흐름에 직접 들어 있지 않아요. 해마다·달마다 들어오는 때를 노려 보세요.`}`])
   }
   void yearLuck
-  return { title: '내 사주 쉬운 풀이', rows, note: '사주는 참고용이에요. 고전(자평진전·적천수·궁통보감)의 기준으로 계산했어요.' }
+  rows.splice(4, 0, ['용신을 찾은 방식', `${y.basis}용신 방식으로 찾았어요. ${y.basis === '억부' ? '내 기운이 센지 약한지를 먼저 보고 정했어요.' : '태어난 계절의 날씨를 맞추는 쪽으로 정했어요.'}`])
+  return { title: '내 사주 쉬운 풀이', learn: LEARN, rows, note: '사주는 참고용이에요. 고전(자평진전·적천수·궁통보감)의 기준으로 계산했어요.' }
 }
 export { ELS }
