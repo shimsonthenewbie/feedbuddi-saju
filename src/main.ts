@@ -447,7 +447,7 @@ function showYear() {
   const v = composePage(r, a, y0 + yearSel, lang, new Date(), nyr ? y0 + 1 : y0)
   if (nyr) { v.care.title = lang === 'ko' ? `${y0 + 1}년 조심할 것` : `What to watch in ${y0 + 1}`; v.care.incomingT = lang === 'ko' ? `${y0 + 1}년에 들어오는 살` : `Stars coming in ${y0 + 1}` }
   const step = (m: (typeof v.past.items)[number]) => `<article class="rcard ym k-${m.kind}${m.isNow ? ' now' : ''}"><div class="yh"><b>${esc(m.range)}</b><span class="yk">${esc(m.label)}</span></div>
-    <p>${esc(m.line)}</p>${m.areas.length ? `<div class="chips2">${m.areas.map((ar) => `<span>${esc(ar)}</span>`).join('')}</div>` : ''}</article>`
+    <p>${esc(m.line)}</p>${m.days && (m.days.good || m.days.care) ? `<p class="dtip">${m.days.good ? `✦ 움직이기 좋은 날 ${esc(m.days.good)}` : ''}${m.days.good && m.days.care ? ' · ' : ''}${m.days.care ? `조심할 날 ${esc(m.days.care)}` : ''}</p>` : ''}${m.areas.length ? `<div class="chips2">${m.areas.map((ar) => `<span>${esc(ar)}</span>`).join('')}</div>` : ''}</article>`
   const sal = (s: (typeof v.care.incoming)[number]) => `<li class="sal ${s.caution ? 'c' : 'g'}"><b>${esc(s.name)}<small>${esc(s.hanja)}</small></b><span>${esc(s.text)}</span></li>`
   out.innerHTML = `
   <article class="card yr">

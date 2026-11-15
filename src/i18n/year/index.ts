@@ -1,5 +1,5 @@
 /** 올해 달별 흐름: 엔진이 정한 성격(kind)과 영역(areas)을 우리 문장으로 풀어 준다. */
-import { yearLuck, type Luck, type LuckKind, type AreaKey, type YearLuck } from '../../myeongri/timing'
+import { yearLuck, dayLuck, type Luck, type LuckKind, type AreaKey, type YearLuck } from '../../myeongri/timing'
 import { natalSals, yearSals, type SalKey } from '../../myeongri/sal'
 import type { SajuResult } from '../../engine/types'
 import type { Analysis } from '../../myeongri'
@@ -44,6 +44,23 @@ const P = {
   },
 } as const
 
+/** 양력 기간 표기: "2월 4일 ~ 3월 5일" */
+function rangeKo(from: string, nextFrom?: string): string {
+  const mo = +from.slice(5, 7), da = +from.slice(8, 10)
+  if (!nextFrom) return `${mo}월 ${da}일 ~`
+  const e = new Date(+nextFrom.slice(0, 4), +nextFrom.slice(5, 7) - 1, +nextFrom.slice(8, 10) - 1)
+  return `${mo}월 ${da}일 ~ ${e.getMonth() + 1}월 ${e.getDate()}일`
+}
+/** 같은 말이 달마다 반복되지 않도록 달 숫자로 문장을 돌려 쓴다(같은 사주·같은 달이면 항상 같은 문장). */
+const HEADV: Record<LuckKind, string[]> = {
+  event: ['생활에 파도가 칠 수 있는 달이에요. 이사·이직·관계 정리 같은 큰 변화가 고개를 들어요.', '가만히 있던 일이 움직이기 시작하는 달이에요. 바뀌는 걸 막기보다 방향을 골라 보세요.', '정리할 건 정리하고 떠날 건 떠나게 되는 달이에요. 미뤄 둔 결정이 이 달에 나오기 쉬워요.', '주변이 한 번 흔들리고 나서 자리가 잡히는 달이에요. 서두르지 않아도 괜찮아요.'],
+  mind: ['일이 터진다기보다 마음이 먼저 지치는 달이에요. 괜한 오해와 불안을 조심해요.', '생각이 많아지고 말 한마디가 오래 남는 달이에요. 답장은 한 박자 늦춰도 돼요.', '별일 없는데 기운이 빠지는 달이에요. 쉬는 것도 일정에 넣어 두세요.', '속마음이 예민해지는 달이에요. 중요한 얘기는 감정이 가라앉은 뒤에 꺼내요.'],
+  work: ['해야 할 일과 책임이 늘어나는 달이에요. 새로 벌이기보다 마무리와 확인이 나아요.', '바쁘지만 일한 만큼 남는 달이에요. 챙길 서류와 약속을 한 번 더 확인해요.', '맡은 일이 몰리는 달이에요. 혼자 다 하려 하지 말고 나눠서 가요.', '성과를 내라는 압박이 오는 달이에요. 우선순위만 잡으면 오히려 인정받아요.'],
+  chance: ['기운이 등을 밀어 주는 달이에요. 시작하거나 부탁하기에 좋은 때예요.', '말을 꺼내면 받아 주는 사람이 있는 달이에요. 미뤄 둔 제안을 이 달에 해 봐요.', '발걸음이 가벼운 달이에요. 만나고 연락하고 움직일수록 길이 열려요.', '일이 슬슬 풀리는 달이에요. 준비해 둔 게 있다면 지금 내놓아요.'],
+  calm: ['큰 부딪힘 없이 평탄한 달이에요. 밀린 정리와 쉬는 시간을 챙기기 좋아요.', '조용히 힘을 모으는 달이에요. 다음 달을 위한 준비를 해 두세요.', '바람이 잔잔한 달이에요. 평소 못 하던 작은 일부터 처리해 봐요.', '무리하지 않아도 되는 달이에요. 몸과 마음을 고르는 데 써요.'],
+}
+const hv = (k: LuckKind, mo: number) => HEADV[k][mo % HEADV[k].length]
+
 export interface MonthView { from: string; month: number; range: string; kind: LuckKind; label: string; head: string; areas: { key: AreaKey; label: string }[]; tip: string; isNow: boolean }
 export interface YearView { title: string; summary: string; months: MonthView[]; note: string; nowLabel: string }
 
@@ -56,11 +73,12 @@ export function composeYear(yl: YearLuck, lang: Lang, now = new Date()): YearVie
     const nextFrom = starts[i + 1]
     const isNow = from <= nowKey && (!nextFrom || nowKey < nextFrom)
     const mo = +from.slice(5, 7), da = +from.slice(8, 10)
-    const [label, head] = T.kind[L.kind]
+    const [label, head0] = T.kind[L.kind]
+    const head = lang === 'ko' ? hv(L.kind, mo) : head0
     const first = L.areas[0]
     const tip = L.kind === 'chance' ? (first ? T.good[first] : T.calmTip) : L.kind === 'calm' ? T.calmTip : first ? T.bad[first] : T.calmTip
     const extra = L.kind !== 'chance' && L.kind !== 'calm' && L.areas.includes('legal') ? ` ${T.bad.legal}` : L.kind !== 'chance' && L.kind !== 'calm' && L.areas.includes('body') ? ` ${T.bad.body}` : ''
-    return { from, month: mo, range: `${mo}/${da}~`, kind: L.kind, label, head, areas: (L.kind === 'calm' ? [] : L.areas).map((key) => ({ key, label: T.area[key] })), tip: tip + (extra && !tip.includes(extra.trim()) ? extra : ''), isNow }
+    return { from, month: mo, range: lang === 'ko' ? rangeKo(from, nextFrom) : `${mo}/${da}~`, kind: L.kind, label, head, areas: (L.kind === 'calm' ? [] : L.areas).map((key) => ({ key, label: T.area[key] })), tip: tip + (extra && !tip.includes(extra.trim()) ? extra : ''), isNow }
   })
   const care = months.filter((m, i) => m.kind === 'event' || yl.months[i].score <= -3).map((m) => T.mon(m.month))
   const good = months.filter((m) => m.kind === 'chance').map((m) => T.mon(m.month))
@@ -136,7 +154,7 @@ const UI = {
 } as const
 
 export interface SalView { name: string; hanja: string; text: string; caution: boolean }
-export interface StepView { monthLabel: string; range: string; kind: LuckKind; label: string; line: string; areas: string[]; isNow: boolean }
+export interface StepView { days?: { good: string; care: string }; monthLabel: string; range: string; kind: LuckKind; label: string; line: string; areas: string[]; isNow: boolean }
 export interface PageView {
   total: { title: string; tone: string; reasons: string[]; summary: string; months: string }
   care: { title: string; none: string; incomingT: string; incoming: SalView[]; natalT: string; natal: SalView[] }
@@ -157,15 +175,30 @@ export function composePage(r: SajuResult, a: Analysis, year: number, lang: Lang
   const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   let ci = flat.findIndex((m, i) => m.from! <= nowKey && (i === flat.length - 1 || nowKey < flat[i + 1].from!))
   if (ci < 0) ci = 0
-  const step = (L: Luck, isNow: boolean, mode: 'past' | 'next'): StepView => {
+  const step = (L: Luck, isNow: boolean, mode: 'past' | 'next', nextFrom?: string): StepView => {
     const mo = +L.from!.slice(5, 7), da = +L.from!.slice(8, 10)
     const first = L.areas[0]
-    const line = mode === 'past' ? U.past[L.kind] : L.kind === 'chance' ? (first ? T.good[first] : T.calmTip) : L.kind === 'calm' ? T.calmTip : first ? T.bad[first] : T.calmTip
-    return { monthLabel: T.mon(mo), range: `${mo}/${da}~`, kind: L.kind, label: T.kind[L.kind][0], line, areas: (L.kind === 'calm' ? [] : L.areas).map((k) => T.area[k]), isNow }
+    const tipLine = mode === 'past' ? U.past[L.kind] : L.kind === 'chance' ? (first ? T.good[first] : T.calmTip) : L.kind === 'calm' ? T.calmTip : first ? T.bad[first] : T.calmTip
+    const line = lang === 'ko' && mode === 'next' ? `${hv(L.kind, mo)} ${tipLine}` : tipLine
+    let days: StepView['days']
+    if (lang === 'ko' && mode === 'next' && nextFrom) {
+      const d0 = new Date(+L.from!.slice(0, 4), mo - 1, da, 12)
+      if (isNow && d0 < now) d0.setTime(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime())
+      const d1 = new Date(+nextFrom.slice(0, 4), +nextFrom.slice(5, 7) - 1, +nextFrom.slice(8, 10) - 1, 12)
+      const ds: { d: Date; s: number }[] = []
+      for (let d = new Date(d0); d <= d1; d.setDate(d.getDate() + 1)) ds.push({ d: new Date(d), s: dayLuck(r, a, new Date(d)).score })
+      const f = (x: { d: Date }) => `${x.d.getMonth() + 1}/${x.d.getDate()}`
+      const by = [...ds].sort((x, y) => y.s - x.s)
+      const good = by.slice(0, 2).filter((x) => x.s > 0).sort((x, y) => +x.d - +y.d).map(f)
+      const care = by.slice(-1).filter((x) => x.s < 0).map(f)
+      days = { good: good.join(', '), care: care.join(', ') }
+    }
+    return { days, monthLabel: T.mon(mo), range: lang === 'ko' ? rangeKo(L.from!, nextFrom) : `${mo}/${da}~`, kind: L.kind, label: T.kind[L.kind][0], line, areas: (L.kind === 'calm' ? [] : L.areas).map((k) => T.area[k]), isNow }
   }
-  const past = flat.slice(Math.max(0, ci - 3), ci).map((L) => step(L, false, 'past'))
-  const next = flat.slice(ci + 1, ci + 4).map((L) => step(L, false, 'next'))
-  const nowItem = flat[ci] ? step(flat[ci], true, 'next') : null
+  const nf = (i: number) => flat[i + 1]?.from
+  const past = flat.slice(Math.max(0, ci - 3), ci).map((L, j) => step(L, false, 'past', nf(Math.max(0, ci - 3) + j)))
+  const next = flat.slice(ci + 1, ci + 4).map((L, j) => step(L, false, 'next', nf(ci + 1 + j)))
+  const nowItem = flat[ci] ? step(flat[ci], true, 'next', nf(ci)) : null
 
   const rs: string[] = []
   const R = REASON[lang]
