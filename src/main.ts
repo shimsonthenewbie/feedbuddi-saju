@@ -1338,7 +1338,7 @@ async function onFacePick(file: File) {
       <p class="amate">${esc(an.mate.label)} ${an.mate.emoji} ${esc(an.mate.name)}</p>
       <div class="row"><button class="go" type="button" id="fshare">${esc(x.faceShare)}</button></div><p class="ok" id="fshok" role="status"></p></article>
       ${wuHtml}
-      ${lang === 'ko' ? (() => { const tt = titanOf(m); return `<article class="rcard"><h3>거인의 힘을 이어받는다면</h3><p><b>${esc(tt.name)}</b> · ${tt.pct}%</p><p>${esc(tt.line)}</p><p>${esc(tt.body)}</p><p class="meta">${esc(tt.cost)}</p>${tt.second ? `<p class="meta">다음으로 가까운 힘: ${esc(tt.second)}</p>` : ''}<p class="meta">상상으로 꾸민 재미용 풀이예요.</p></article>` })() : ''}
+      ${lang === 'ko' ? (() => { const tt = titanOf(m); return `<article class="rcard"><h3>거인의 힘을 이어받는다면</h3><p><b>${esc(tt.name)}</b> · ${tt.pct}%</p><p>${esc(tt.line)}</p><p>${esc(tt.body)}</p><p class="meta">${esc(tt.cost)}</p>${tt.second ? `<p class="meta">다음으로 가까운 힘: ${esc(tt.second)}</p>` : ''}<p class="meta">재미로 꾸민 비공식 풀이예요. 원작과 관계가 없어요.</p></article>` })() : ''}
       <article class="rcard lead faceres"><div class="fphoto"></div><h3>${esc(r.headline)}</h3><p>${esc(r.cards[0].paras[0])}</p>
       <div class="chips2">${r.chips.map((c) => `<span>${esc(c)}</span>`).join('')}</div>
       <div class="axes">${r.axes.map((a) => `<div class="ax"><span>${esc(a.label)}</span><i class="tr"><b style="width:${a.value}%"></b></i><em>${a.value}</em></div>`).join('')}</div></article>
