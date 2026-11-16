@@ -682,3 +682,18 @@ details.learn .mrow{margin-top:8px}
 .t2yrs div b i{font-style:normal;font-weight:400;font-size:12px;color:var(--mute);margin-left:4px}
 .t2yrs div p{margin:2px 0 0;font-size:14.5px;line-height:1.65}
 .t2yrs div.me{background:var(--inset);border-radius:10px;padding:8px 10px;border:1px solid var(--gold)}
+.t2mind{display:grid;gap:8px;margin:6px 0 12px}
+.t2mind details{background:var(--inset);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.t2mind summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:11px 12px}
+.t2mind summary::-webkit-details-marker{display:none}
+.t2mind summary span{min-width:0;flex:1}
+.t2mind summary b{display:block;font:700 15.5px/1.35 var(--serif)}
+.t2mind summary i{display:block;font-style:normal;font-size:13px;color:var(--mute)}
+.t2mind summary::after{content:'열기';font-size:12px;color:var(--gold);font-weight:700;flex:none}
+.t2mind details[open] summary::after{content:'닫기'}
+.t2mr{padding:2px 14px 13px;border-top:1px dashed var(--line)}
+.t2mr strong{display:block;margin-top:10px;font:700 19px/1.3 var(--serif);color:var(--seal)}
+.t2mr p{margin:6px 0 0;font-size:15px;line-height:1.7}
+.t2mr .t2mt{font-weight:700}
+.t2mr .t2mw{font-size:13px;color:var(--mute)}
+.t2mind summary .t2ico{flex:none;width:44px;height:44px}

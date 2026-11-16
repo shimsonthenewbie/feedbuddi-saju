@@ -2,6 +2,7 @@
 import type { SajuResult } from './engine/types'
 import type { Analysis } from './myeongri'
 import { todayData, type AxisKey } from './myeongri/today'
+import { mindCards } from './i18n/daily/mindKo'
 import { zodiacToday, starToday, ganziKo, storyOf } from './i18n/daily/todayKo2'
 import { art } from './art'
 import { composeTodayKo, LOADING_TIPS, type TodayViewKo } from './i18n/daily/todayKo'
@@ -106,6 +107,9 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
     <h3 class="t2h">오늘의 행운</h3>
     <div class="t2lucky">${v.lucky.map((i) => `<div><span>${esc(i.label)}</span><b>${esc(i.value)}</b></div>`).join('')}</div>
     <p class="t2avoid">오늘은 <b>${esc(v.avoid)}</b> 계열을 줄이면 더 편해요.</p>
+    <h3 class="t2h">오늘의 심리 카드</h3>
+    <p class="t2sub">내 사주와 오늘 날짜로 계산해요. 매일 결과가 바뀌어요. 카드를 눌러 열어 보세요.</p>
+    <div class="t2mind">${mindCards(t).map((m) => `<details><summary>${ico(m.art, m.emoji, 'big')}<span><b>${esc(m.title)}</b><i>${esc(m.ask)}</i></span></summary><div class="t2mr"><strong>${esc(m.name)}</strong><p>${esc(m.text)}</p><p class="t2mt">오늘의 한 가지: ${esc(m.tip)}</p><p class="t2mw">${esc(m.why)}</p></div></details>`).join('')}</div>
     </div>
 
     <div class="t2view" data-view="zodiac" hidden>
