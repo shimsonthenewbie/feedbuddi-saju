@@ -1866,6 +1866,23 @@ function bindShare() {
 }
 
 render()
+// 탭을 켜 둔 채 날짜가 바뀌면(자정이 지나거나 다음 날 다시 열면) 어제 화면이 그대로 남는다.
+// 화면에 돌아왔을 때 날짜가 달라졌으면 오늘 기준으로 다시 그린다. 입력 중인 화면은 건드리지 않는다.
+let shownDay = new Date().toDateString()
+function refreshIfNewDay() {
+  if (document.visibilityState !== 'visible') return
+  const now = new Date().toDateString()
+  if (now === shownDay) return
+  shownDay = now
+  if (!loadProfile()) return
+  const el = document.activeElement
+  if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return
+  if (mode === 'today' || mode === 'year' || mode === 'home') { dayOffset = 0; render() }
+}
+document.addEventListener('visibilitychange', refreshIfNewDay)
+window.addEventListener('pageshow', refreshIfNewDay)
+window.addEventListener('focus', refreshIfNewDay)
+setInterval(refreshIfNewDay, 60000)
 // 질문권 링크(?tk=번호)로 들어오면 질문권을 이 기기에 저장하고 주소창에서 지운다.
 try {
   const q = new URLSearchParams(location.search)
