@@ -104,8 +104,32 @@ const REL_TXT: Record<Rel, string[]> = {
   won: ['마음은 있는데 표현이 엇나가기 쉬운 날이에요. 말은 부드럽게, 오해는 바로 풀어 보세요.', '사소한 일에 서운함이 생기기 쉬워요. 상대의 말을 한 번 더 좋게 해석해 보세요.', '속마음을 숨기면 답답해지니 짧고 솔직하게 전해 보세요.'],
   none: ['큰 파도 없이 흘러가는 날이에요. 해야 할 일을 차분히 이어 가면 충분해요.', '평소 리듬이 유지되는 날이에요. 작은 루틴을 지키면 하루가 편안해요.', '무난하게 지나가는 날이에요. 미뤄 둔 정리나 점검을 하기 좋아요.'],
 }
-export interface ZodiacRow { key: number; name: string; years: string; rel: Rel; relLabel: string; score: number; text: string; mine: boolean }
-export function zodiacToday(dayBranch: string, myBranch: string, seed: number): ZodiacRow[] {
+// 출생연도별 한 줄: 오늘 하늘 기운(일진 천간)의 오행 T 와 태어난 해 천간의 오행 Y 의 관계
+type YRel = 'same' | 'help' | 'out' | 'press' | 'gain'
+const YREL_TXT: Record<YRel, string[]> = {
+  same: ['오늘 하늘의 {T} 기운이 태어난 해의 {Y} 기운과 같아요. 내 편이 늘어나는 날이니 또래·동료와 힘을 합쳐 보세요.', '같은 {Y} 기운이 겹치는 날이에요. 자신감이 붙지만 고집도 세지니 한 발 양보하면 일이 쉬워요.', '{Y} 기운이 한 번 더 들어와요. 하던 일을 밀고 나가기 좋고, 지출 경쟁만 조심하세요.'],
+  help: ['오늘 하늘의 {T} 기운이 태어난 해의 {Y} 기운을 길러 줘요. 윗사람의 도움이나 반가운 소식이 닿기 쉬워요.', '{T} 기운이 {Y} 기운을 받쳐 주는 날이에요. 배우고 묻는 일에 운이 따르니 모르는 건 바로 물어보세요.', '{T}이(가) {Y}을(를) 살려 주는 날이에요. 문서·계약·공부처럼 차분한 일이 잘 풀려요.'],
+  out: ['태어난 해의 {Y} 기운이 오늘 하늘의 {T} 기운을 낳아요. 내 힘이 밖으로 나가는 날이니 재능을 보여 주기 좋지만 체력은 아껴 쓰세요.', '{Y} 기운이 {T} 기운으로 흘러 나가요. 말과 표현에 힘이 실리니 발표·제안에 좋고, 한마디 더 하고 싶을 때 멈추면 딱 좋아요.', '내 {Y} 기운을 써서 {T} 기운을 키우는 날이에요. 베푼 만큼 돌아오니 먼저 챙겨 주세요.'],
+  press: ['오늘 하늘의 {T} 기운이 태어난 해의 {Y} 기운을 눌러요. 책임질 일이 늘어나는 날이니 약속과 규칙을 먼저 챙기세요.', '{T} 기운이 {Y} 기운을 다듬는 날이에요. 조금 답답해도 맡은 일을 해내면 신뢰가 쌓여요.', '{T}이(가) {Y}을(를) 누르는 날이에요. 윗사람과 부딪히기 쉬우니 대답은 짧게, 일은 정확하게 하세요.'],
+  gain: ['태어난 해의 {Y} 기운이 오늘 하늘의 {T} 기운을 다스려요. 내가 잡을 수 있는 기회가 보이는 날이니 돈·거래 이야기를 미루지 마세요.', '{Y} 기운이 {T} 기운을 쥐는 날이에요. 실속을 챙기기 좋지만 욕심을 한 뼘만 줄이면 탈이 없어요.', '내 {Y} 기운으로 {T} 기운을 움직이는 날이에요. 발로 뛰는 만큼 얻으니 직접 확인하고 직접 만나세요.'],
+}
+const EL_IDX = (stemIdx: number) => Math.floor(stemIdx / 2) // 0목 1화 2토 3금 4수
+export interface YearLine { year: number; ganzi: string; text: string }
+export function yearLines(dayStem: string, zodiac: number, seed: number): YearLine[] {
+  const T = EL_IDX(SH.indexOf(dayStem))
+  const out: YearLine[] = []
+  for (let y = 1948 + zodiac - 12; y <= 2008; y++) {
+    if (((y - 4) % 12 + 12) % 12 !== zodiac || y < 1942) continue
+    const si = ((y - 4) % 10 + 10) % 10
+    const Y = EL_IDX(si)
+    const rel: YRel = T === Y ? 'same' : (T + 1) % 5 === Y ? 'help' : (Y + 1) % 5 === T ? 'out' : (T + 2) % 5 === Y ? 'press' : 'gain'
+    const text = pick(YREL_TXT[rel], seed, y).replace(/\{T\}/g, EL_OF_STEM[T * 2]).replace(/\{Y\}/g, EL_OF_STEM[Y * 2]).replace(/(나무|불|흙|쇠|물)이\(가\)/g, (_, w) => w + (w === '나무' || w === '쇠' ? '가' : '이')).replace(/(나무|불|흙|쇠|물)을\(를\)/g, (_, w) => w + (w === '나무' || w === '쇠' ? '를' : '을'))
+    out.push({ year: y, ganzi: SH[si] + BH[zodiac], text })
+  }
+  return out.slice(-6)
+}
+export interface ZodiacRow { key: number; name: string; years: string; rel: Rel; relLabel: string; score: number; text: string; mine: boolean; byYear: YearLine[] }
+export function zodiacToday(dayBranch: string, myBranch: string, seed: number, dayStem = '甲'): ZodiacRow[] {
   const d = BH.indexOf(dayBranch)
   return ANIMAL.map((nm, i) => {
     const pair = (L: number[][]) => L.some(([x, y]) => (x === d && y === i) || (x === i && y === d))
@@ -113,7 +137,7 @@ export function zodiacToday(dayBranch: string, myBranch: string, seed: number): 
     const jit = ((seed + i * 31) % 7) - 3
     const score = Math.max(40, Math.min(94, Math.round(62 + REL_RAW[rel] * 11 + jit)))
     const years = [2020, 2008, 1996, 1984, 1972, 1960].map((y) => y - (((y - 4) % 12) - i + 12) % 12).filter((y) => y <= 2020).slice(0, 4).map((y) => String(y).slice(2)).join('·')
-    return { key: i, name: nm + '띠', years: years, rel, relLabel: REL_LABEL[rel], score, text: pick(REL_TXT[rel], seed, i), mine: BH[i] === myBranch }
+    return { key: i, name: nm + '띠', years: years, rel, relLabel: REL_LABEL[rel], score, text: pick(REL_TXT[rel], seed, i), mine: BH[i] === myBranch, byYear: yearLines(dayStem, i, seed) }
   })
 }
 

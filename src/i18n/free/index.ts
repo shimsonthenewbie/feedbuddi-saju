@@ -2,6 +2,7 @@ import type { Analysis } from '../../myeongri'
 import type { SajuResult } from '../../engine/types'
 import { getBranchRelation, getStemRelation } from '../../engine/pillars'
 import { extraSals } from '../../myeongri/sal'
+import { SINSAL_KO, STAGE_KO } from './sinsalKo'
 import { consultPool } from '../consult'
 
 type L = 'ko' | 'en'
@@ -232,6 +233,7 @@ export function freeCards(r: SajuResult, a: Analysis, lang: string, dayBranchGro
       const st = t.stages[r.pillars[i].unseong] ?? t.stages[Object.keys(t.stages).find((k) => t.stages[k][0] === r.pillars[i].unseong) ?? '']
       return st ? `${t.palace[i]} — ${st[0]}: ${st[1]}` : ''
     }).filter(Boolean)] },
+    ...(lang === 'ko' ? [{ title: '인생 시기별 살과 생활 처방', body: ['태어난 해의 띠를 기준으로 네 기둥에 붙는 열두 신살이에요. 좋고 나쁨을 가르는 판정이 아니라 그 시기에 두드러지는 분위기로 읽어 주세요.', ...[3, 2, 1, 0].filter((i) => !(r.input.unknownTime && i === 0)).map((i) => { const s = SINSAL_KO[r.pillars[i].sinsal]; return s ? `${STAGE_KO[i]} — ${s[0]}: ${s[1]} 처방: ${s[2]}` : '' }).filter(Boolean)] }] : []),
     { title: t.t.pair, body: [t.pairIntro, ...(pairs.length ? pairs.map((p) => `${t.palace[p.a]} · ${t.palace[p.b]} — ${t.rel2[p.kind]}`) : [t.pairNone])] },
     { title: t.t.stars, body: [...(starLines.length ? starLines : [t.starNone]), t.starNote] },
     { title: t.t.year, body: [t.year[yearTone] ?? t.year['평탄·혼재']] },

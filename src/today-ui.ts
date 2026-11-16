@@ -43,6 +43,7 @@ function flowChart(flow: TodayViewKo['flow']): string {
   return `<svg class="t2flow" viewBox="0 0 300 164" role="img" aria-label="그제부터 모레까지 5일 흐름"><path d="${area}" fill="var(--seal)" fill-opacity=".08"/><polyline points="${pts.join(' ')}" fill="none" stroke="var(--seal)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`
 }
 
+const BHX = '子丑寅卯辰巳午未申酉戌亥'
 const ZE = ['🐭', '🐮', '🐯', '🐰', '🐲', '🐍', '🐴', '🐑', '🐵', '🐔', '🐶', '🐷']
 const ZK = ['rat', 'ox', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'goat', 'monkey', 'rooster', 'dog', 'pig']
 const SE = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓']
@@ -62,12 +63,12 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
   const t = todayData(r, a, date)
   const v = composeTodayKo(t)
   const seed = t.base.seed
-  const zs = zodiacToday(t.dayGanzi[1], t.who.yearBranch, seed)
+  const zs = zodiacToday(t.dayGanzi[1], t.who.yearBranch, seed, t.dayGanzi[0])
   const ss = starToday(o.moon, o.sun, seed)
   const tabs = [{ id: 'all', name: '총운', range: '하루 전체', score: v.score }, ...v.slots.map((s) => ({ id: s.key, name: s.name, range: RANGE[s.key], score: s.score }))]
   const slotPanel = v.slots.map((s) => `<div class="t2panel" data-p="${s.key}" hidden><p class="t2ps"><b>${esc(s.name)}</b> <span>${esc(RANGE[s.key])}</span></p>${bar(s.score)}<p class="dbody">${esc(s.text)}</p></div>`).join('')
   const P = v.profile
-  const zRow = (z: (typeof zs)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh">${ico('zodiac-' + ZK[z.key], ZE[z.key], 'big')}<b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 띠</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.years)}년생 · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p></section>`
+  const zRow = (z: (typeof zs)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh">${ico('zodiac-' + ZK[z.key], ZE[z.key], 'big')}<b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 띠</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.years)}년생 · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p><details class="t2yrs"${z.mine ? ' open' : ''}><summary>태어난 해별로 보기</summary>${z.byYear.map((y) => `<div${z.mine && String(y.year) === String(r.input.year - (r.pillars[3].pillar.branch === BHX[(r.input.year - 4) % 12] ? 0 : 1)) ? ' class="me"' : ''}><b>${String(y.year).slice(2)}년생 <i>${esc(ganziKo(y.ganzi))}</i></b><p>${esc(y.text)}</p></div>`).join('')}</details></section>`
   const sRow = (z: (typeof ss)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh">${ico('sign-' + SKEY[z.key], SE[z.key], 'big')}<b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 별자리</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.date)} · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p></section>`
   const top3 = [...zs].sort((p, q) => q.score - p.score).slice(0, 3).map((z) => z.name).join(', ')
   return `
