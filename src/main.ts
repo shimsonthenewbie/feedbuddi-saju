@@ -13,7 +13,8 @@ import { luckAt } from './myeongri/timing'
 import { freeCards, freePool } from './i18n/free'
 import { dailyFortune } from './myeongri/daily'
 import { composeDaily } from './i18n/daily'
-import { todayHtml, bindToday, loadingHtml, shouldLoad } from './today-ui'
+import { todayHtml, bindToday, loadingHtml, shouldLoad, yearStory, yearStoryHtml, pairStory, pairStoryHtml } from './today-ui'
+import { getYearGanzi } from './engine/pillars'
 import { mountAsk } from './consult-ui'
 import { art } from './art'
 import { natal } from './astro'
@@ -471,7 +472,9 @@ function showYear() {
   const step = (m: (typeof v.past.items)[number]) => `<article class="rcard ym k-${m.kind}${m.isNow ? ' now' : ''}"><div class="yh"><b>${esc(m.range)}</b><span class="yk">${esc(m.label)}</span></div>
     <p>${esc(m.line)}</p>${m.days && (m.days.good || m.days.care) ? `<p class="dtip">${m.days.good ? `✦ 움직이기 좋은 날 ${esc(m.days.good)}` : ''}${m.days.good && m.days.care ? ' · ' : ''}${m.days.care ? `조심할 날 ${esc(m.days.care)}` : ''}</p>` : ''}${m.areas.length ? `<div class="chips2">${m.areas.map((ar) => `<span>${esc(ar)}</span>`).join('')}</div>` : ''}</article>`
   const sal = (s: (typeof v.care.incoming)[number]) => `<li class="sal ${s.caution ? 'c' : 'g'}"><b>${esc(s.name)}<small>${esc(s.hanja)}</small></b><span>${esc(s.text)}</span></li>`
+  const ysHtml = lang === 'ko' ? yearStoryHtml(yearStory(a.dayStem, getYearGanzi(y0 + yearSel), a.yongsin.primary, a.elementStatus?.missing ?? [], a.elementStatus?.lack ?? []), `${y0 + yearSel}년`) : ''
   out.innerHTML = `
+  ${ysHtml}
   <article class="card yr">
     <h2>${esc(v.total.title)}</h2>
     <p class="dbody"><b>${esc(v.total.summary)}</b></p>
@@ -1773,6 +1776,7 @@ function matchHtml(people: Person[]): string {
     <div class="axes">${m.axes.slice(1).map((a) => `<div class="ax"><span>${esc(a.label)}</span><i class="tr"><b style="width:${a.value}%"></b></i><em>${a.value}</em></div>`).join('')}</div>
     <ul class="chips2">${m.chips.map((c) => `<li><small>${esc(c.k)}</small>${esc(c.v)}</li>`).join('')}</ul>
   </article>
+  ${lang === 'ko' ? pairStoryHtml(pairStory(analyze(A.result).dayStem, analyze(B.result).dayStem), A.label, B.label) : ''}
   ${rest.map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3>${c.paras.map((p) => `<p>${esc(p)}</p>`).join('')}${c.list ? `<ul>${c.list.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}</article>`).join('')}
   ${lang === 'ko' ? `<article class="card" id="mbtipair"><h3>MBTI까지 같이 보기 (재미)</h3><p class="meta">두 사람 MBTI를 고르면 서로의 사주가 상대 유형을 어떻게 보는지 알려 줘요.</p>
     <div class="row"><select id="mtA" aria-label="첫 번째 사람의 MBTI">${['<option value="">첫 번째 사람 MBTI</option>', ...TYPE_LIST.map((x) => `<option>${x}</option>`)].join('')}</select>

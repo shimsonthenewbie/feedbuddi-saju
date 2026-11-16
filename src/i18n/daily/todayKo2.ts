@@ -222,3 +222,26 @@ export function storyOf(t: TodayData): Story {
   }
   return { meKey: STEM_KEY[me], meName: SN[me], meImage: DM[me], skyKey: STEM_KEY[sky], skyName: SN[sky], skyImage: DM[sky], earthName: `${BK[BH.indexOf(br)]}(${EN[Tb]})`, sky: PAIR[Ts][M], earth: PAIR[Tb][M], extra }
 }
+
+// ── 올해 운세·궁합용: 같은 자연 비유를 '해'와 '사이'로 바꿔 쓴다 ──
+const reword = (s: string, unit: '해' | '사이') => s.replace(/날이라/g, unit === '해' ? '해라' : '사이라').replace(/날이에요/g, unit === '해' ? '해예요' : '사이예요')
+export interface Side { key: string; name: string; image: string; hanja: string }
+const sideOf = (stem: string): Side => ({ key: STEM_KEY[stem], name: SN[stem], image: DM[stem], hanja: stem })
+export interface YearStory { me: Side; sky: Side; earthName: string; skyLine: string; earthLine: string; extra: string | null }
+/** 올해 기운(세운 간지)이 내 일간을 만났을 때 */
+export function yearStory(dayStem: string, yearGanzi: string, yongEl: Element, missing: Element[], lack: Element[]): YearStory {
+  const M = STEM_INFO[dayStem].element as Element; const Ts = STEM_INFO[yearGanzi[0]].element as Element; const Tb = BRANCH_ELEMENT[yearGanzi[1]] as Element
+  let extra: string | null = null
+  for (const e of [Ts, Tb]) {
+    if (e === yongEl) { extra = `올해는 내게 꼭 필요한(용신) ${EN[e]} 기운이 들어오는 해예요. 준비해 둔 일을 꺼내기 좋아요.`; break }
+    if (missing.includes(e)) { extra = `내 사주에 없던 ${EN[e]} 기운이 들어오는 해예요. 낯설지만 빈자리가 채워지는 경험을 해요.`; break }
+    if (lack.includes(e)) { extra = `내 사주에 모자랐던 ${EN[e]} 기운이 들어오는 해예요. 부족했던 부분이 조금 채워져요.`; break }
+  }
+  return { me: sideOf(dayStem), sky: sideOf(yearGanzi[0]), earthName: `${BK[BH.indexOf(yearGanzi[1])]}(${EN[Tb]})`, skyLine: reword(PAIR[Ts][M], '해'), earthLine: reword(PAIR[Tb][M], '해'), extra }
+}
+export interface PairStory { a: Side; b: Side; aGets: string; bGets: string }
+/** 두 사람의 일간이 만났을 때: aGets = B의 기운이 A에게 주는 것 */
+export function pairStory(stemA: string, stemB: string): PairStory {
+  const A = STEM_INFO[stemA].element as Element; const B = STEM_INFO[stemB].element as Element
+  return { a: sideOf(stemA), b: sideOf(stemB), aGets: reword(PAIR[B][A], '사이'), bGets: reword(PAIR[A][B], '사이') }
+}

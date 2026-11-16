@@ -3,6 +3,8 @@ import type { SajuResult } from './engine/types'
 import type { Analysis } from './myeongri'
 import { todayData, type AxisKey } from './myeongri/today'
 import { sameDayPillar, bornOn } from './myeongri/celebs'
+import { yearStory as _ys, pairStory as _ps, type YearStory, type PairStory } from './i18n/daily/todayKo2'
+export const yearStory = _ys, pairStory = _ps
 import { mindCards } from './i18n/daily/mindKo'
 import { zodiacToday, starToday, ganziKo, storyOf } from './i18n/daily/todayKo2'
 import { art } from './art'
@@ -89,7 +91,7 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
       ${ring(v.score)}
       <div class="t2hl"><span class="t2lab">${esc(v.label)}</span><h2>${esc(v.headline)}</h2><span class="t2dl">${esc(v.delta)}</span></div>
     </div>
-    ${(() => { const S = storyOf(t); return `<div class="t2story"><h3 class="t2h0">오늘 나에게 온 기운</h3><div class="t2vs"><div>${ico('stem-' + S.meKey, t.who.dayStem, 'stem')}<span>나</span><b>${esc(S.meName)}</b><small>${esc(S.meImage)}</small></div><i>×</i><div>${ico('stem-' + S.skyKey, t.dayGanzi[0], 'stem')}<span>오늘 하늘 기운</span><b>${esc(S.skyName)}</b><small>${esc(S.skyImage)}</small></div></div><p><b>하늘</b> ${esc(S.sky)}</p><p><b>땅(${esc(S.earthName)})</b> ${esc(S.earth)}</p>${S.extra ? `<p class="t2ex">${esc(S.extra)}</p>` : ''}</div>` })()}
+    ${(() => { const S = storyOf(t); return `<div class="t2story"><h3 class="t2h0">오늘 나에게 온 기운</h3><div class="t2vs"><div>${ico('stem-' + S.meKey, t.who.dayStem, 'stem')}<span>나</span><b>${esc(S.meName)}</b><small>${esc(S.meImage)}</small></div><i>×</i><div>${ico('stem-' + S.skyKey, t.dayGanzi[0], 'stem')}<span>오늘 하늘 기운</span><b>${esc(S.skyName)}</b><small>${esc(S.skyImage)}</small></div></div>${S.sky === S.earth ? `<p><b>하늘·땅</b> ${esc(S.sky)} 하늘과 땅이 같은 기운이라 오늘은 이 흐름이 더 뚜렷해요.</p>` : `<p><b>하늘</b> ${esc(S.sky)}</p><p><b>땅(${esc(S.earthName)})</b> ${esc(S.earth)}</p>`}${S.extra ? `<p class="t2ex">${esc(S.extra)}</p>` : ''}</div>` })()}
     <div class="t2acts"><div class="t2act ok"><span>체크</span><b>${esc(v.check.title)}</b><p>${esc(v.check.text)}</p></div><div class="t2act warn"><span>주의</span><b>${esc(v.caution.title)}</b><p>${esc(v.caution.text)}</p></div></div>
     <div class="t2tabs" role="tablist">${tabs.map((x, i) => `<button type="button" role="tab" data-t="${x.id}" aria-selected="${i === 0}" class="${i === 0 ? 'on' : ''} ${band(x.score)}">${mini(x.score)}<b>${esc(x.name)}</b><span>${esc(x.range)}</span></button>`).join('')}</div>
     <div class="t2panel" data-p="all"><p class="dbody">${esc(v.total)}</p></div>
@@ -149,3 +151,12 @@ export function loadingHtml(): string {
 }
 export const shouldLoad = (key: string) => { if (seen === key) return false; seen = key; return true }
 export type { AxisKey }
+
+/** 올해 운세 화면 맨 위: 나 × 올해 기운 */
+export function yearStoryHtml(S: YearStory, yearLabel: string): string {
+  return `<article class="card"><div class="t2story" style="margin:0"><h3 class="t2h0">${esc(yearLabel)} 나에게 온 기운</h3><div class="t2vs"><div>${ico('stem-' + S.me.key, S.me.hanja, 'stem')}<span>나</span><b>${esc(S.me.name)}</b><small>${esc(S.me.image)}</small></div><i>×</i><div>${ico('stem-' + S.sky.key, S.sky.hanja, 'stem')}<span>올해 하늘 기운</span><b>${esc(S.sky.name)}</b><small>${esc(S.sky.image)}</small></div></div>${S.skyLine === S.earthLine ? `<p><b>하늘·땅</b> ${esc(S.skyLine)} 하늘과 땅이 같은 기운이라 이 흐름이 한 해 내내 뚜렷해요.</p>` : `<p><b>하늘</b> ${esc(S.skyLine)}</p><p><b>땅(${esc(S.earthName)})</b> ${esc(S.earthLine)}</p>`}${S.extra ? `<p class="t2ex">${esc(S.extra)}</p>` : ''}</div></article>`
+}
+/** 궁합 화면: 두 사람의 타고난 기운이 만나면 */
+export function pairStoryHtml(S: PairStory, nameA: string, nameB: string): string {
+  return `<article class="rcard"><div class="t2story" style="margin:0"><h3 class="t2h0">두 사람의 기운이 만나면</h3><div class="t2vs"><div>${ico('stem-' + S.a.key, S.a.hanja, 'stem')}<span>${esc(nameA)}</span><b>${esc(S.a.name)}</b><small>${esc(S.a.image)}</small></div><i>×</i><div>${ico('stem-' + S.b.key, S.b.hanja, 'stem')}<span>${esc(nameB)}</span><b>${esc(S.b.name)}</b><small>${esc(S.b.image)}</small></div></div><p><b>${esc(nameA)}에게 ${esc(nameB)}</b> ${esc(S.aGets)}</p><p><b>${esc(nameB)}에게 ${esc(nameA)}</b> ${esc(S.bGets)}</p></div></article>`
+}
