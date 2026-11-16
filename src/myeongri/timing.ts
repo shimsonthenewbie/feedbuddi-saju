@@ -450,3 +450,15 @@ export function dayLuck(r: SajuResult, a: Analysis, date: Date): Luck {
   const mT: Target = { name: '월운', palace: '세운', stem: four[1][0], branch: four[1][1], ganzi: four[1] }
   return buildLuck(r, a, `${y}-${m}-${d}`, four[2], [...natal, ...daewoonTargets(dw?.item ?? null), yT, mT], nb, 0.8)
 }
+
+/** 하루 안의 시간대(시주) 운. 그날 일진과 원국에 부딪히는 정도를 본다. hour는 0~23 */
+export function hourLuck(r: SajuResult, a: Analysis, date: Date, hour: number): Luck {
+  const y = date.getFullYear()
+  const m = date.getMonth() + 1
+  const d = date.getDate()
+  const four = getFourPillars(y, m, d, hour, 0)
+  const natal = natalTargets(r)
+  const nb = natal.map((t) => t.branch!)
+  const dT: Target = { name: '일운', palace: '세운', stem: four[2][0], branch: four[2][1], ganzi: four[2] }
+  return buildLuck(r, a, `${y}-${m}-${d} ${hour}시`, four[3], [...natal, dT], nb, 0.7)
+}

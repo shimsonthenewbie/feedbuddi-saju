@@ -13,6 +13,7 @@ import { luckAt } from './myeongri/timing'
 import { freeCards, freePool } from './i18n/free'
 import { dailyFortune } from './myeongri/daily'
 import { composeDaily } from './i18n/daily'
+import { todayHtml, bindToday, loadingHtml, shouldLoad } from './today-ui'
 import { mountAsk } from './consult-ui'
 import { art } from './art'
 import { natal } from './astro'
@@ -312,9 +313,30 @@ function showToday() {
   const a = analyze(r)
   const base = new Date()
   const date = new Date(base.getFullYear(), base.getMonth(), base.getDate() + dayOffset)
+  if (lang === 'ko') {
+    const key = `${pr.y}${pr.m}${pr.d}${pr.hh}${pr.mm}${pr.gender}|${base.toDateString()}`
+    const dstr2 = date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })
+    const label2 = dayOffset === 0 ? '오늘' : dayOffset === -1 ? '어제' : dayOffset === 1 ? '내일' : ''
+    const draw = () => {
+      const ni = r.input as Parameters<typeof natal>[0]
+      const mt = natal({ ...ni, year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(), hour: 12, minute: 0, unknownTime: true }).planets.Moon.sign
+      const ac = astroTodayCard(natal(ni), mt, lang)
+      out.innerHTML = todayHtml(r, a, date, label2, dstr2) +
+        `<article class="card"><h3 class="dh">${esc(ac.title)}</h3>${ac.paras.map((q) => `<p class="dbody">${esc(q)}</p>`).join('')}</article>
+        <article class="card"><h3>더 깊게 보고 싶다면</h3><div class="row"><button class="go" data-mode="year" type="button">올해 월별 흐름</button><button class="go ghost" data-mode="solo" type="button">내 사주 풀이</button><button class="go ghost" data-mode="ask" type="button">고민 상담</button></div></article>
+        <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${x.change}</button></p>`
+      bindToday(out)
+      out.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
+      document.getElementById('prev')!.onclick = () => { dayOffset--; showToday() }
+      document.getElementById('next')!.onclick = () => { dayOffset++; showToday() }
+      document.getElementById('reset')!.onclick = () => { clearProfile(); render() }
+    }
+    if (shouldLoad(key)) { out.innerHTML = loadingHtml(); setTimeout(() => { if (document.getElementById('out') === out && mode === 'today') draw() }, 1500) } else draw()
+    return
+  }
   const f = dailyFortune(r, a, date)
   const v = composeDaily(f, lang)
-  const dstr = date.toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US', { month: 'long', day: 'numeric', weekday: 'short' })
+  const dstr = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', weekday: 'short' })
   const label = dayOffset === 0 ? x.dToday : dayOffset === -1 ? x.dYest : dayOffset === 1 ? x.dTom : ''
   out.innerHTML = `
   <article class="card daily">

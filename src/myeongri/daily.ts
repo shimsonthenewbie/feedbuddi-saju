@@ -46,16 +46,16 @@ const THEME: Record<string, ThemeKey> = {
   편관: 'pyeongwan', 정관: 'jeonggwan', 편인: 'pyeonin', 정인: 'jeongin',
 }
 
-function hash(s: string): number {
+export function hash(s: string): number {
   let h = 2166136261
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) }
   return h >>> 0
 }
-const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+export const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
-interface Raw { total: number; cats: Record<CatKey, number>; luck: Luck }
+export interface Raw { total: number; cats: Record<CatKey, number>; luck: Luck }
 
-function rawFor(r: SajuResult, a: Analysis, date: Date): Raw {
+export function rawFor(r: SajuResult, a: Analysis, date: Date): Raw {
   const L = dayLuck(r, a, date)
   const grp = (sip: string): Group => GROUP_OF[sip as keyof typeof GROUP_OF]
   const g1 = grp(L.stemSipsin)
@@ -76,7 +76,7 @@ function rawFor(r: SajuResult, a: Analysis, date: Date): Raw {
   }
 }
 
-function pct(sorted: number[], v: number): number {
+export function pct(sorted: number[], v: number): number {
   let n = 0
   for (const x of sorted) if (x < v) n++
   return n / Math.max(1, sorted.length - 1)
