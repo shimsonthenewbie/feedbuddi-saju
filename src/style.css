@@ -697,3 +697,8 @@ details.learn .mrow{margin-top:8px}
 .t2mr .t2mt{font-weight:700}
 .t2mr .t2mw{font-size:13px;color:var(--mute)}
 .t2mind summary .t2ico{flex:none;width:44px;height:44px}
+.t2celeb{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.t2celeb span{background:var(--inset);border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:14px;display:inline-flex;gap:5px;align-items:baseline}
+.t2celeb b{font-family:var(--serif)}
+.t2celeb i{font-style:normal;font-size:12px;color:var(--gold)}
+.t2celeb em{font-style:normal;font-size:11.5px;color:var(--mute)}

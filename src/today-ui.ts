@@ -2,6 +2,7 @@
 import type { SajuResult } from './engine/types'
 import type { Analysis } from './myeongri'
 import { todayData, type AxisKey } from './myeongri/today'
+import { sameDayPillar, bornOn } from './myeongri/celebs'
 import { mindCards } from './i18n/daily/mindKo'
 import { zodiacToday, starToday, ganziKo, storyOf } from './i18n/daily/todayKo2'
 import { art } from './art'
@@ -107,6 +108,7 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
     <h3 class="t2h">오늘의 행운</h3>
     <div class="t2lucky">${v.lucky.map((i) => `<div><span>${esc(i.label)}</span><b>${esc(i.value)}</b></div>`).join('')}</div>
     <p class="t2avoid">오늘은 <b>${esc(v.avoid)}</b> 계열을 줄이면 더 편해요.</p>
+    ${(() => { const cl = (c: { name: string; tag: string; year: number }) => `<span><b>${esc(c.name)}</b>${c.tag ? `<i>${esc(c.tag)}</i>` : ''}<em>${c.year}</em></span>`; const same = sameDayPillar(t.who.dayStem + t.who.dayBranch).slice(0, 6); const [, mm, dd] = t.date.split('-').map(Number); const born = bornOn(mm, dd).slice(0, 6); if (!same.length && !born.length) return ''; return `<h3 class="t2h">유명인과 나</h3>${same.length ? `<p class="t2sub">나와 같은 날의 기운(일주)으로 태어난 유명인 · ${esc(ganziKo(t.who.dayStem + t.who.dayBranch))}</p><div class="t2celeb">${same.map(cl).join('')}</div>` : ''}${born.length ? `<p class="t2sub">${mm}월 ${dd}일에 태어난 유명인</p><div class="t2celeb">${born.map(cl).join('')}</div>` : ''}<p class="t2whyn">생일은 위키백과와 위키데이터가 서로 일치하는 사람만 담았어요. 태어난 시간은 알 수 없어 날짜 기준으로 계산했어요.</p>` })()}
     <h3 class="t2h">오늘의 심리 카드</h3>
     <p class="t2sub">내 사주와 오늘 날짜로 계산해요. 매일 결과가 바뀌어요. 카드를 눌러 열어 보세요.</p>
     <div class="t2mind">${mindCards(t).map((m) => `<details><summary>${ico(m.art, m.emoji, 'big')}<span><b>${esc(m.title)}</b><i>${esc(m.ask)}</i></span></summary><div class="t2mr"><strong>${esc(m.name)}</strong><p>${esc(m.text)}</p><p class="t2mt">오늘의 한 가지: ${esc(m.tip)}</p><p class="t2mw">${esc(m.why)}</p></div></details>`).join('')}</div>
