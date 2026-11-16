@@ -2,7 +2,8 @@
 import type { SajuResult } from './engine/types'
 import type { Analysis } from './myeongri'
 import { todayData, type AxisKey } from './myeongri/today'
-import { zodiacToday, starToday, ganziKo } from './i18n/daily/todayKo2'
+import { zodiacToday, starToday, ganziKo, storyOf } from './i18n/daily/todayKo2'
+import { art } from './art'
 import { composeTodayKo, LOADING_TIPS, type TodayViewKo } from './i18n/daily/todayKo'
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
@@ -42,6 +43,12 @@ function flowChart(flow: TodayViewKo['flow']): string {
   return `<svg class="t2flow" viewBox="0 0 300 164" role="img" aria-label="그제부터 모레까지 5일 흐름"><path d="${area}" fill="var(--seal)" fill-opacity=".08"/><polyline points="${pts.join(' ')}" fill="none" stroke="var(--seal)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`
 }
 
+const ZE = ['🐭', '🐮', '🐯', '🐰', '🐲', '🐍', '🐴', '🐑', '🐵', '🐔', '🐶', '🐷']
+const ZK = ['rat', 'ox', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'goat', 'monkey', 'rooster', 'dog', 'pig']
+const SE = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓']
+const SKEY = ['aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces']
+/** 그림 파일이 있으면 그림, 없으면 이모지·기호로 대신 보여 준다 */
+const ico = (file: string, fb: string, cls = '') => `<span class="t2ico ${cls}"><em>${fb}</em><img src="${art(file)}" alt="" loading="lazy" onload="this.previousElementSibling.remove()" onerror="this.remove()"></span>`
 const RANGE: Record<string, string> = { morning: '07–12시', afternoon: '12–18시', night: '18–24시' }
 function mini(score: number): string {
   const C = 2 * Math.PI * 16
@@ -60,8 +67,8 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
   const tabs = [{ id: 'all', name: '총운', range: '하루 전체', score: v.score }, ...v.slots.map((s) => ({ id: s.key, name: s.name, range: RANGE[s.key], score: s.score }))]
   const slotPanel = v.slots.map((s) => `<div class="t2panel" data-p="${s.key}" hidden><p class="t2ps"><b>${esc(s.name)}</b> <span>${esc(RANGE[s.key])}</span></p>${bar(s.score)}<p class="dbody">${esc(s.text)}</p></div>`).join('')
   const P = v.profile
-  const zRow = (z: (typeof zs)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh"><b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 띠</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.years)}년생 · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p></section>`
-  const sRow = (z: (typeof ss)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh"><b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 별자리</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.date)} · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p></section>`
+  const zRow = (z: (typeof zs)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh">${ico('zodiac-' + ZK[z.key], ZE[z.key], 'big')}<b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 띠</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.years)}년생 · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p></section>`
+  const sRow = (z: (typeof ss)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh">${ico('sign-' + SKEY[z.key], SE[z.key], 'big')}<b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 별자리</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.date)} · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p></section>`
   const top3 = [...zs].sort((p, q) => q.score - p.score).slice(0, 3).map((z) => z.name).join(', ')
   return `
   <article class="card daily t2">
@@ -79,6 +86,7 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
       ${ring(v.score)}
       <div class="t2hl"><span class="t2lab">${esc(v.label)}</span><h2>${esc(v.headline)}</h2><span class="t2dl">${esc(v.delta)}</span></div>
     </div>
+    ${(() => { const S = storyOf(t); return `<div class="t2story"><h3 class="t2h0">오늘 나에게 온 기운</h3><div class="t2vs"><div>${ico('stem-' + S.meKey, t.who.dayStem, 'stem')}<span>나</span><b>${esc(S.meName)}</b><small>${esc(S.meImage)}</small></div><i>×</i><div>${ico('stem-' + S.skyKey, t.dayGanzi[0], 'stem')}<span>오늘 하늘 기운</span><b>${esc(S.skyName)}</b><small>${esc(S.skyImage)}</small></div></div><p><b>하늘</b> ${esc(S.sky)}</p><p><b>땅(${esc(S.earthName)})</b> ${esc(S.earth)}</p>${S.extra ? `<p class="t2ex">${esc(S.extra)}</p>` : ''}</div>` })()}
     <div class="t2acts"><div class="t2act ok"><span>체크</span><b>${esc(v.check.title)}</b><p>${esc(v.check.text)}</p></div><div class="t2act warn"><span>주의</span><b>${esc(v.caution.title)}</b><p>${esc(v.caution.text)}</p></div></div>
     <div class="t2tabs" role="tablist">${tabs.map((x, i) => `<button type="button" role="tab" data-t="${x.id}" aria-selected="${i === 0}" class="${i === 0 ? 'on' : ''} ${band(x.score)}">${mini(x.score)}<b>${esc(x.name)}</b><span>${esc(x.range)}</span></button>`).join('')}</div>
     <div class="t2panel" data-p="all"><p class="dbody">${esc(v.total)}</p></div>

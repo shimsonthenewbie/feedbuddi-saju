@@ -39,7 +39,7 @@ export interface TodayData {
   /** 오늘부터 7일 총운 */
   week: { date: string; score: number }[]
   /** 프로필·근거용 */
-  who: { dayStem: string; dayBranch: string; yearBranch: string; strength: string; gyeok: string; yongEl: Element; avoidEl: Element }
+  who: { dayStem: string; dayBranch: string; yearBranch: string; strength: string; gyeok: string; yongEl: Element; avoidEl: Element; missing: Element[]; lack: Element[] }
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
@@ -93,6 +93,6 @@ export function todayData(r: SajuResult, a: Analysis, date: Date): TodayData {
   const sub = AXES.filter((k) => k !== 'total') as Exclude<AxisKey, 'total'>[]
   const order = [...sub].sort((p, q) => axes[q] - axes[p] || hash(`${seed}${p}`) - hash(`${seed}${q}`))
   const week = [0, 1, 2, 3, 4, 5, 6].map((o) => ({ date: iso(dateAt(mid + o)), score: axesAt(mid + o).total }))
-  const who = { dayStem: a.dayStem, dayBranch: r.pillars[1].pillar.branch, yearBranch: r.pillars[3].pillar.branch, strength: a.strength.label, gyeok: a.gyeokguk.name, yongEl: a.yongsin.primary, avoidEl: a.yongsin.gisin }
+  const who = { dayStem: a.dayStem, dayBranch: r.pillars[1].pillar.branch, yearBranch: r.pillars[3].pillar.branch, strength: a.strength.label, gyeok: a.gyeokguk.name, yongEl: a.yongsin.primary, avoidEl: a.yongsin.gisin, missing: a.elementStatus.missing, lack: a.elementStatus.lack }
   return { week, who, date: iso(day), dayGanzi: base.dayGanzi, score: axes.total, axes, slots, bestSlot, flow, base, luck: raws[mid].luck, top: order[0], low: order[order.length - 1], deltaYesterday: axes.total - yScore }
 }

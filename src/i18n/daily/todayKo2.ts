@@ -140,3 +140,61 @@ export function starToday(moonSign: number, mySign: number, seed: number): StarR
     return { key: i, name: nm, date: SIGN_DATE[i], rel, relLabel: SREL_LABEL[rel], score: Math.max(40, Math.min(94, Math.round(62 + SREL_RAW[rel] * 10 + jit))), text: pick(SREL_TXT[rel], seed, i), mine: i === mySign }
   })
 }
+
+/* ───────── 오늘 나에게 온 기운 이야기 (일간 × 오늘 일진, 자연 비유) ───────── */
+import { STEM_INFO, BRANCH_ELEMENT } from '../../engine/constants'
+const EN: Record<Element, string> = { tree: '나무', fire: '불', earth: '흙', metal: '쇠', water: '물' }
+const SN: Record<string, string> = { 甲: '갑목', 乙: '을목', 丙: '병화', 丁: '정화', 戊: '무토', 己: '기토', 庚: '경금', 辛: '신금', 壬: '임수', 癸: '계수' }
+export const STEM_KEY: Record<string, string> = { 甲: 'gap', 乙: 'eul', 丙: 'byeong', 丁: 'jeong', 戊: 'mu', 己: 'gi', 庚: 'gyeong', 辛: 'sin', 壬: 'im', 癸: 'gye' }
+// 오늘(T) 기운이 내(M) 기운을 만났을 때. PAIR[T][M]
+const PAIR: Record<Element, Record<Element, string>> = {
+  tree: {
+    tree: '나무 곁에 또 나무가 서요. 같은 편이 생기지만 햇빛과 자리를 두고 살짝 다투기도 해요.',
+    fire: '나무가 불을 지펴 줘요. 도와주는 손길과 배움이 들어와 기운이 붙어요.',
+    earth: '나무가 흙 속에 뿌리를 뻗어요. 산이 나무를 품어야 하니 책임과 할 일이 늘지만, 잘 품으면 숲이 돼요.',
+    metal: '쇠가 나무를 다듬어요. 내 손으로 다루고 얻는 날이라 일과 돈 쪽으로 움직임이 생겨요.',
+    water: '물이 나무를 키워요. 내가 쏟은 만큼 결과가 자라지만 기운이 많이 빠지는 날이에요.',
+  },
+  fire: {
+    tree: '나무가 타올라 불이 돼요. 내 안의 재능이 밖으로 드러나지만 에너지도 빨리 닳아요.',
+    fire: '불 옆에 또 불이 붙어요. 활기는 커지지만 열이 과해지지 않게 조절해야 해요.',
+    earth: '불이 흙을 데워 줘요. 차가웠던 마음이 풀리고 도움과 배움이 따뜻하게 들어와요.',
+    metal: '불이 쇠를 달궈요. 압박이 느껴지지만 잘 견디면 더 단단한 칼이 돼요.',
+    water: '물이 불을 다스려요. 내가 주도권을 쥐고 움직일 수 있어 재물과 기회를 잡기 좋아요.',
+  },
+  earth: {
+    tree: '나무가 흙에 뿌리를 내려요. 내가 가꾸고 얻는 일에 힘이 실리고 재물 기회가 보여요.',
+    fire: '불이 타고 남은 재가 흙이 돼요. 내가 쏟은 열정이 결과로 남지만 힘이 빠지기 쉬워요.',
+    earth: '산 옆에 또 산이 있어요. 든든한 동료가 생기지만 서로 양보 없이 버틸 수 있어요.',
+    metal: '흙 속에서 쇠가 자라요. 든든한 뒷받침이 생겨 마음이 안정돼요.',
+    water: '흙이 물길을 막아요. 규칙과 책임이 나를 죄는 느낌이 들지만, 둑을 쌓듯 질서를 잡으면 좋아요.',
+  },
+  metal: {
+    tree: '쇠가 나무를 다듬어요. 따끔하지만 정돈되고 반듯해지는 날이에요.',
+    fire: '불이 쇠를 녹여 모양을 만들어요. 내가 주도해서 결과를 만드는 날이에요.',
+    earth: '흙에서 쇠가 나와요. 내가 가진 걸 꺼내 보여 주는 날이에요. 쓰고 나면 힘이 빠져요.',
+    metal: '쇠 옆에 또 쇠가 있어요. 칼날이 부딪히듯 경쟁과 협력이 같이 와요.',
+    water: '쇠에서 물이 맺혀요. 차분한 지혜와 도움이 들어와요.',
+  },
+  water: {
+    tree: '물이 나무를 키워요. 배움과 도움이 들어와 쑥쑥 자라는 날이에요.',
+    fire: '물이 불을 눌러요. 열정이 식을 수 있으니 휴식과 페이스 조절이 필요해요.',
+    earth: '산이 물길을 다스려요. 내가 주도해서 흐름을 잡고 재물과 기회를 모으기 좋아요.',
+    metal: '쇠가 물을 맺어요. 내 재능이 밖으로 흘러나오지만 에너지는 쓰이는 날이에요.',
+    water: '물 옆에 또 물이 흘러요. 생각과 감정이 불어나니 한 가지에 집중해 보세요.',
+  },
+}
+export interface Story { meKey: string; meName: string; meImage: string; skyKey: string; skyName: string; skyImage: string; earthName: string; sky: string; earth: string; extra: string | null }
+export function storyOf(t: TodayData): Story {
+  const me = t.who.dayStem; const sky = t.dayGanzi[0]; const br = t.dayGanzi[1]
+  const M = STEM_INFO[me].element as Element; const Ts = STEM_INFO[sky].element as Element; const Tb = BRANCH_ELEMENT[br] as Element
+  const lack = (e: Element) => t.who.missing.includes(e) ? '없던' : t.who.lack.includes(e) ? '모자랐던' : ''
+  const key = (e: Element) => (e === t.who.yongEl ? '내게 꼭 필요한(용신)' : lack(e))
+  let extra: string | null = null
+  for (const e of [Ts, Tb]) {
+    const k = key(e)
+    if (k === '내게 꼭 필요한(용신)') { extra = `오늘은 ${k} ${EN[e]} 기운이 들어오는 날이에요. 이럴 때 점수가 크게 올라가요.`; break }
+    if (k) { extra = `내 사주에 ${k} ${EN[e]} 기운이 들어오는 날이에요. 빈자리가 채워지는 느낌이 들 수 있어요.`; break }
+  }
+  return { meKey: STEM_KEY[me], meName: SN[me], meImage: DM[me], skyKey: STEM_KEY[sky], skyName: SN[sky], skyImage: DM[sky], earthName: `${BK[BH.indexOf(br)]}(${EN[Tb]})`, sky: PAIR[Ts][M], earth: PAIR[Tb][M], extra }
+}
