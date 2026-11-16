@@ -2,6 +2,7 @@
 import type { AxisKey, SlotKey, TodayData } from '../../myeongri/today'
 import type { Element } from '../../engine/types'
 import { ko } from './ko'
+import { SLOT2, MIDS, CHECK_T, CAUTION_T, EL_EXT, profileOf, reasonOf } from './todayKo2'
 
 type Tier = 'hi' | 'mid' | 'lo'
 export const tierOf = (n: number): Tier => (n >= 75 ? 'hi' : n >= 55 ? 'mid' : 'lo')
@@ -111,6 +112,12 @@ export interface TodayViewKo {
   flow: { label: string; date: string; score: number; today: boolean }[]
   flowLine: string
   lucky: { label: string; value: string }[]
+  avoid: string
+  check: { title: string; text: string }
+  caution: { title: string; text: string }
+  week: { date: string; score: number; dow: string; best: boolean; low: boolean }[]
+  profile: ReturnType<typeof profileOf>
+  reason: ReturnType<typeof reasonOf>
   disclaimer: string
 }
 
@@ -128,9 +135,9 @@ export function composeTodayKo(t: TodayData): TodayViewKo {
   const sections = (['money', 'love', 'work', 'health', 'study'] as const).map((k, i) => {
     const s = t.axes[k]
     const a = AXT[k][tierOf(s)]
-    return { key: k, name: AXIS_NAME[k], score: s, text: `${pick(a.lead, seed, 10 + i)} ${pick(a.act, seed, 20 + i)}` }
+    return { key: k, name: AXIS_NAME[k], score: s, text: `${pick(a.lead, seed, 10 + i)} ${pick(MIDS[k][tierOf(s)], seed, 15 + i)} ${pick(a.act, seed, 20 + i)}` }
   })
-  const slots = t.slots.map((s, i) => ({ key: s.key, ...SLOT_NAME[s.key], score: s.score, text: pick(SLOT_TXT[s.key][tierOf(s.score)], seed, 30 + i) }))
+  const slots = t.slots.map((s, i) => ({ key: s.key, ...SLOT_NAME[s.key], score: s.score, text: pick(SLOT2[s.key][tierOf(s.score)], seed, 30 + i) }))
   const mx = Math.max(...t.slots.map((s) => s.score)); const mn = Math.min(...t.slots.map((s) => s.score))
   const bestLine = mx - mn < 7 ? '하루 내내 큰 기복 없이 비슷하게 흘러가요.' : `하루 중 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})에 가장 힘이 실려요. 중요한 일은 이때 해 보세요.`
   const flow = t.flow.map((f, i) => ({ label: DNAME[i], date: md(f.date), score: f.score, today: f.offset === 0 }))
@@ -140,18 +147,27 @@ export function composeTodayKo(t: TodayData): TodayViewKo {
   const flowLine = `${trend} 그제부터 모레까지 중 가장 좋은 날은 ${mdKo(peak.date)}이에요.`
   const delta = t.deltaYesterday > 3 ? `어제보다 ${t.deltaYesterday}점 올랐어요` : t.deltaYesterday < -3 ? `어제보다 ${-t.deltaYesterday}점 내려갔어요` : '어제와 비슷해요'
   const e1 = t.base.lucky.element
-  const E1 = EL[e1]
+  const E1 = EL[e1]; const X1 = EL_EXT[e1]
   const lucky = [
     { label: '행운의 색', value: E1.color },
     { label: '행운의 숫자', value: `${E1.num[0]}, ${E1.num[1]}` },
     { label: '좋은 방향', value: ko.lucky.dirs[t.base.lucky.direction] },
-    { label: '행운의 음식', value: pick(E1.food, seed, 40) },
-    { label: '행운의 옷차림', value: pick(E1.wear, seed, 41) },
+    { label: '행운의 음식', value: pick(X1.food, seed, 40) },
+    { label: '행운의 소품', value: pick(X1.item, seed, 42) },
+    { label: '좋은 장소', value: pick(X1.place, seed, 43) },
+    { label: '행운의 코디', value: pick(X1.coordi, seed, 41) },
     { label: '힘이 실리는 시간', value: `${SLOT_NAME[t.bestSlot].name} ${SLOT_NAME[t.bestSlot].sub}` },
   ]
+  const ck = t.top; const cn = t.low
+  const AXA = (k: Exclude<AxisKey, 'total'>) => AXT[k][tierOf(t.axes[k])].act
+  const check = { title: CHECK_T[ck], text: pick(AXA(ck), seed, 50) }
+  const caution = { title: CAUTION_T[cn], text: pick(AXA(cn), seed, 51) }
+  const DOW = ['일', '월', '화', '수', '목', '금', '토']
+  const mxw = Math.max(...t.week.map((w) => w.score)); const mnw = Math.min(...t.week.map((w) => w.score))
+  const week = t.week.map((w) => { const [y, m, d] = w.date.split('-').map(Number); return { date: `${m}/${d}`, score: w.score, dow: DOW[new Date(y, m - 1, d).getDay()], best: w.score === mxw, low: w.score === mnw } })
   return {
     score: t.score, label: scoreLabel(t.score), headline, delta,
     axes: (['total', 'money', 'love', 'work', 'health', 'study'] as AxisKey[]).map((k) => ({ key: k, name: AXIS_NAME[k], score: t.axes[k] })),
-    total, sections, slots, bestLine, flow, flowLine, lucky, disclaimer: ko.disclaimer,
+    total, sections, slots, bestLine, flow, flowLine, lucky, avoid: EL_EXT[t.who.avoidEl].avoid, check, caution, week, profile: profileOf(t.who), reason: reasonOf(t), disclaimer: ko.disclaimer,
   }
 }

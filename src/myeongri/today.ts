@@ -5,7 +5,7 @@
  * 점수는 "이 사람의 최근·앞으로 ±32일" 안에서의 상대 위치(백분위)를 40~94로 펴서 매긴다.
  * 그래서 사람마다, 날마다 골고루 나오고, 매번 비슷한 점수로 쏠리지 않는다.
  */
-import type { SajuResult } from '../engine/types'
+import type { Element, SajuResult } from '../engine/types'
 import { GROUP_OF, type Analysis, type Group, type Role } from './index'
 import { dailyFortune, hash, iso, pct, rawFor, type DailyFortune } from './daily'
 import { hourLuck, type Luck } from './timing'
@@ -36,6 +36,10 @@ export interface TodayData {
   low: Exclude<AxisKey, 'total'>
   /** 어제 대비 오늘 점수 차 */
   deltaYesterday: number
+  /** 오늘부터 7일 총운 */
+  week: { date: string; score: number }[]
+  /** 프로필·근거용 */
+  who: { dayStem: string; dayBranch: string; yearBranch: string; strength: string; gyeok: string; yongEl: Element; avoidEl: Element }
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
@@ -88,5 +92,7 @@ export function todayData(r: SajuResult, a: Analysis, date: Date): TodayData {
 
   const sub = AXES.filter((k) => k !== 'total') as Exclude<AxisKey, 'total'>[]
   const order = [...sub].sort((p, q) => axes[q] - axes[p] || hash(`${seed}${p}`) - hash(`${seed}${q}`))
-  return { date: iso(day), dayGanzi: base.dayGanzi, score: axes.total, axes, slots, bestSlot, flow, base, luck: raws[mid].luck, top: order[0], low: order[order.length - 1], deltaYesterday: axes.total - yScore }
+  const week = [0, 1, 2, 3, 4, 5, 6].map((o) => ({ date: iso(dateAt(mid + o)), score: axesAt(mid + o).total }))
+  const who = { dayStem: a.dayStem, dayBranch: r.pillars[1].pillar.branch, yearBranch: r.pillars[3].pillar.branch, strength: a.strength.label, gyeok: a.gyeokguk.name, yongEl: a.yongsin.primary, avoidEl: a.yongsin.gisin }
+  return { week, who, date: iso(day), dayGanzi: base.dayGanzi, score: axes.total, axes, slots, bestSlot, flow, base, luck: raws[mid].luck, top: order[0], low: order[order.length - 1], deltaYesterday: axes.total - yScore }
 }

@@ -321,11 +321,11 @@ function showToday() {
       const ni = r.input as Parameters<typeof natal>[0]
       const mt = natal({ ...ni, year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(), hour: 12, minute: 0, unknownTime: true }).planets.Moon.sign
       const ac = astroTodayCard(natal(ni), mt, lang)
-      out.innerHTML = todayHtml(r, a, date, label2, dstr2) +
+      out.innerHTML = todayHtml(r, a, date, label2, dstr2, { moon: Number(mt), sun: natal(ni).planets.Sun.sign }) +
         `<article class="card"><h3 class="dh">${esc(ac.title)}</h3>${ac.paras.map((q) => `<p class="dbody">${esc(q)}</p>`).join('')}</article>
         <article class="card"><h3>더 깊게 보고 싶다면</h3><div class="row"><button class="go" data-mode="year" type="button">올해 월별 흐름</button><button class="go ghost" data-mode="solo" type="button">내 사주 풀이</button><button class="go ghost" data-mode="ask" type="button">고민 상담</button></div></article>
         <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${x.change}</button></p>`
-      bindToday(out)
+      bindToday(out, (d) => { const b0 = new Date(base.getFullYear(), base.getMonth(), base.getDate()); dayOffset = Math.round((d.getTime() - b0.getTime()) / 86400000); showToday() })
       out.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
       document.getElementById('prev')!.onclick = () => { dayOffset--; showToday() }
       document.getElementById('next')!.onclick = () => { dayOffset++; showToday() }

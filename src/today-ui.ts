@@ -2,6 +2,7 @@
 import type { SajuResult } from './engine/types'
 import type { Analysis } from './myeongri'
 import { todayData, type AxisKey } from './myeongri/today'
+import { zodiacToday, starToday, ganziKo } from './i18n/daily/todayKo2'
 import { composeTodayKo, LOADING_TIPS, type TodayViewKo } from './i18n/daily/todayKo'
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
@@ -41,11 +42,27 @@ function flowChart(flow: TodayViewKo['flow']): string {
   return `<svg class="t2flow" viewBox="0 0 300 164" role="img" aria-label="그제부터 모레까지 5일 흐름"><path d="${area}" fill="var(--seal)" fill-opacity=".08"/><polyline points="${pts.join(' ')}" fill="none" stroke="var(--seal)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${dots}</svg>`
 }
 
-export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: string, dateStr: string): string {
+const RANGE: Record<string, string> = { morning: '07–12시', afternoon: '12–18시', night: '18–24시' }
+function mini(score: number): string {
+  const C = 2 * Math.PI * 16
+  return `<svg viewBox="0 0 44 44" class="t2mini" aria-hidden="true"><circle cx="22" cy="22" r="16" fill="none" stroke="var(--line)" stroke-width="4"/><circle cx="22" cy="22" r="16" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - score / 100)).toFixed(1)}" transform="rotate(-90 22 22)"/><text x="22" y="26.5" text-anchor="middle">${score}</text></svg>`
+}
+const bar = (n: number) => `<div class="t2bar ${band(n)}"><i style="width:${n}%"></i><em>${n}</em></div>`
+
+export interface TodayOpts { moon: number; sun: number }
+
+export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: string, dateStr: string, o: TodayOpts): string {
   const t = todayData(r, a, date)
   const v = composeTodayKo(t)
-  const tabs = [{ id: 'all', name: '총운', score: v.score }, ...v.slots.map((s) => ({ id: s.key, name: s.name, score: s.score }))]
-  const slotPanel = v.slots.map((s) => `<div class="t2panel" data-p="${s.key}" hidden><p class="t2ps"><b>${esc(s.name)}</b> <span>${esc(s.sub)} 기준</span></p><div class="t2bar ${band(s.score)}"><i style="width:${s.score}%"></i><em>${s.score}점</em></div><p class="dbody">${esc(s.text)}</p></div>`).join('')
+  const seed = t.base.seed
+  const zs = zodiacToday(t.dayGanzi[1], t.who.yearBranch, seed)
+  const ss = starToday(o.moon, o.sun, seed)
+  const tabs = [{ id: 'all', name: '총운', range: '하루 전체', score: v.score }, ...v.slots.map((s) => ({ id: s.key, name: s.name, range: RANGE[s.key], score: s.score }))]
+  const slotPanel = v.slots.map((s) => `<div class="t2panel" data-p="${s.key}" hidden><p class="t2ps"><b>${esc(s.name)}</b> <span>${esc(RANGE[s.key])}</span></p>${bar(s.score)}<p class="dbody">${esc(s.text)}</p></div>`).join('')
+  const P = v.profile
+  const zRow = (z: (typeof zs)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh"><b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 띠</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.years)}년생 · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p></section>`
+  const sRow = (z: (typeof ss)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh"><b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 별자리</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.date)} · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p></section>`
+  const top3 = [...zs].sort((p, q) => q.score - p.score).slice(0, 3).map((z) => z.name).join(', ')
   return `
   <article class="card daily t2">
     <div class="dnav">
@@ -53,32 +70,60 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
       <div class="dtitle"><b>${esc(dateStr)}</b>${dayLabel ? `<span>${esc(dayLabel)} · ${esc(t.dayGanzi)}일</span>` : `<span>${esc(t.dayGanzi)}일</span>`}</div>
       <button type="button" id="next" aria-label="내일">›</button>
     </div>
+    <div class="t2pick"><label>다른 날짜 보기 <input type="date" id="t2date" value="${t.date}"></label></div>
+    <div class="t2views" role="tablist"><button type="button" class="on" data-v="me">내 운세</button><button type="button" data-v="zodiac">띠 운세</button><button type="button" data-v="star">별자리 운세</button></div>
+
+    <div class="t2view" data-view="me">
+    <div class="t2prof"><div><span>내 기운</span><b>${esc(P.el)}</b></div><div><span>일주 동물</span><b>${esc(P.animal)}</b></div><div><span>나를 닮은 것</span><b>${esc(P.image)}</b></div></div>
     <div class="t2hero ${band(v.score)}">
       ${ring(v.score)}
       <div class="t2hl"><span class="t2lab">${esc(v.label)}</span><h2>${esc(v.headline)}</h2><span class="t2dl">${esc(v.delta)}</span></div>
     </div>
-    <div class="t2tabs" role="tablist">${tabs.map((x, i) => `<button type="button" role="tab" data-t="${x.id}" aria-selected="${i === 0}" class="${i === 0 ? 'on' : ''}"><b>${esc(x.name)}</b><span>${x.score}</span></button>`).join('')}</div>
+    <div class="t2acts"><div class="t2act ok"><span>체크</span><b>${esc(v.check.title)}</b><p>${esc(v.check.text)}</p></div><div class="t2act warn"><span>주의</span><b>${esc(v.caution.title)}</b><p>${esc(v.caution.text)}</p></div></div>
+    <div class="t2tabs" role="tablist">${tabs.map((x, i) => `<button type="button" role="tab" data-t="${x.id}" aria-selected="${i === 0}" class="${i === 0 ? 'on' : ''} ${band(x.score)}">${mini(x.score)}<b>${esc(x.name)}</b><span>${esc(x.range)}</span></button>`).join('')}</div>
     <div class="t2panel" data-p="all"><p class="dbody">${esc(v.total)}</p></div>
     ${slotPanel}
     <p class="t2best">⏰ ${esc(v.bestLine)}</p>
     <h3 class="t2h">영역별 운세 한눈에</h3>
     ${radar(v.axes)}
-    <div class="t2secs">${v.sections.map((s) => `<section class="t2sec"><div class="t2sh"><b>${esc(s.name)}</b><div class="t2bar ${band(s.score)}"><i style="width:${s.score}%"></i><em>${s.score}</em></div></div><p>${esc(s.text)}</p></section>`).join('')}</div>
+    <div class="t2secs">${v.sections.map((s) => `<section class="t2sec"><div class="t2sh"><b>${esc(s.name)}</b>${bar(s.score)}</div><p>${esc(s.text)}</p></section>`).join('')}</div>
+    <h3 class="t2h">왜 이 점수일까요?</h3>
+    <div class="t2why">${v.reason.rows.map(([k, x]) => `<div><b>${esc(k)}</b><p>${esc(x)}</p></div>`).join('')}<p class="t2whyn">${esc(v.reason.note)}</p></div>
     <h3 class="t2h">5일 흐름</h3>
     ${flowChart(v.flow)}
     <p class="dbody">${esc(v.flowLine)}</p>
+    <h3 class="t2h">앞으로 7일 한눈에</h3>
+    <div class="t2week">${v.week.map((w) => `<div class="${band(w.score)}${w.best ? ' best' : ''}${w.low ? ' low' : ''}"><span>${esc(w.dow)}</span><b>${w.score}</b><i>${w.best ? '최고' : w.low ? '조심' : esc(w.date)}</i></div>`).join('')}</div>
     <h3 class="t2h">오늘의 행운</h3>
     <div class="t2lucky">${v.lucky.map((i) => `<div><span>${esc(i.label)}</span><b>${esc(i.value)}</b></div>`).join('')}</div>
+    <p class="t2avoid">오늘은 <b>${esc(v.avoid)}</b> 계열을 줄이면 더 편해요.</p>
+    </div>
+
+    <div class="t2view" data-view="zodiac" hidden>
+      <p class="dbody">오늘은 ${esc(ganziKo(t.dayGanzi))}일이에요. 이 날의 땅 기운과 열두 띠가 맺는 관계(합·충·원진 등)로 본 오늘의 띠별 운세예요. 오늘 특히 힘이 실리는 띠는 <b>${esc(top3)}</b>예요.</p>
+      <div class="t2secs">${[...zs].sort((p, q) => Number(q.mine) - Number(p.mine)).map(zRow).join('')}</div>
+    </div>
+    <div class="t2view" data-view="star" hidden>
+      <p class="dbody">오늘 달이 머무는 별자리와 열두 별자리가 맺는 관계로 본 오늘의 별자리 운세예요.</p>
+      <div class="t2secs">${[...ss].sort((p, q) => Number(q.mine) - Number(p.mine)).map(sRow).join('')}</div>
+    </div>
     <p class="note">${esc(v.disclaimer)}</p>
   </article>`
 }
 
-export function bindToday(root: HTMLElement) {
+export function bindToday(root: HTMLElement, onDate: (d: Date) => void) {
   const tabs = root.querySelectorAll<HTMLButtonElement>('.t2tabs button')
   tabs.forEach((b) => (b.onclick = () => {
     tabs.forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', String(x === b)) })
     root.querySelectorAll<HTMLElement>('.t2panel').forEach((p) => { p.hidden = p.dataset.p !== b.dataset.t })
   }))
+  const vs = root.querySelectorAll<HTMLButtonElement>('.t2views button')
+  vs.forEach((b) => (b.onclick = () => {
+    vs.forEach((x) => x.classList.toggle('on', x === b))
+    root.querySelectorAll<HTMLElement>('.t2view').forEach((p) => { p.hidden = p.dataset.view !== b.dataset.v })
+  }))
+  const di = root.querySelector<HTMLInputElement>('#t2date')
+  if (di) di.onchange = () => { const [y, m, d] = di.value.split('-').map(Number); if (y) onDate(new Date(y, m - 1, d)) }
 }
 
 let seen = ''

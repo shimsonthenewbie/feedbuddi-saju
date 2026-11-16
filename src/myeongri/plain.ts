@@ -6,7 +6,7 @@ import { yearLuck } from './timing'
 type El = 'tree' | 'fire' | 'earth' | 'metal' | 'water'
 const EL: Record<string, string> = { tree: '나무(목)', fire: '불(화)', earth: '흙(토)', metal: '쇠(금)', water: '물(수)' }
 const ELS: Record<string, string> = { tree: '나무', fire: '불', earth: '흙', metal: '쇠', water: '물' }
-const DM: Record<string, string> = {
+export const DM: Record<string, string> = {
   甲: '곧게 뻗는 큰 나무', 乙: '유연하게 휘며 자라는 풀과 덩굴', 丙: '모두를 비추는 태양', 丁: '어둠을 밝히는 촛불',
   戊: '든든한 큰 산', 己: '곡식을 길러 내는 논밭', 庚: '단단한 바위와 쇠', 辛: '잘 다듬어진 보석',
   壬: '크게 흐르는 바다와 강', 癸: '조용히 스며드는 비와 이슬',
