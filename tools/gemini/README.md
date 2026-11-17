@@ -39,3 +39,8 @@ node translate.mjs --lang=ja    # 일본어 (zh, es, fr, de, pt, id, th, vi, ru,
 "쓸 수 있는 그림 모델이 없어요"가 나오면 무료 API 키에는 그림 만들기 사용량이 없는 거예요. 둘 중 하나로 가요.
 1. **결제 수단을 붙인 키**: AI Studio에서 결제(Tier 1)를 켜면 그림 1장에 40~60원쯤이라, 73장이 4천 원 안팎이에요. 켠 뒤 같은 명령을 다시 실행하면 돼요.
 2. **제미나이 앱·AI Studio 화면에서 손으로**: 이미 만들어 둔 주문서(`scratch` 의 그림 주문서)를 복사해 붙여 넣는 방법이에요. 번역(글)은 무료 키로도 돼요.
+
+## 브라우저로 제미나이 화면을 조작해서 번역하기 (API 없이)
+- 묶음은 40문장씩 123개로 다시 나눴어요(화면 채팅은 한 번에 긴 답을 못 주는 일이 있어서). 크기는 `N=60 node extract-strings.cjs` 로 바꿀 수 있어요.
+- 지시문은 `translation-rules.mjs` 의 `systemPrompt('English')` 를 쓰고, 묶음 파일 내용을 그 아래에 붙여서 보내요.
+- 받은 답(JSON 배열)을 `out/en/batch-000.json` 처럼 저장한 뒤 `node check-translations.mjs` 로 검사해요. 잘못된 묶음은 `--fix` 로 지우고 다시 받아요.

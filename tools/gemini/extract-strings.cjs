@@ -10,6 +10,6 @@ for(const f of files){ if(skip.test(f))continue
 const seen=new Map();const uniq=[]
 for(const it of items){ if(!seen.has(it.ko)){seen.set(it.ko,it.id);uniq.push(it)} }
 fs.writeFileSync('tools/gemini/i18n/all.json',JSON.stringify(uniq,null,1))
-const N=120;let b=0
+const N=Number(process.env.N||120);let b=0
 for(let i=0;i<uniq.length;i+=N){fs.writeFileSync(`tools/gemini/i18n/batch-${String(b++).padStart(3,'0')}.json`,JSON.stringify(uniq.slice(i,i+N).map(x=>({id:x.id,ko:x.ko})),null,0))}
 console.log('total',items.length,'unique',uniq.length,'withVars',uniq.filter(x=>x.vars).length,'batches',b,'chars',uniq.reduce((a,x)=>a+x.ko.length,0))
