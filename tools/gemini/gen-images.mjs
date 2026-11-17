@@ -3,7 +3,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { HERE, generate, log, sleep } from './lib.mjs'
 
-const MODEL = process.env.IMAGE_MODEL || 'gemini-2.5-flash-image'
+const MODELS = process.env.IMAGE_MODEL ? process.env.IMAGE_MODEL.split(',') : ['gemini-2.5-flash-image', 'gemini-2.0-flash-preview-image-generation', 'gemini-2.0-flash-exp-image-generation']
+let MODEL = MODELS[0]
 const OUT = path.join(HERE, 'out', 'images')
 const BASEDIR = path.join(HERE, 'out', 'base')
 const REF = path.join(HERE, 'ref')
@@ -18,10 +19,23 @@ const refs = (names) => names.filter((n) => fs.existsSync(path.join(REF, n))).ma
 
 async function draw(prompt, refParts, file, aspect = '1:1') {
   if (dry) { console.log('\n──', path.basename(file), aspect, '\n' + prompt); return true }
-  const r = await generate(MODEL, {
-    contents: [{ role: 'user', parts: [...refParts, { text: prompt }] }],
-    generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: aspect } },
-  })
+  let r
+  for (;;) {
+    try {
+      const is25 = /2\.5|3/.test(MODEL)
+      r = await generate(MODEL, {
+        contents: [{ role: 'user', parts: [...refParts, { text: prompt + (is25 || aspect === '1:1' ? '' : ' Wide 16:9 composition.') }] }],
+        generationConfig: is25 ? { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: aspect } } : { responseModalities: ['TEXT', 'IMAGE'] },
+      })
+      break
+    } catch (e) {
+      if (!e.noQuota) throw e
+      log(`⚠ ${MODEL}: ${e.message}`)
+      const next = MODELS[MODELS.indexOf(MODEL) + 1]
+      if (!next) { console.error('\n쓸 수 있는 그림 모델이 없어요. 무료 키로는 API 그림 만들기가 막혀 있는 거예요. README의 "대안"을 보세요.'); process.exit(2) }
+      MODEL = next; log(`→ ${MODEL} 로 바꿔서 해 봐요`)
+    }
+  }
   const img = r.parts.find((p) => p.inlineData?.data)
   if (!img) { log(`⚠ ${path.basename(file)}: 그림이 안 나왔어요${r.blocked ? ` (막힘: ${r.blocked})` : ''} — 건너뛰어요. 나중에 다시 켜면 이 그림만 다시 시도해요`); return false }
   fs.mkdirSync(path.dirname(file), { recursive: true })

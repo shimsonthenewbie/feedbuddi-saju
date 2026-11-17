@@ -44,7 +44,11 @@ export async function generate(model, body) {
     if (res.status === 429) {
       const retry = (err.details || []).find((d) => /RetryInfo/.test(d['@type'] || ''))?.retryDelay
       const sec = retry ? parseFloat(retry) : 0
-      const daily = /PerDay|per day|daily/i.test(JSON.stringify(err))
+      const raw = JSON.stringify(err)
+      // 무료 키에 이 모델의 사용량이 처음부터 0이면 기다려도 소용없다 → 바로 알린다
+      if (/limit"?:\s*0\b/.test(raw) || /limit: 0/.test(raw)) { const e = new Error(`이 모델은 지금 키로는 쓸 수 없어요(무료 사용량 0). ${msg.slice(0, 160)}`); e.noQuota = true; throw e }
+      log(`   (제미나이 응답: ${msg.slice(0, 200)})`)
+      const daily = /PerDay|per day|daily/i.test(raw) && !/PerMinute/i.test(raw)
       if (daily) await wait(30 * 60000, '오늘 쓸 수 있는 양을 다 썼어요(하루 한도)')   // 30분마다 확인. 자정(미국 태평양시, 한국 오후 4~5시쯤)에 풀려요
       else await wait((sec || 60) * 1000 + 5000, '1분당 한도에 걸렸어요')
       continue
