@@ -18,17 +18,10 @@ import { getYearGanzi } from './engine/pillars'
 import { mountAsk } from './consult-ui'
 import { art } from './art'
 import { natal } from './astro'
-import { findFace, fileToCanvas } from './face/mesh'
-import { measure } from './face/measure'
-import { readFace } from './face/read'
-import { animalOf } from './face/animal'
-import { titanOf } from './face/titan'
-import { makeOverlay, drawDots, drawGuide } from './face/draw'
-import { wuxingOf } from './face/wuxing'
-import { findHand, measureHand, readHand, handNote, handMixTitle } from './hand/hand'
-import { pairOf, type Side } from './face/pair'
-import { comboOf } from './face/combo'
-import { momentsOf, EL_NAME, EL_BODY } from './face/moments'
+// 관상·손금 코드는 필요할 때만 불러온다
+let F!: typeof import('./face/all')
+const loadFace = async () => (F ??= await import('./face/all'))
+import type { Side } from './face/pair'
 import { reportData, buildReportRequest, PARTS, type Part, type Tone } from './report-prompt'
 import { yearLuck } from './myeongri/timing'
 import { composePage } from './i18n/year'
@@ -516,6 +509,7 @@ function showTojeong() {
   const en = lang === 'en'
   out.innerHTML = `
   <article class="card yr"><h2>${esc(v.title)}</h2><p class="meta">${en ? 'Hexagram code' : '괘 번호'} ${esc(v.code)}</p>
+    <p class="note">${en ? `Based on your saved birth date (${pr.y}.${pr.m}.${pr.d}). Tojeong is fixed by birth date and year, so the result stays the same all year.` : `저장해 둔 생년월일(${pr.y}.${pr.m}.${pr.d})로 본 풀이예요. 토정비결은 생년월일과 그 해로 정해지기 때문에 한 해 동안은 몇 번을 봐도 같은 결과가 나와요.`}</p>
     <p class="dbody"><b>${esc(v.summary)}</b></p>
     <p class="dbody"><b>${esc(v.flow[0])}</b> ${esc(v.flow[1])}</p>
     <p class="dbody"><b>${esc(v.advice[0])}</b> ${esc(v.advice[1])}</p></article>
@@ -1270,19 +1264,20 @@ function handHtml(): string {
 }
 
 async function onHandPick(file: File) {
+  await loadFace()
   const x = t(), ko = lang === 'ko'
   const err = document.getElementById('faceerr')!, out = document.getElementById('faceout')!
   err.textContent = ''
   out.innerHTML = `<article class="card scan"><div class="fphoto"></div><p class="scancap" id="scancap" role="status"></p></article>`
   const t0 = performance.now()
   try {
-    const cv = await fileToCanvas(file)
-    const ov = makeOverlay(cv); cv.className = 'fcanvas'
+    const cv = await F.fileToCanvas(file)
+    const ov = F.makeOverlay(cv); cv.className = 'fcanvas'
     const wrapEl = document.createElement('div'); wrapEl.className = 'fwrap scanning'
     const beam = document.createElement('i'); beam.className = 'beam'; const brk = document.createElement('i'); brk.className = 'brackets'
     wrapEl.append(cv, ov, brk, beam); out.querySelector('.fphoto')!.append(wrapEl)
     document.getElementById('scancap')!.textContent = ko ? '손 모양을 읽고 있어요…' : 'Reading your hand…'
-    const found = await Promise.race([findHand(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
+    const found = await Promise.race([F.findHand(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
     await new Promise((r) => setTimeout(r, Math.max(0, 2200 - (performance.now() - t0))))
     if (found === 'none') { out.innerHTML = ''; err.textContent = ko ? '손을 찾지 못했어요. 밝은 곳에서 손바닥이 보이게 손가락을 펴고 다시 찍어 주세요.' : 'No hand found. Spread your fingers, palm facing the camera, in good light.'; return }
     if (found === 'many') { out.innerHTML = ''; err.textContent = ko ? '손이 둘 이상 보여요. 한 손만 나오게 찍어 주세요.' : 'More than one hand. Please show one hand only.'; return }
@@ -1290,13 +1285,13 @@ async function onHandPick(file: File) {
     for (const p of found.pts) { g.beginPath(); g.arc(p.x * ov.width, p.y * ov.height, Math.max(3, ov.width / 130), 0, 7); g.fill() }
     wrapEl.classList.remove('scanning')
     await new Promise((r) => setTimeout(r, 700))
-    const m = measureHand(found), r = readHand(m, lang)
+    const m = F.measureHand(found), r = F.readHand(m, lang)
     const dbg = /[?&]debug\b/.test(location.search)
     out.innerHTML = `<article class="card animal"><div class="aemoji" aria-hidden="true">🖐️</div><h2>${esc(r.elName)}</h2><p class="atitle">${esc(r.head)}</p><p>${esc(r.body)}</p>
-      <h3>${esc(handMixTitle(lang))}</h3><div class="amix">${r.mix.map((a) => `<div><span>${esc(a.name)}</span><i class="tr"><b style="width:${a.pct}%"></b></i><em>${a.pct}%</em></div>`).join('')}</div></article>
+      <h3>${esc(F.handMixTitle(lang))}</h3><div class="amix">${r.mix.map((a) => `<div><span>${esc(a.name)}</span><i class="tr"><b style="width:${a.pct}%"></b></i><em>${a.pct}%</em></div>`).join('')}</div></article>
       ${r.cards.map((c) => `<article class="rcard"><h3>${esc(c.title)}</h3><p>${esc(c.body)}</p></article>`).join('')}
       ${dbg ? `<pre class="dbg">${Object.entries(m).map(([k, v]) => `${k}\t${(v as number).toFixed(3)}`).join('\n')}</pre>` : ''}
-      <p class="note">${esc(handNote(lang))}</p>
+      <p class="note">${esc(F.handNote(lang))}</p>
       <article class="card"><div class="row"><button class="go filebtn ghost" type="button" data-faceask="handalb">${ko ? '다른 손으로 다시 보기' : 'Try another photo'}</button></div></article>`
     out.querySelectorAll<HTMLElement>('[data-faceask]').forEach((b) => (b.onclick = () => askFaceConsent(b.dataset.faceask!)))
     out.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -1323,19 +1318,20 @@ const FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 39
 
 let lastFace: Side | null = null
 async function onFacePair(file: File) {
+  await loadFace()
   const x = t(); const box = document.getElementById('pairout'); const err = document.getElementById('faceerr')!
   if (!box || !lastFace) return
   err.textContent = ''; box.innerHTML = `<article class="card"><p class="meta">${esc(x.faceBusy)}</p></article>`
   try {
-    const cv = await fileToCanvas(file)
-    const found = await Promise.race([findFace(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
+    const cv = await F.fileToCanvas(file)
+    const found = await Promise.race([F.findFace(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
     if (found === 'none') { box.innerHTML = ''; err.textContent = x.faceNone; return }
     if (found === 'many') { box.innerHTML = ''; err.textContent = x.faceMany; return }
-    const m = measure(found)
+    const m = F.measure(found)
     if (m.yaw > 0.24 || m.yawDeg > 55 || m.pitchDeg > 50) { box.innerHTML = ''; err.textContent = x.faceAngle(Math.round(m.yawDeg), Math.round(m.pitchDeg), Math.round(Math.abs(m.roll))); return }
-    const r = readFace(m, lang), an = animalOf(m, r.axes, lang), wu = wuxingOf(m), wn = EL_NAME[lang] ?? EL_NAME.en
+    const r = F.readFace(m, lang), an = F.animalOf(m, r.axes, lang), wu = F.wuxingOf(m), wn = F.EL_NAME[lang] ?? F.EL_NAME.en
     const other: Side = { key: an.key, emoji: an.emoji, name: an.name, tags: an.tags, el: wu[0].el, elName: wn[wu[0].el][0] }
-    const pr = pairOf(lastFace, other, lang)
+    const pr = F.pairOf(lastFace, other, lang)
     box.innerHTML = `<article class="card animal pair"><div class="aemoji" aria-hidden="true">${lastFace.emoji} × ${other.emoji}</div><h2>${esc(lastFace.name)}${lang === 'ko' ? '상' : ''} × ${esc(other.name)}${lang === 'ko' ? '상' : ''}</h2>
       <p class="atitle">${pr.score}${lang === 'ko' ? '점' : ''} · ${esc(pr.head)}</p>
       ${pr.lines.map((l) => `<p>${esc(l)}</p>`).join('')}
@@ -1350,6 +1346,7 @@ async function onFacePair(file: File) {
 }
 
 async function onFacePick(file: File) {
+  await loadFace()
   const x = t()
   const err = document.getElementById('faceerr')!, out = document.getElementById('faceout')!
   err.textContent = ''
@@ -1358,9 +1355,9 @@ async function onFacePick(file: File) {
   let capTimer = 0
   const stopScan = () => clearInterval(capTimer)
   try {
-    const cv = await fileToCanvas(file)
+    const cv = await F.fileToCanvas(file)
     // 사진 위로 스캔 빛줄기가 오르내린다(사진은 화면에만 쓰고 저장하지 않는다)
-    const ov = makeOverlay(cv)
+    const ov = F.makeOverlay(cv)
     cv.className = 'fcanvas'
     const wrapEl = document.createElement('div'); wrapEl.className = 'fwrap scanning'
     const beam = document.createElement('i'); beam.className = 'beam'
@@ -1371,12 +1368,12 @@ async function onFacePick(file: File) {
     const caps = [...x.ringCaps]; let ci = 0
     const setCap = () => { document.getElementById('scancap')!.textContent = caps[ci++ % caps.length]; (document.getElementById('scanbar') as HTMLElement).style.width = Math.min(40, ci * 12) + '%' }
     setCap(); capTimer = window.setInterval(setCap, 1300)
-    const found = await Promise.race([findFace(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
+    const found = await Promise.race([F.findFace(cv), new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), 40000))])
     await new Promise((r) => setTimeout(r, Math.max(0, (/[?&]slow\b/.test(location.search) ? 12000 : 2600) - (performance.now() - tScan))))
     stopScan()
     if (found === 'none') { out.innerHTML = ''; err.textContent = x.faceNone; return }
     if (found === 'many') { out.innerHTML = ''; err.textContent = x.faceMany; return }
-    const m = measure(found)
+    const m = F.measure(found)
     const yw = Math.round(m.yawDeg), pt = Math.round(m.pitchDeg), rl = Math.round(Math.abs(m.roll))
     if (m.yaw > 0.24 || yw > 55 || pt > 50) {
       // 벗어난 정도를 알려주고, 인식된 얼굴 위치를 사진 위에 박스로 보여 준다
@@ -1393,21 +1390,21 @@ async function onFacePick(file: File) {
     }
     wrapEl.classList.remove('scanning')
     const cap = (txt: string, pct: number) => { document.getElementById('scancap')!.textContent = txt; (document.getElementById('scanbar') as HTMLElement).style.width = pct + '%' }
-    cap(x.scan1, 15); await drawDots(ov, found)
-    cap(x.scan2, 55); await drawGuide(ov, found, [...x.guideLabels])
+    cap(x.scan1, 15); await F.drawDots(ov, found)
+    cap(x.scan2, 55); await F.drawGuide(ov, found, [...x.guideLabels])
     cap(x.scan3, 90); await new Promise((r) => setTimeout(r, 500))
-    const r = readFace(m, lang)
-    const an = animalOf(m, r.axes, lang)
+    const r = F.readFace(m, lang)
+    const an = F.animalOf(m, r.axes, lang)
     const debug = /[?&]debug\b/.test(location.search)
-    const wu = wuxingOf(m), wn = EL_NAME[lang] ?? EL_NAME.en
+    const wu = F.wuxingOf(m), wn = F.EL_NAME[lang] ?? F.EL_NAME.en
     lastFace = { key: an.key, emoji: an.emoji, name: an.name, tags: an.tags, el: wu[0].el, elName: wn[wu[0].el][0] }
-    const mom = momentsOf(m, r.axes, lang)
+    const mom = F.momentsOf(m, r.axes, lang)
     const wuHtml = `<article class="rcard wux"><h3>${esc(x.wuTitle)}</h3><div class="wtop"><span class="wbadge">${esc(wn[wu[0].el][0])}</span><div><b>${wu[0].pct}%</b><em>${esc(wn[wu[0].el][1])}</em></div></div>
-      <p>${esc((EL_BODY[lang] ?? EL_BODY.en)[wu[0].el])}</p><p class="meta">${esc(x.wuMix(wn[wu[1].el][0]))}</p>
+      <p>${esc((F.EL_BODY[lang] ?? F.EL_BODY.en)[wu[0].el])}</p><p class="meta">${esc(x.wuMix(wn[wu[1].el][0]))}</p>
       <div class="wbars">${wu.map((w) => `<div><span>${esc(wn[w.el][0])}</span><i class="tr"><b style="width:${Math.min(100, w.pct * 2)}%"></b></i><em>${w.pct}%</em></div>`).join('')}</div></article>`
     const pr0 = loadProfile()
     let comboHtml = ''
-    if (pr0) { try { const cb = comboOf(wu[0].el, analyze(resultOf(pr0)), lang); comboHtml = `<article class="rcard combo"><h3>${esc(cb.title)}</h3>${cb.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}<p class="meta">${esc(cb.note)}</p></article>` } catch { /* 사주 계산 실패 시 생략 */ } }
+    if (pr0) { try { const cb = F.comboOf(wu[0].el, analyze(resultOf(pr0)), lang); comboHtml = `<article class="rcard combo"><h3>${esc(cb.title)}</h3>${cb.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}<p class="meta">${esc(cb.note)}</p></article>` } catch { /* 사주 계산 실패 시 생략 */ } }
     const momHtml = `<article class="rcard mom"><h3>${esc(mom.title)}</h3><p class="meta">${esc(mom.intro)}</p>${mom.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}</article>`
     out.innerHTML = `<article class="card animal"><div class="aemoji" aria-hidden="true">${an.emoji}</div><h2>${esc(an.name)}${lang === 'ko' ? '상' : ' face'}</h2><p class="atitle">${esc(an.title)}</p>
       <div class="chips2">${an.tags.map((c) => `<span>#${esc(c)}</span>`).join('')}</div>
@@ -1418,7 +1415,7 @@ async function onFacePick(file: File) {
       <p class="amate">${esc(an.mate.label)} ${an.mate.emoji} ${esc(an.mate.name)}</p>
       <div class="row"><button class="go" type="button" id="fshare">${esc(x.faceShare)}</button></div><p class="ok" id="fshok" role="status"></p></article>
       ${wuHtml}
-      ${lang === 'ko' ? (() => { const tt = titanOf(m); return `<article class="rcard"><h3>거인의 힘을 이어받는다면</h3><p><b>${esc(tt.name)}</b> · ${tt.pct}%</p><p>${esc(tt.line)}</p><p>${esc(tt.body)}</p><p class="meta">${esc(tt.cost)}</p>${tt.second ? `<p class="meta">다음으로 가까운 힘: ${esc(tt.second)}</p>` : ''}<p class="meta">재미로 꾸민 비공식 풀이예요. 원작과 관계가 없어요.</p></article>` })() : ''}
+      ${lang === 'ko' ? (() => { const tt = F.titanOf(m); return `<article class="rcard"><h3>거인의 힘을 이어받는다면</h3><p><b>${esc(tt.name)}</b> · ${tt.pct}%</p><p>${esc(tt.line)}</p><p>${esc(tt.body)}</p><p class="meta">${esc(tt.cost)}</p>${tt.second ? `<p class="meta">다음으로 가까운 힘: ${esc(tt.second)}</p>` : ''}<p class="meta">재미로 꾸민 비공식 풀이예요. 원작과 관계가 없어요.</p></article>` })() : ''}
       <article class="rcard lead faceres"><div class="fphoto"></div><h3>${esc(r.headline)}</h3><p>${esc(r.cards[0].paras[0])}</p>
       <div class="chips2">${r.chips.map((c) => `<span>${esc(c)}</span>`).join('')}</div>
       <div class="axes">${r.axes.map((a) => `<div class="ax"><span>${esc(a.label)}</span><i class="tr"><b style="width:${a.value}%"></b></i><em>${a.value}</em></div>`).join('')}</div></article>

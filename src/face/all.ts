@@ -1,0 +1,12 @@
+// 관상·손금 기능 묶음: 그 화면에 들어갈 때만 내려받는다(첫 화면을 가볍게 하기 위해)
+export * from './mesh'
+export * from './measure'
+export * from './read'
+export * from './animal'
+export * from './titan'
+export * from './draw'
+export * from './wuxing'
+export * from './pair'
+export * from './combo'
+export * from './moments'
+export * from '../hand/hand'
