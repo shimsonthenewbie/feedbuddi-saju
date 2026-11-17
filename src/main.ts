@@ -13,6 +13,7 @@ import { luckAt } from './myeongri/timing'
 import { freeCards, freePool } from './i18n/free'
 import { dailyFortune } from './myeongri/daily'
 import { composeDaily } from './i18n/daily'
+import { access, CATALOG } from './pay/catalog'
 import { todayHtml, bindToday, loadingHtml, shouldLoad, yearStory, yearStoryHtml, pairStory, pairStoryHtml } from './today-ui'
 import { getYearGanzi } from './engine/pillars'
 import { mountAsk } from './consult-ui'
@@ -1583,6 +1584,11 @@ function personForm(id: 'a' | 'b', label: string): string {
   </fieldset>`
 }
 
+// 유료화 준비: 시험 오픈 중에는 access()가 항상 open 이라 아래 잠금 화면은 나오지 않는다.
+function lockedHtml(kind: 'need-login' | 'need-pay'): string {
+  const p = CATALOG[mode]; const ko = lang === 'ko'
+  return `<article class="card"><h2>${esc(ko ? (p?.nameKo ?? '') : mode)}</h2><p>${ko ? (kind === 'need-login' ? '로그인하면 볼 수 있어요.' : '전체 풀이는 결제 후 볼 수 있어요.') : (kind === 'need-login' ? 'Please sign in to view this.' : 'The full reading is available after purchase.')}</p></article>`
+}
 function render() {
   if (mode === 'home') { guestProfile = null; guestAsk = false }
   else if (!PROFILE_MODES.includes(mode)) guestAsk = false
@@ -1671,6 +1677,8 @@ function bind() {
   if (mode === 'dream' && !koOnly()) initDream()
   if (mode === 'koname') initKoname()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
+  const acc = access(mode)
+  if (acc !== 'open') { const o = document.getElementById('out'); if (o) o.innerHTML = lockedHtml(acc); return }
   whoBar()
 }
 const PROFILE_MODES = ['today', 'ask', 'year', 'report', 'pick', 'exam', 'tojeong', 'gusung', 'mbti', 'astro', 'iching']
