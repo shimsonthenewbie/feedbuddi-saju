@@ -49,10 +49,13 @@ function flowChart(flow: TodayViewKo['flow']): string {
 
 const BHX = '子丑寅卯辰巳午未申酉戌亥'
 const ZE = ['🐭', '🐮', '🐯', '🐰', '🐲', '🐍', '🐴', '🐑', '🐵', '🐔', '🐶', '🐷']
-const ZK = ['rat', 'ox', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'goat', 'monkey', 'rooster', 'dog', 'pig']
+const ZK = ['rat', 'ox', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'sheep', 'monkey', 'rooster', 'dog', 'pig']
 const SE = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓']
 const SKEY = ['aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo', 'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces']
 /** 그림 파일이 있으면 그림, 없으면 이모지·기호로 대신 보여 준다 */
+// 그림만 넣는 자리: 파일이 없으면 아무것도 보이지 않는다
+const pic = (file: string, cls = '') => `<img class="t2pic ${cls}" src="${art(file)}" alt="" loading="lazy" onerror="this.remove()">`
+const LUCKY_ART = ['ico-color', 'ico-number', 'ico-direction', 'ico-food', 'ico-item', 'ico-place', 'ico-outfit', 'ico-time']
 const ico = (file: string, fb: string, cls = '') => `<span class="t2ico ${cls}"><em>${fb}</em><img src="${art(file)}" alt="" loading="lazy" onload="this.previousElementSibling.remove()" onerror="this.remove()"></span>`
 const RANGE: Record<string, string> = { morning: '07–12시', afternoon: '12–18시', night: '18–24시' }
 function mini(score: number): string {
@@ -70,7 +73,7 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
   const zs = zodiacToday(t.dayGanzi[1], t.who.yearBranch, seed, t.dayGanzi[0])
   const ss = starToday(o.moon, o.sun, seed)
   const tabs = [{ id: 'all', name: '총운', range: '하루 전체', score: v.score }, ...v.slots.map((s) => ({ id: s.key, name: s.name, range: RANGE[s.key], score: s.score }))]
-  const slotPanel = v.slots.map((s) => `<div class="t2panel" data-p="${s.key}" hidden><p class="t2ps"><b>${esc(s.name)}</b> <span>${esc(RANGE[s.key])}</span></p>${bar(s.score)}<p class="dbody">${esc(s.text)}</p></div>`).join('')
+  const slotPanel = v.slots.map((s) => `<div class="t2panel" data-p="${s.key}" hidden>${pic('time-' + s.key, 'ban')}<p class="t2ps"><b>${esc(s.name)}</b> <span>${esc(RANGE[s.key])}</span></p>${bar(s.score)}<p class="dbody">${esc(s.text)}</p></div>`).join('')
   const P = v.profile
   const zRow = (z: (typeof zs)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh">${ico('zodiac-' + ZK[z.key], ZE[z.key], 'big')}<b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 띠</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.years)}년생 · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p><details class="t2yrs"${z.mine ? ' open' : ''}><summary>태어난 해별로 보기</summary>${z.byYear.map((y) => `<div${z.mine && String(y.year) === String(r.input.year - (r.pillars[3].pillar.branch === BHX[(r.input.year - 4) % 12] ? 0 : 1)) ? ' class="me"' : ''}><b>${String(y.year).slice(2)}년생 <i>${esc(ganziKo(y.ganzi))}</i></b><p>${esc(y.text)}</p></div>`).join('')}</details></section>`
   const sRow = (z: (typeof ss)[number]) => `<section class="t2sec${z.mine ? ' t2mine' : ''}"><div class="t2sh">${ico('sign-' + SKEY[z.key], SE[z.key], 'big')}<b>${esc(z.name)}${z.mine ? ' <em class="t2me">내 별자리</em>' : ''}</b>${bar(z.score)}</div><p class="t2sub">${esc(z.date)} · ${esc(z.relLabel)}</p><p>${esc(z.text)}</p></section>`
@@ -99,7 +102,7 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
     <p class="t2best">⏰ ${esc(v.bestLine)}</p>
     <h3 class="t2h">영역별 운세 한눈에</h3>
     ${radar(v.axes)}
-    <div class="t2secs">${v.sections.map((s) => `<section class="t2sec"><div class="t2sh"><b>${esc(s.name)}</b>${bar(s.score)}</div><p>${esc(s.text)}</p></section>`).join('')}</div>
+    <div class="t2secs">${v.sections.map((s) => `<section class="t2sec"><div class="t2sh">${pic('ico-' + s.key, 'sm')}<b>${esc(s.name)}</b>${bar(s.score)}</div><p>${esc(s.text)}</p></section>`).join('')}</div>
     <h3 class="t2h">왜 이 점수일까요?</h3>
     <div class="t2why">${v.reason.rows.map(([k, x]) => `<div><b>${esc(k)}</b><p>${esc(x)}</p></div>`).join('')}<p class="t2whyn">${esc(v.reason.note)}</p></div>
     <h3 class="t2h">5일 흐름</h3>
@@ -108,7 +111,7 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
     <h3 class="t2h">앞으로 7일 한눈에</h3>
     <div class="t2week">${v.week.map((w) => `<div class="${band(w.score)}${w.best ? ' best' : ''}${w.low ? ' low' : ''}"><span>${esc(w.dow)}</span><b>${w.score}</b><i>${w.best ? '최고' : w.low ? '조심' : esc(w.date)}</i></div>`).join('')}</div>
     <h3 class="t2h">오늘의 행운</h3>
-    <div class="t2lucky">${v.lucky.map((i) => `<div><span>${esc(i.label)}</span><b>${esc(i.value)}</b></div>`).join('')}</div>
+    <div class="t2lucky">${v.lucky.map((i, n) => `<div>${pic(LUCKY_ART[n] ?? '', 'lk')}<span>${esc(i.label)}</span><b>${esc(i.value)}</b></div>`).join('')}</div>
     <p class="t2avoid">오늘은 <b>${esc(v.avoid)}</b> 계열을 줄이면 더 편해요.</p>
     ${(() => { const cl = (c: { name: string; tag: string; year: number }) => `<span><b>${esc(c.name)}</b>${c.tag ? `<i>${esc(c.tag)}</i>` : ''}<em>${c.year}</em></span>`; const same = sameDayPillar(t.who.dayStem + t.who.dayBranch).slice(0, 6); const [, mm, dd] = t.date.split('-').map(Number); const born = bornOn(mm, dd).slice(0, 6); if (!same.length && !born.length) return ''; return `<h3 class="t2h">유명인과 나</h3>${same.length ? `<p class="t2sub">나와 같은 날의 기운(일주)으로 태어난 유명인 · ${esc(ganziKo(t.who.dayStem + t.who.dayBranch))}</p><div class="t2celeb">${same.map(cl).join('')}</div>` : ''}${born.length ? `<p class="t2sub">${mm}월 ${dd}일에 태어난 유명인</p><div class="t2celeb">${born.map(cl).join('')}</div>` : ''}<p class="t2whyn">생일은 위키백과와 위키데이터가 서로 일치하는 사람만 담았어요. 태어난 시간은 알 수 없어 날짜 기준으로 계산했어요.</p>` })()}
     <h3 class="t2h">오늘의 심리 카드</h3>

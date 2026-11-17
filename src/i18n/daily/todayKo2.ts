@@ -245,3 +245,9 @@ export function pairStory(stemA: string, stemB: string): PairStory {
   const A = STEM_INFO[stemA].element as Element; const B = STEM_INFO[stemB].element as Element
   return { a: sideOf(stemA), b: sideOf(stemB), aGets: reword(PAIR[B][A], '사이'), bGets: reword(PAIR[A][B], '사이') }
 }
+/** 올해 운세 달별 카드의 '왜' 한 줄: 그 달 하늘 기운이 내 일간을 만나면 */
+export function monthWhy(dayStem: string, monthGanzi: string): string {
+  const M = STEM_INFO[dayStem].element as Element; const s = monthGanzi[0]; const T = STEM_INFO[s].element as Element
+  const line = PAIR[T][M].replace(/날이라/g, '달이라').replace(/날이에요/g, '달이에요')
+  return `${ganziKo(monthGanzi)}월 · 하늘 기운 ${SN[s]}(${DM[s]}) — ${line}`
+}

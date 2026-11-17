@@ -1,5 +1,6 @@
 /** 올해 달별 흐름: 엔진이 정한 성격(kind)과 영역(areas)을 우리 문장으로 풀어 준다. */
 import { yearLuck, dayLuck, type Luck, type LuckKind, type AreaKey, type YearLuck } from '../../myeongri/timing'
+import { monthWhy } from '../daily/todayKo2'
 import { natalSals, yearSals, type SalKey } from '../../myeongri/sal'
 import type { SajuResult } from '../../engine/types'
 import type { Analysis } from '../../myeongri'
@@ -154,7 +155,7 @@ const UI = {
 } as const
 
 export interface SalView { name: string; hanja: string; text: string; caution: boolean }
-export interface StepView { days?: { good: string; care: string }; monthLabel: string; range: string; kind: LuckKind; label: string; line: string; areas: string[]; isNow: boolean }
+export interface StepView { why?: string; days?: { good: string; care: string }; monthLabel: string; range: string; kind: LuckKind; label: string; line: string; areas: string[]; isNow: boolean }
 export interface PageView {
   total: { title: string; tone: string; reasons: string[]; summary: string; months: string }
   care: { title: string; none: string; incomingT: string; incoming: SalView[]; natalT: string; natal: SalView[] }
@@ -193,7 +194,7 @@ export function composePage(r: SajuResult, a: Analysis, year: number, lang: Lang
       const care = by.slice(-1).filter((x) => x.s < 0).map(f)
       days = { good: good.join(', '), care: care.join(', ') }
     }
-    return { days, monthLabel: T.mon(mo), range: lang === 'ko' ? rangeKo(L.from!, nextFrom) : `${mo}/${da}~`, kind: L.kind, label: T.kind[L.kind][0], line, areas: (L.kind === 'calm' ? [] : L.areas).map((k) => T.area[k]), isNow }
+    return { why: lang === 'ko' ? monthWhy(a.dayStem, L.ganzi) : undefined, days, monthLabel: T.mon(mo), range: lang === 'ko' ? rangeKo(L.from!, nextFrom) : `${mo}/${da}~`, kind: L.kind, label: T.kind[L.kind][0], line, areas: (L.kind === 'calm' ? [] : L.areas).map((k) => T.area[k]), isNow }
   }
   const nf = (i: number) => flat[i + 1]?.from
   const past = flat.slice(Math.max(0, ci - 3), ci).map((L, j) => step(L, false, 'past', nf(Math.max(0, ci - 3) + j)))
