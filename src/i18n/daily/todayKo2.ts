@@ -4,7 +4,8 @@ import type { TodayData, SlotKey } from '../../myeongri/today'
 import { DM } from '../../myeongri/plain'
 
 export type Tier = 'hi' | 'mid' | 'lo'
-export const pick = <T>(a: T[], seed: number, salt = 0): T => a[(seed + salt * 7919) % a.length]
+// 자리(salt)마다 서로 독립적으로 고르도록 섞는다. 예전 식은 문장들이 늘 같은 조합으로 묶여 나왔다.
+export const pick = <T>(a: T[], seed: number, salt = 0): T => a[((): number => { let h = (seed ^ Math.imul(salt + 1, 0x9e3779b1)) >>> 0; h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0; h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0; return (h ^ (h >>> 16)) >>> 0 })() % a.length]
 
 export const SLOT2: Record<SlotKey, Record<Tier, string[]>> = {
   morning: {
@@ -250,4 +251,25 @@ export function monthWhy(dayStem: string, monthGanzi: string): string {
   const M = STEM_INFO[dayStem].element as Element; const s = monthGanzi[0]; const T = STEM_INFO[s].element as Element
   const line = PAIR[T][M].replace(/날이라/g, '달이라').replace(/날이에요/g, '달이에요')
   return `${ganziKo(monthGanzi)}월 · 하늘 기운 ${SN[s]}(${DM[s]}) — ${line}`
+}
+// 시간대 풀이 끝에 붙는 한 줄: 그 시간의 하늘 기운이 내 일간과 어떤 사이인지
+const SLOT_TAIL: Record<YRel, string[]> = {
+  same: ['나와 같은 기운이 드는 시간이라 마음 맞는 사람과 함께하면 힘이 나요.', '내 기운이 한 겹 더해지는 시간이에요. 자신 있게 밀고 가되 고집은 조금만 내려놓으세요.'],
+  help: ['나를 길러 주는 기운이 드는 시간이라 배우고 묻고 쉬기에 좋아요.', '도움이 들어오는 시간이에요. 혼자 끙끙대던 일은 이때 물어보세요.'],
+  out: ['내 기운이 밖으로 나가는 시간이라 말하고 보여 주는 일에 좋아요. 대신 체력은 아껴 쓰세요.', '표현이 잘 되는 시간이에요. 하고 싶던 말이나 제안을 이때 꺼내 보세요.'],
+  press: ['나를 다듬는 기운이 드는 시간이라 약속과 규칙을 먼저 챙기면 탈이 없어요.', '책임질 일이 몰리기 쉬운 시간이에요. 급한 것 하나만 골라 먼저 끝내세요.'],
+  gain: ['내가 쥘 수 있는 기운이 드는 시간이라 돈·거래·정리 같은 실속 있는 일에 좋아요.', '손에 잡히는 결과를 내기 좋은 시간이에요. 미뤄 둔 계산이나 정산을 해 보세요.'],
+}
+// 점수가 낮은 시간대에는 같은 기운을 조심하는 쪽으로 읽는다(본문과 말이 어긋나지 않게)
+const SLOT_TAIL_LO: Record<YRel, string> = {
+  same: '나와 같은 기운이 드는 시간이라 고집이 세지기 쉬워요. 한 발 물러서면 편해요.',
+  help: '나를 길러 주는 기운이 드는 시간이니 무리하지 말고 쉬면서 채우세요.',
+  out: '내 기운이 밖으로 빠지는 시간이라 금방 지쳐요. 말수와 일정을 줄이세요.',
+  press: '나를 누르는 기운이 드는 시간이라 부담이 커져요. 꼭 해야 할 것만 하세요.',
+  gain: '욕심이 나기 쉬운 시간이에요. 큰 결정과 지출은 미루세요.',
+}
+export function slotTail(dayStem: string, hourStem: string, seed: number, salt: number, low = false): string {
+  const M = EL_IDX(SH.indexOf(dayStem)), T = EL_IDX(SH.indexOf(hourStem))
+  const rel: YRel = T === M ? 'same' : (T + 1) % 5 === M ? 'help' : (M + 1) % 5 === T ? 'out' : (T + 2) % 5 === M ? 'press' : 'gain'
+  return `이 시간의 하늘 기운은 ${SN[hourStem]}${'甲乙庚辛'.includes(hourStem) ? '이에요' : '예요'}. ${low ? SLOT_TAIL_LO[rel] : pick(SLOT_TAIL[rel], seed, salt)}`
 }

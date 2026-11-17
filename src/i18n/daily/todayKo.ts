@@ -2,11 +2,12 @@
 import type { AxisKey, SlotKey, TodayData } from '../../myeongri/today'
 import type { Element } from '../../engine/types'
 import { ko } from './ko'
-import { SLOT2, MIDS, CHECK_T, CAUTION_T, EL_EXT, profileOf, reasonOf } from './todayKo2'
+import { SLOT2, MIDS, CHECK_T, CAUTION_T, EL_EXT, profileOf, reasonOf, slotTail } from './todayKo2'
 
 type Tier = 'hi' | 'mid' | 'lo'
 export const tierOf = (n: number): Tier => (n >= 75 ? 'hi' : n >= 55 ? 'mid' : 'lo')
-const pick = <T>(a: T[], seed: number, salt = 0): T => a[(seed + salt * 7919) % a.length]
+// 자리(salt)마다 서로 독립적으로 고르도록 섞는다. 예전 식은 문장들이 늘 같은 조합으로 묶여 나왔다.
+const pick = <T>(a: T[], seed: number, salt = 0): T => a[((): number => { let h = (seed ^ Math.imul(salt + 1, 0x9e3779b1)) >>> 0; h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0; h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0; return (h ^ (h >>> 16)) >>> 0 })() % a.length]
 const hasBatchim = (w: string) => { const c = w.charCodeAt(w.length - 1); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 !== 0 }
 const eun = (w: string) => w + (hasBatchim(w) ? '은' : '는')
 
@@ -137,9 +138,9 @@ export function composeTodayKo(t: TodayData): TodayViewKo {
     const a = AXT[k][tierOf(s)]
     return { key: k, name: AXIS_NAME[k], score: s, text: `${pick(a.lead, seed, 10 + i)} ${pick(MIDS[k][tierOf(s)], seed, 15 + i)} ${pick(a.act, seed, 20 + i)}` }
   })
-  const slots = t.slots.map((s, i) => ({ key: s.key, ...SLOT_NAME[s.key], score: s.score, text: pick(SLOT2[s.key][tierOf(s.score)], seed, 30 + i) }))
+  const slots = t.slots.map((s, i) => ({ key: s.key, ...SLOT_NAME[s.key], score: s.score, text: `${pick(SLOT2[s.key][tierOf(s.score)], seed, 30 + i)} ${slotTail(t.who.dayStem, s.ganzi[0], seed, 60 + i, tierOf(s.score) === 'lo')}` }))
   const mx = Math.max(...t.slots.map((s) => s.score)); const mn = Math.min(...t.slots.map((s) => s.score))
-  const bestLine = mx - mn < 7 ? '하루 내내 큰 기복 없이 비슷하게 흘러가요.' : `하루 중 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})에 가장 힘이 실려요. 중요한 일은 이때 해 보세요.`
+  const bestLine = mx - mn < 7 ? '하루 내내 큰 기복 없이 비슷하게 흘러가요.' : pick([`하루 중 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})에 가장 힘이 실려요. 중요한 일은 이때 해 보세요.`, `오늘은 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})이 가장 좋아요. 약속과 연락은 이 시간으로 잡아 보세요.`, `${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})에 기운이 올라와요. 미뤄 둔 일은 이때 시작하면 수월해요.`, `힘을 쓸 때는 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})이에요. 나머지 시간은 무리하지 말고 아껴 두세요.`], seed, 77)
   const flow = t.flow.map((f, i) => ({ label: DNAME[i], date: md(f.date), score: f.score, today: f.offset === 0 }))
   const today = t.flow[2].score; const tom = t.flow[3].score
   const peak = [...t.flow].sort((p, q) => q.score - p.score)[0]
