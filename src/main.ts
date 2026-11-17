@@ -17,7 +17,11 @@ import { todayHtml, bindToday, loadingHtml, shouldLoad, yearStory, yearStoryHtml
 import { getYearGanzi } from './engine/pillars'
 import { mountAsk } from './consult-ui'
 import { art } from './art'
-import { natal } from './astro'
+// 별자리(천문 계산) 코드는 첫 화면이 뜬 뒤에 따로 불러온다
+let AS: typeof import('./astro/all') | null = null
+let astroLoading: Promise<unknown> | null = null
+const loadAstro = () => (astroLoading ??= import('./astro/all').then((m) => { AS = m }))
+type NatalIn = Parameters<typeof import('./astro/all')['natal']>[0]
 // 관상·손금 코드는 필요할 때만 불러온다
 let F!: typeof import('./face/all')
 const loadFace = async () => (F ??= await import('./face/all'))
@@ -35,7 +39,6 @@ import { gungtongCard } from './myeongri/gungtong'
 import { composeTojeong } from './i18n/tojeong'
 import { dailyHexagram } from './i18n/iching'
 import { draw, dailyCard, type Drawn } from './i18n/tarot'
-import { composeAstro } from './i18n/natal'
 import { plainRead } from './myeongri/plain'
 import { makeKoName, type Gender } from './i18n/koname'
 import { readName, WX_KO, type Wx } from './myeongri/name'
@@ -46,7 +49,6 @@ import { CATS, pickDays, yearBranch, zodiacOf, type CatKey, type DayPick } from 
 import { pickCalc } from './myeongri/pick'
 import { composePick } from './i18n/pick'
 import { makeInviteUrl, readInvite, makeCard, makeFaceCard, type Invite } from './share'
-import { astroFreeCard, astroMatchCard, astroTodayCard } from './i18n/astro'
 import { matchReading, matchPool } from './i18n/match'
 
 type Mode = 'home' | 'koname' | 'dream' | 'tarot' | 'astro' | 'name' | 'gusung' | 'mbti' | 'tojeong' | 'iching' | 'taegil' | 'exam' | 'legal' | 'pick' | 'report' | 'year' | 'newyear' | 'face' | 'hand' | 'invite' | 'star' | 'free' | 'today' | 'ask' | 'solo' | 'match' | 'shop'
@@ -307,6 +309,7 @@ function resultOf(pr: Profile): SajuResult {
 const starRow = (n: number) => '★'.repeat(n) + '<span class="off">' + '★'.repeat(5 - n) + '</span>'
 
 function showToday() {
+  if (!AS) { void loadAstro().then(() => { if (mode === 'today') render() }); return }
   const x = t()
   const pr = loadProfile()!
   const out = document.getElementById('out')!
@@ -319,10 +322,10 @@ function showToday() {
     const dstr2 = date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })
     const label2 = dayOffset === 0 ? '오늘' : dayOffset === -1 ? '어제' : dayOffset === 1 ? '내일' : ''
     const draw = () => {
-      const ni = r.input as Parameters<typeof natal>[0]
-      const mt = natal({ ...ni, year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(), hour: 12, minute: 0, unknownTime: true }).planets.Moon.sign
-      const ac = astroTodayCard(natal(ni), mt, lang)
-      out.innerHTML = todayHtml(r, a, date, label2, dstr2, { moon: Number(mt), sun: natal(ni).planets.Sun.sign }) +
+      const ni = r.input as NatalIn
+      const mt = AS!.natal({ ...ni, year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(), hour: 12, minute: 0, unknownTime: true }).planets.Moon.sign
+      const ac = AS!.astroTodayCard(AS!.natal(ni), mt, lang)
+      out.innerHTML = todayHtml(r, a, date, label2, dstr2, { moon: Number(mt), sun: AS!.natal(ni).planets.Sun.sign }) +
         `<article class="card"><h3 class="dh">${esc(ac.title)}</h3>${ac.paras.map((q) => `<p class="dbody">${esc(q)}</p>`).join('')}</article>
         <article class="card"><h3>더 깊게 보고 싶다면</h3><div class="row"><button class="go" data-mode="year" type="button">올해 월별 흐름</button><button class="go ghost" data-mode="solo" type="button">내 사주 풀이</button><button class="go ghost" data-mode="ask" type="button">고민 상담</button></div></article>
         <p class="mine">${esc(pr.y + '.' + pr.m + '.' + pr.d)} · ${esc(pr.place)} <button type="button" id="reset" class="linkbtn">${x.change}</button></p>`
@@ -356,9 +359,9 @@ function showToday() {
     <div class="dcats">${v.cats.map((c) => `<div class="dcat"><div class="cn">${esc(c.name)}</div><div class="cs" aria-label="${c.stars}/5">${starRow(c.stars)}</div><p>${esc(c.line)}</p></div>`).join('')}</div>
     <p class="dtip">✦ ${esc(v.tip)}</p>
     ${(() => {
-      const ni = r.input as Parameters<typeof natal>[0]
-      const mt = natal({ ...ni, year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(), hour: 12, minute: 0, unknownTime: true }).planets.Moon.sign
-      const ac = astroTodayCard(natal(ni), mt, lang)
+      const ni = r.input as NatalIn
+      const mt = AS!.natal({ ...ni, year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate(), hour: 12, minute: 0, unknownTime: true }).planets.Moon.sign
+      const ac = AS!.astroTodayCard(AS!.natal(ni), mt, lang)
       return `<h3 class="dh">${esc(ac.title)}</h3>${ac.paras.map((q) => `<p class="dbody">${esc(q)}</p>`).join('')}`
     })()}
     <h3>${esc(v.lucky.title)}</h3>
@@ -760,6 +763,7 @@ async function showAstro() {
   const out = document.getElementById('out')!
   out.innerHTML = `<article class="card"><p>${lang === 'en' ? 'Calculating the sky…' : '하늘의 위치를 계산하는 중이에요…'}</p></article>`
   const { natalChart } = await import('./myeongri/natal')
+  const { composeAstro } = await import('./i18n/natal')
   const v = composeAstro(natalChart(pr.y, pr.m, pr.d, pr.hh, pr.mm, pr.unk, pr.lat, pr.lon), lang)
   out.innerHTML = `<article class="card yr"><h2>${esc(v.title)}</h2><p class="meta">${esc(v.summary)}</p></article>
   ${v.cards.map((c) => `<article class="card"><h3>${esc(c.title)}</h3><p class="dbody"><b>${esc(c.head)}</b> ${esc(c.body)}</p></article>`).join('')}
@@ -1074,6 +1078,7 @@ function homeHtml(): string {
 
 let freePerson: Person | null = null
 function showFree() {
+  if (!AS) { void loadAstro().then(() => { if (mode === 'free') render() }); return }
   const x = t()
   const out = document.getElementById('out')!
   if (!freePerson) { mode = 'home'; render(); return }
@@ -1083,7 +1088,7 @@ function showFree() {
   const dg = GROUP_OF[sipsinOf(a.dayStem, mainStemOf(dayBranch))]
   const tone = luckAt(r, a, new Date()).year.tone
   const base = freeCards(r, a, lang, dg, tone)
-  const ac = astroFreeCard(natal(r.input as Parameters<typeof natal>[0]), lang)
+  const ac = AS!.astroFreeCard(AS!.natal(r.input as NatalIn), lang)
   const gt = lang === 'ko' ? gungtongCard(a.dayStem, a.monthBranch, a.gungtong) : null
   const cards = [base[0], ...(gt ? [{ title: gt.title, head: '', body: gt.paras }] : []), { title: ac.title, head: '', body: ac.paras }, ...base.slice(1)] as typeof base
   const fp = freePool(lang)
@@ -1476,6 +1481,7 @@ function starHtml(): string {
 }
 
 function onStarSubmit(e: Event) {
+  if (!AS) { e.preventDefault(); void loadAstro().then(() => onStarSubmit(e)); return }
   e.preventDefault()
   const x = t()
   const f = e.target as HTMLFormElement
@@ -1489,7 +1495,7 @@ function onStarSubmit(e: Event) {
   err.textContent = ''
   const [y, m, d] = date.split('-').map(Number)
   const [hh, mm] = unk ? [12, 0] : timeV.split(':').map(Number)
-  const ac = astroFreeCard(natal({ year: y, month: m, day: d, hour: hh, minute: mm, latitude: city.lat, longitude: city.lon, timezone: city.tz, unknownTime: unk }), lang)
+  const ac = AS!.astroFreeCard(AS!.natal({ year: y, month: m, day: d, hour: hh, minute: mm, latitude: city.lat, longitude: city.lon, timezone: city.tz, unknownTime: unk }), lang)
   const out = document.getElementById('sout')!
   out.innerHTML = `<article class="rcard lead"><h3>${esc(ac.title)}</h3>${ac.paras.map((p) => `<p>${esc(p)}</p>`).join('')}</article>
   <article class="card"><div class="row"><button class="go" type="button" data-mode="home">${esc(x.starMore)}</button></div></article>`
@@ -1787,7 +1793,7 @@ function matchHtml(people: Person[]): string {
   const m = matchReading(A.result, analyze(A.result), B.result, analyze(B.result), lang)
   lastMatch = { people, m }
   const [lead, ...rest0] = m.cards
-  const ac = astroMatchCard(natal(A.result.input as Parameters<typeof natal>[0]), natal(B.result.input as Parameters<typeof natal>[0]), lang)
+  const ac = AS!.astroMatchCard(AS!.natal(A.result.input as NatalIn), AS!.natal(B.result.input as NatalIn), lang)
   const rest = [...rest0, { kind: 'astro', title: ac.title, paras: ac.paras } as (typeof rest0)[number]]
   return `<article class="rcard lead score">
     <img class="smascot" src="${art('match-sprite')}" alt="" width="110" height="110">
@@ -1811,6 +1817,7 @@ function matchHtml(people: Person[]): string {
 }
 
 function showResult(people: Person[], lead = '') {
+  if (!AS) { void loadAstro().then(() => showResult(people, lead)); return }
   const x = t()
   const out = document.getElementById('out')!
   const render2 = () => buildPrompt(mode === 'match' ? 'match' : 'solo', readLang, people)
@@ -1890,6 +1897,7 @@ function bindShare() {
 }
 
 render()
+setTimeout(() => void loadAstro(), 1200) // 첫 화면이 뜬 뒤 미리 받아 둔다
 // 탭을 켜 둔 채 날짜가 바뀌면(자정이 지나거나 다음 날 다시 열면) 어제 화면이 그대로 남는다.
 // 화면에 돌아왔을 때 날짜가 달라졌으면 오늘 기준으로 다시 그린다. 입력 중인 화면은 건드리지 않는다.
 let shownDay = new Date().toDateString()
