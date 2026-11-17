@@ -1,0 +1,419 @@
+{
+ "style": "Cute modern sticker illustration. Chibi proportions with a big round head, small body, simple friendly face with dot eyes and a tiny smile. Soft rounded shapes, clean warm-brown outline of even thickness, flat pastel colors with one soft shadow tone, no gradients, no texture, very few details so it stays readable at 48 pixels. Each subject sits on a soft pastel circle badge. Same character-design language as the attached orange dragon mascot 'Yongyongi' (ignore the lamp and smoke in the references: the dragon has NO lamp, it has a chubby body, two short legs, small feet and a short tail). Only a tiny Korean touch (a small ribbon or tiny gat hat) where asked, nothing old-fashioned. Plain pure white background outside the badge, generous margin, no text, no letters, no numbers, no frame, no drop shadow.",
+ "groups": [
+  {
+   "id": "stem",
+   "title": "일간 자연 그림 10장",
+   "pri": 1,
+   "items": [
+    {
+     "id": "stem-gap",
+     "name": "갑목 甲",
+     "desc": "a tall strong tree standing straight, thick trunk, fresh green leaves"
+    },
+    {
+     "id": "stem-eul",
+     "name": "을목 乙",
+     "desc": "a flexible young vine and small flower grass swaying, delicate and soft"
+    },
+    {
+     "id": "stem-byeong",
+     "name": "병화 丙",
+     "desc": "a bright big sun shining warmly with gentle rays"
+    },
+    {
+     "id": "stem-jeong",
+     "name": "정화 丁",
+     "desc": "a small candle flame glowing warmly in a lantern"
+    },
+    {
+     "id": "stem-mu",
+     "name": "무토 戊",
+     "desc": "a big sturdy mountain with a few trees, calm and reliable"
+    },
+    {
+     "id": "stem-gi",
+     "name": "기토 己",
+     "desc": "soft fertile farmland soil with sprouts, a small garden field"
+    },
+    {
+     "id": "stem-gyeong",
+     "name": "경금 庚",
+     "desc": "a raw iron ore chunk and a sharp traditional sword shining"
+    },
+    {
+     "id": "stem-sin",
+     "name": "신금 辛",
+     "desc": "a polished jewel gem and a small ornament, sparkling"
+    },
+    {
+     "id": "stem-im",
+     "name": "임수 壬",
+     "desc": "a wide ocean wave and a big river flowing, deep blue"
+    },
+    {
+     "id": "stem-gye",
+     "name": "계수 癸",
+     "desc": "gentle rain drops and morning dew on a leaf, soft light blue"
+    }
+   ]
+  },
+  {
+   "id": "zodiac",
+   "title": "띠 동물 12장",
+   "pri": 1,
+   "items": [
+    {
+     "id": "zodiac-rat",
+     "name": "쥐띠 子",
+     "desc": "a cute mouse, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-ox",
+     "name": "소띠 丑",
+     "desc": "a cute gentle ox, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-tiger",
+     "name": "호랑이띠 寅",
+     "desc": "a cute baby tiger, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-rabbit",
+     "name": "토끼띠 卯",
+     "desc": "a cute white rabbit, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-dragon",
+     "name": "용띠 辰",
+     "desc": "a cute little blue dragon (different color from the orange mascot), wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-snake",
+     "name": "뱀띠 巳",
+     "desc": "a cute small snake coiled, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-horse",
+     "name": "말띠 午",
+     "desc": "a cute pony horse, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-sheep",
+     "name": "양띠 未",
+     "desc": "a cute fluffy sheep, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-monkey",
+     "name": "원숭이띠 申",
+     "desc": "a cute monkey, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-rooster",
+     "name": "닭띠 酉",
+     "desc": "a cute rooster chick, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-dog",
+     "name": "개띠 戌",
+     "desc": "a cute puppy, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    },
+    {
+     "id": "zodiac-pig",
+     "name": "돼지띠 亥",
+     "desc": "a cute little pig, wearing a tiny traditional Korean accessory (small gat hat or ribbon), friendly smile"
+    }
+   ]
+  },
+  {
+   "id": "sign",
+   "title": "별자리 12장",
+   "pri": 2,
+   "items": [
+    {
+     "id": "sign-aries",
+     "name": "양자리",
+     "desc": "a cute ram with curled horns, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-taurus",
+     "name": "황소자리",
+     "desc": "a cute bull with small horns, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-gemini",
+     "name": "쌍둥이자리",
+     "desc": "two small twin kids holding hands, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-cancer",
+     "name": "게자리",
+     "desc": "a cute crab, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-leo",
+     "name": "사자자리",
+     "desc": "a cute lion with a fluffy mane, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-virgo",
+     "name": "처녀자리",
+     "desc": "a gentle maiden holding a wheat sheaf, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-libra",
+     "name": "천칭자리",
+     "desc": "a golden balance scale, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-scorpio",
+     "name": "전갈자리",
+     "desc": "a cute scorpion with a small stinger, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-sagittarius",
+     "name": "사수자리",
+     "desc": "a cute centaur archer with a bow, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-capricorn",
+     "name": "염소자리",
+     "desc": "a cute sea-goat with a fish tail, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-aquarius",
+     "name": "물병자리",
+     "desc": "a person pouring water from a jar, with a few tiny twinkling stars around"
+    },
+    {
+     "id": "sign-pisces",
+     "name": "물고기자리",
+     "desc": "two small fish swimming in a circle, with a few tiny twinkling stars around"
+    }
+   ]
+  },
+  {
+   "id": "time",
+   "title": "시간대 배너 3장",
+   "pri": 2,
+   "items": [
+    {
+     "id": "time-morning",
+     "name": "오전",
+     "desc": "the orange dragon mascot (with legs and tail, no lamp) stretching in a bright sunrise sky with soft clouds, fresh morning mood"
+    },
+    {
+     "id": "time-afternoon",
+     "name": "오후",
+     "desc": "the orange dragon mascot (with legs and tail, no lamp) sitting with a cup of tea under warm afternoon sun, relaxed mood"
+    },
+    {
+     "id": "time-night",
+     "name": "밤",
+     "desc": "the orange dragon mascot (with legs and tail, no lamp) sleeping on a crescent moon among stars, calm night mood"
+    }
+   ]
+  },
+  {
+   "id": "icon",
+   "title": "작은 아이콘 21장",
+   "pri": 2,
+   "items": [
+    {
+     "id": "ico-total",
+     "name": "총운",
+     "desc": "simple bold flat icon of a shining star, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-money",
+     "name": "재물운",
+     "desc": "simple bold flat icon of a gold coin pouch, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-love",
+     "name": "애정운",
+     "desc": "simple bold flat icon of a heart with a small ribbon, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-work",
+     "name": "직장운",
+     "desc": "simple bold flat icon of a briefcase, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-health",
+     "name": "건강운",
+     "desc": "simple bold flat icon of a green leaf with a heart, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-study",
+     "name": "학업운",
+     "desc": "simple bold flat icon of an open book with a brush pen, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-check",
+     "name": "오늘 체크",
+     "desc": "simple bold flat icon of a check mark in a circle, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-warn",
+     "name": "조심할 것",
+     "desc": "simple bold flat icon of a small warning sign with a soft expression, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-color",
+     "name": "행운의 색",
+     "desc": "simple bold flat icon of a paint palette, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-number",
+     "name": "행운의 숫자",
+     "desc": "simple bold flat icon of a lucky clover with a number-less ball, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-direction",
+     "name": "행운의 방향",
+     "desc": "simple bold flat icon of a compass, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-food",
+     "name": "행운의 음식",
+     "desc": "simple bold flat icon of a small bowl of food, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-item",
+     "name": "행운의 물건",
+     "desc": "simple bold flat icon of a small lucky charm pouch (bokjumeoni), very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-place",
+     "name": "행운의 장소",
+     "desc": "simple bold flat icon of a small traditional Korean pavilion, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-outfit",
+     "name": "행운의 코디",
+     "desc": "simple bold flat icon of a small hanbok jacket, very simple shapes, readable at small size"
+    },
+    {
+     "id": "ico-time",
+     "name": "행운의 시간",
+     "desc": "simple bold flat icon of a small clock, very simple shapes, readable at small size"
+    },
+    {
+     "id": "mind-weather",
+     "name": "심리 카드: 마음 날씨",
+     "desc": "simple bold flat icon of a sun peeking behind a soft cloud, very simple shapes, readable at small size"
+    },
+    {
+     "id": "mind-chem",
+     "name": "심리 카드: 케미 좋은 사람",
+     "desc": "simple bold flat icon of two small friends giving a high five, very simple shapes, readable at small size"
+    },
+    {
+     "id": "mind-wallet",
+     "name": "심리 카드: 지갑 경보",
+     "desc": "simple bold flat icon of a coin purse with a tiny alarm bell, very simple shapes, readable at small size"
+    },
+    {
+     "id": "mind-love",
+     "name": "심리 카드: 연애 온도",
+     "desc": "simple bold flat icon of a heart-shaped thermometer, very simple shapes, readable at small size"
+    },
+    {
+     "id": "mind-focus",
+     "name": "심리 카드: 집중 배터리",
+     "desc": "simple bold flat icon of a battery with a small lightning bolt, very simple shapes, readable at small size"
+    }
+   ]
+  },
+  {
+   "id": "pose",
+   "title": "용용이 새 포즈 10장 (램프 없는 버전)",
+   "pri": 3,
+   "items": [
+    {
+     "id": "dragon-hello",
+     "name": "인사",
+     "desc": "the orange dragon mascot waving hello, wearing its small black gat hat and red jacket, with legs and a short tail, no lamp"
+    },
+    {
+     "id": "dragon-joy",
+     "name": "기쁨",
+     "desc": "the orange dragon mascot jumping with joy, wearing its small black gat hat and red jacket, with legs and a short tail, no lamp"
+    },
+    {
+     "id": "dragon-think",
+     "name": "생각",
+     "desc": "the orange dragon mascot thinking with a paw on its chin, wearing its small black gat hat and red jacket, with legs and a short tail, no lamp"
+    },
+    {
+     "id": "dragon-cheer",
+     "name": "응원",
+     "desc": "the orange dragon mascot cheering with both arms up, wearing its small black gat hat and red jacket, with legs and a short tail, no lamp"
+    },
+    {
+     "id": "dragon-bow",
+     "name": "인사(절)",
+     "desc": "the orange dragon mascot bowing politely, wearing its small black gat hat and red jacket, with legs and a short tail, no lamp"
+    },
+    {
+     "id": "dragon-orb",
+     "name": "구슬",
+     "desc": "the orange dragon mascot holding a glowing orb, wearing its small black gat hat and red jacket, with legs and a short tail, no lamp"
+    },
+    {
+     "id": "dragon-sleep",
+     "name": "잠",
+     "desc": "the orange dragon mascot sleeping curled up, wearing its small black gat hat and red jacket, with legs and a short tail, no lamp"
+    },
+    {
+     "id": "dragon-surprise",
+     "name": "놀람",
+     "desc": "the orange dragon mascot surprised with wide eyes, wearing its small black gat hat and red jacket, with legs and a short tail, no lamp"
+    },
+    {
+     "id": "dragon-tea",
+     "name": "차 한 잔",
+     "desc": "the orange dragon mascot drinking tea, wearing its small black gat hat and red jacket, with legs and a short tail, no lamp"
+    },
+    {
+     "id": "dragon-worry",
+     "name": "걱정",
+     "desc": "the orange dragon mascot looking worried with a sweat drop, wearing its small black gat hat and red jacket, with legs and a short tail, no lamp"
+    }
+   ]
+  },
+  {
+   "id": "rel",
+   "title": "관계 배지 5장",
+   "pri": 3,
+   "items": [
+    {
+     "id": "rel-hap",
+     "name": "육합",
+     "desc": "two small hands clasped together with a heart"
+    },
+    {
+     "id": "rel-sam",
+     "name": "삼합",
+     "desc": "three small friends standing in a triangle holding hands"
+    },
+    {
+     "id": "rel-chung",
+     "name": "충",
+     "desc": "two small characters bumping into each other with a spark"
+    },
+    {
+     "id": "rel-won",
+     "name": "원진",
+     "desc": "two small characters turning their backs with a small dark cloud"
+    },
+    {
+     "id": "rel-same",
+     "name": "같은 띠",
+     "desc": "two identical small characters smiling side by side"
+    }
+   ]
+  }
+ ]
+}
