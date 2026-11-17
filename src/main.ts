@@ -278,16 +278,23 @@ const PKEY = 'fb-saju-profile'
 function saveProfile(p: Person) {
   const i = p.result.input
   const v: Profile = { y: i.year, m: i.month, d: i.day, hh: i.hour, mm: i.minute, gender: i.gender, unk: !!i.unknownTime, lat: i.latitude ?? SEOUL.lat, lon: i.longitude ?? SEOUL.lon, place: p.placeName }
+  if (guestAsk) { guestProfile = v; guestAsk = false; return } // 친구 정보는 저장하지 않고 이번에만 쓴다
   try { localStorage.setItem(PKEY, JSON.stringify(v)) } catch { /* 저장 불가 환경 */ }
   memProfile = v
 }
+// 친구 것 봐주기: 내 저장 정보는 그대로 두고 잠깐 다른 사람 정보로 본다
+let guestProfile: Profile | null = null
+let guestAsk = false
 let memProfile: Profile | null = null
 function loadProfile(): Profile | null {
+  if (guestAsk) return null
+  if (guestProfile) return guestProfile
   if (memProfile) return memProfile
   try { const raw = localStorage.getItem(PKEY); if (raw) memProfile = JSON.parse(raw) } catch { /* 무시 */ }
   return memProfile
 }
 function clearProfile() {
+  if (guestProfile) { guestProfile = null; return }
   memProfile = null
   try { localStorage.removeItem(PKEY) } catch { /* 무시 */ }
 }
@@ -1571,6 +1578,8 @@ function personForm(id: 'a' | 'b', label: string): string {
 }
 
 function render() {
+  if (mode === 'home') { guestProfile = null; guestAsk = false }
+  else if (!PROFILE_MODES.includes(mode)) guestAsk = false
   if (mode === 'newyear') { mode = 'year'; yearSel = Math.max(0, Math.min(1, 2027 - new Date().getFullYear())); yearAll = true; newYearMode = true } else if (mode !== 'year') newYearMode = false
   const x = t()
   document.documentElement.lang = lang
@@ -1583,12 +1592,13 @@ function render() {
     ${mode !== 'home' ? `<button class="homebtn" id="homebtn" type="button" aria-label="${lang === 'ko' ? '홈으로' : 'Home'}">🏠 ${lang === 'ko' ? '홈' : 'Home'}</button>` : ''}
     <button class="langbtn" id="lang" type="button">${lang === 'ko' ? 'EN' : '한국어'}</button>
   </header>
-  ${mode === 'home' ? homeHtml() : koOnly() ? koOnlyHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' || mode === 'iching' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'dream' ? dreamHtml() : mode === 'koname' ? konameHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'mbti' || mode === 'astro') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
+  ${mode === 'home' ? homeHtml() : koOnly() ? koOnlyHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'dream' ? dreamHtml() : mode === 'koname' ? konameHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'mbti' || mode === 'astro' || mode === 'iching') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
-    ${personForm('a', x.me)}
+    ${guestAsk ? `<p class="whobar">${lang === 'ko' ? '친구 정보를 넣어 주세요. 저장되지 않고 이번에만 써요.' : 'Enter your friend’s birth info. It is not saved.'} <button type="button" class="linkbtn" id="guestcancel">${lang === 'ko' ? '취소' : 'Cancel'}</button></p>` : ''}
+    ${personForm('a', guestAsk ? (lang === 'ko' ? '친구' : 'Friend') : x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
-    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'mbti' || mode === 'astro' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
+    <button class="go" type="submit">${mode === 'solo' ? x.go : mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'mbti' || mode === 'astro' || mode === 'iching' ? x.todayGo : mode === 'invite' ? x.invGo : x.goMatch}</button>
   </form>
   <section id="out"></section>`}
   ${navHtml()}
@@ -1648,13 +1658,26 @@ function bind() {
   if (mode === 'mbti' && loadProfile()) showMbti()
   if (mode === 'gusung' && loadProfile()) showGusung()
   if (mode === 'astro' && loadProfile()) void showAstro()
-  if (mode === 'iching') showIching()
+  if (mode === 'iching' && loadProfile()) showIching()
   if (mode === 'taegil' && !koOnly()) initTaegil()
   if (mode === 'name' && !koOnly()) initName()
   if (mode === 'tarot') initTarot()
   if (mode === 'dream' && !koOnly()) initDream()
   if (mode === 'koname') initKoname()
   if (mode === 'ask' && loadProfile()) mountAsk(document.getElementById('out')!, lang, resultOf(loadProfile()!))
+  whoBar()
+}
+const PROFILE_MODES = ['today', 'ask', 'year', 'report', 'pick', 'exam', 'tojeong', 'gusung', 'mbti', 'astro', 'iching']
+function whoBar() {
+  document.getElementById('guestcancel')?.addEventListener('click', () => { guestAsk = false; render() })
+  const out = document.getElementById('out'); const pr = loadProfile()
+  if (!out || !pr || !PROFILE_MODES.includes(mode)) return
+  const ko = lang === 'ko'; const d = `${pr.y}.${pr.m}.${pr.d}`
+  out.insertAdjacentHTML('beforebegin', guestProfile
+    ? `<p class="whobar guest">${ko ? `친구 정보(${d})로 보는 중이에요.` : `Viewing with a friend’s info (${d}).`} <button type="button" class="linkbtn" id="whomine">${ko ? '내 것으로 돌아가기' : 'Back to mine'}</button> · <button type="button" class="linkbtn" id="whofriend">${ko ? '다른 친구 보기' : 'Another friend'}</button></p>`
+    : `<p class="whobar">${ko ? `내 정보(${d})로 보는 중이에요.` : `Viewing with your info (${d}).`} <button type="button" class="linkbtn" id="whofriend">${ko ? '친구 것 보기' : 'View a friend’s'}</button></p>`)
+  document.getElementById('whomine')?.addEventListener('click', () => { guestProfile = null; dayOffset = 0; render() })
+  document.getElementById('whofriend')?.addEventListener('click', () => { guestProfile = null; guestAsk = true; window.scrollTo(0, 0); render() })
 }
 
 function readPerson(id: 'a' | 'b', label: string): Person | string {
@@ -1691,7 +1714,7 @@ function onSubmit(e: Event) {
   const a = readPerson('a', x.me)
   if (typeof a === 'string') { err.textContent = a; return }
   people.push(a)
-  if (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'mbti' || mode === 'astro') {
+  if (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'mbti' || mode === 'astro' || mode === 'iching') {
     saveProfile(a)
     dayOffset = 0
     render()
