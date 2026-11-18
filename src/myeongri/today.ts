@@ -42,6 +42,8 @@ export interface TodayData {
   who: { dayStem: string; dayBranch: string; yearBranch: string; strength: string; gyeok: string; yongEl: Element; avoidEl: Element; missing: Element[]; lack: Element[] }
 }
 
+/** 화면에 보이는 점수 눈금. 내부 계산(35~98)을 점신 같은 절대 기준 앱과 지금 점수의 딱 중간(약 41~73)으로 당긴다. 문구·색깔 기준도 이 눈금에 맞춰 두었다. */
+export const soft = (n: number) => Math.round(n * 0.5 + 24)
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
 const toScore = (p: number, jit: number) => clamp(Math.round(40 + 54 * p + jit), 35, 98)
 
@@ -94,5 +96,8 @@ export function todayData(r: SajuResult, a: Analysis, date: Date): TodayData {
   const order = [...sub].sort((p, q) => axes[q] - axes[p] || hash(`${seed}${p}`) - hash(`${seed}${q}`))
   const week = [0, 1, 2, 3, 4, 5, 6].map((o) => ({ date: iso(dateAt(mid + o)), score: axesAt(mid + o).total }))
   const who = { dayStem: a.dayStem, dayBranch: r.pillars[1].pillar.branch, yearBranch: r.pillars[3].pillar.branch, strength: a.strength.label, gyeok: a.gyeokguk.name, yongEl: a.yongsin.primary, avoidEl: a.yongsin.gisin, missing: a.elementStatus.missing, lack: a.elementStatus.lack }
-  return { week, who, date: iso(day), dayGanzi: base.dayGanzi, score: axes.total, axes, slots, bestSlot, flow, base, luck: raws[mid].luck, top: order[0], low: order[order.length - 1], deltaYesterday: axes.total - yScore }
+  const S = soft
+  const sAxes = {} as Record<AxisKey, number>
+  for (const k of AXES) sAxes[k] = S(axes[k])
+  return { week: week.map((w) => ({ ...w, score: S(w.score) })), who, date: iso(day), dayGanzi: base.dayGanzi, score: S(axes.total), axes: sAxes, slots: slots.map((x) => ({ ...x, score: S(x.score) })), bestSlot, flow: flow.map((f) => ({ ...f, score: S(f.score) })), base, luck: raws[mid].luck, top: order[0], low: order[order.length - 1], deltaYesterday: S(axes.total) - S(yScore) }
 }

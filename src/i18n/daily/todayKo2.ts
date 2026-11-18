@@ -1,6 +1,7 @@
 /** 오늘의 운세 2.0 보강 문구 (시간대 비유·영역 중간문장·행운 확장·근거·프로필·띠·별자리). "경향" 어조. */
 import type { Element } from '../../engine/types'
 import type { TodayData, SlotKey } from '../../myeongri/today'
+import { soft } from '../../myeongri/today'
 import { DM } from '../../myeongri/plain'
 
 export type Tier = 'hi' | 'mid' | 'lo'
@@ -136,7 +137,7 @@ export function zodiacToday(dayBranch: string, myBranch: string, seed: number, d
     const pair = (L: number[][]) => L.some(([x, y]) => (x === d && y === i) || (x === i && y === d))
     const rel: Rel = i === d ? 'same' : (i - d + 12) % 12 === 6 ? 'chung' : pair(HAP) ? 'hap' : (i % 4 === d % 4) ? 'sam' : pair(WON) ? 'won' : 'none'
     const jit = ((seed + i * 31) % 7) - 3
-    const score = Math.max(40, Math.min(94, Math.round(62 + REL_RAW[rel] * 11 + jit)))
+    const score = soft(Math.max(40, Math.min(94, Math.round(62 + REL_RAW[rel] * 11 + jit))))
     const years = [2020, 2008, 1996, 1984, 1972, 1960].map((y) => y - (((y - 4) % 12) - i + 12) % 12).filter((y) => y <= 2020).slice(0, 4).map((y) => String(y).slice(2)).join('·')
     return { key: i, name: nm + '띠', years: years, rel, relLabel: REL_LABEL[rel], score, text: pick(REL_TXT[rel], seed, i), mine: BH[i] === myBranch, byYear: yearLines(dayStem, i, seed) }
   })
@@ -162,7 +163,7 @@ export function starToday(moonSign: number, mySign: number, seed: number): StarR
     const df = (i - moonSign + 12) % 12
     const rel: SRel = df === 0 ? 'same' : df === 4 || df === 8 ? 'trine' : df === 2 || df === 10 ? 'sextile' : df === 3 || df === 9 ? 'square' : df === 6 ? 'opp' : 'none'
     const jit = ((seed + i * 17) % 7) - 3
-    return { key: i, name: nm, date: SIGN_DATE[i], rel, relLabel: SREL_LABEL[rel], score: Math.max(40, Math.min(94, Math.round(62 + SREL_RAW[rel] * 10 + jit))), text: pick(SREL_TXT[rel], seed, i), mine: i === mySign }
+    return { key: i, name: nm, date: SIGN_DATE[i], rel, relLabel: SREL_LABEL[rel], score: soft(Math.max(40, Math.min(94, Math.round(62 + SREL_RAW[rel] * 10 + jit)))), text: pick(SREL_TXT[rel], seed, i), mine: i === mySign }
   })
 }
 
