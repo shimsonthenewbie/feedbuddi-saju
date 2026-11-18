@@ -42,8 +42,8 @@ export interface TodayData {
   who: { dayStem: string; dayBranch: string; yearBranch: string; strength: string; gyeok: string; yongEl: Element; avoidEl: Element; missing: Element[]; lack: Element[] }
 }
 
-/** 화면에 보이는 점수 눈금. 내부 계산(35~98)을 점신 같은 절대 기준 앱과 지금 점수의 딱 중간(약 41~73)으로 당긴다. 문구·색깔 기준도 이 눈금에 맞춰 두었다. */
-export const soft = (n: number) => Math.round(n * 0.5 + 24)
+/** 화면에 보이는 점수 눈금. 내부 계산(35~98)을 25~92로 옮긴다. 문구·색깔 기준도 이 눈금에 맞춰 두었다. */
+export const soft = (n: number) => Math.round(25 + ((n - 35) * 67) / 63)
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
 const toScore = (p: number, jit: number) => clamp(Math.round(40 + 54 * p + jit), 35, 98)
 

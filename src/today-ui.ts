@@ -11,7 +11,7 @@ import { art } from './art'
 import { composeTodayKo, LOADING_TIPS, type TodayViewKo } from './i18n/daily/todayKo'
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
-const band = (s: number) => (s >= 62 ? 'hi' : s >= 52 ? 'mid' : 'lo')
+const band = (s: number) => (s >= 68 ? 'hi' : s >= 46 ? 'mid' : 'lo')
 
 function ring(score: number): string {
   const C = 2 * Math.PI * 52
@@ -40,7 +40,7 @@ function radar(axes: TodayViewKo['axes']): string {
 
 function flowChart(flow: TodayViewKo['flow']): string {
   const X = [34, 92, 150, 208, 266]
-  const y = (s: number) => 112 - ((Math.min(80, Math.max(36, s)) - 36) / 44) * 82
+  const y = (s: number) => 112 - ((Math.min(92, Math.max(25, s)) - 25) / 67) * 82
   const pts = flow.map((f, i) => `${X[i]},${y(f.score).toFixed(1)}`)
   const area = `M${X[0]},124 L${pts.join(' L')} L${X[4]},124 Z`
   const dots = flow.map((f, i) => `<circle cx="${X[i]}" cy="${y(f.score).toFixed(1)}" r="${f.today ? 6 : 4}" fill="${f.today ? 'var(--seal)' : 'var(--card)'}" stroke="var(--seal)" stroke-width="2"/><text x="${X[i]}" y="${(y(f.score) - 11).toFixed(1)}" text-anchor="middle" class="${f.today ? 't2fs on' : 't2fs'}">${f.score}</text><text x="${X[i]}" y="142" text-anchor="middle" class="${f.today ? 't2fd on' : 't2fd'}">${esc(f.label)}</text><text x="${X[i]}" y="156" text-anchor="middle" class="t2fd2">${esc(f.date)}</text>`).join('')

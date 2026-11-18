@@ -5,7 +5,7 @@ import { ko } from './ko'
 import { SLOT2, MIDS, CHECK_T, CAUTION_T, EL_EXT, profileOf, reasonOf, slotTail } from './todayKo2'
 
 type Tier = 'hi' | 'mid' | 'lo'
-export const tierOf = (n: number): Tier => (n >= 62 ? 'hi' : n >= 52 ? 'mid' : 'lo')
+export const tierOf = (n: number): Tier => (n >= 68 ? 'hi' : n >= 46 ? 'mid' : 'lo')
 // 자리(salt)마다 서로 독립적으로 고르도록 섞는다. 예전 식은 문장들이 늘 같은 조합으로 묶여 나왔다.
 const pick = <T>(a: T[], seed: number, salt = 0): T => a[((): number => { let h = (seed ^ Math.imul(salt + 1, 0x9e3779b1)) >>> 0; h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0; h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0; return (h ^ (h >>> 16)) >>> 0 })() % a.length]
 const hasBatchim = (w: string) => { const c = w.charCodeAt(w.length - 1); return c >= 0xac00 && c <= 0xd7a3 && (c - 0xac00) % 28 !== 0 }
@@ -98,7 +98,7 @@ export const LOADING_TIPS = [
   '오전·오후·밤은 그 시간의 간지를 내 사주와 따로 맞춰 본 값이에요.',
 ]
 
-const scoreLabel = (s: number) => (s >= 69 ? '오늘은 최고의 날' : s >= 64 ? '아주 좋은 날' : s >= 59 ? '좋은 흐름' : s >= 54 ? '무난한 하루' : s >= 49 ? '차분하게 가는 날' : '쉬어 가는 날')
+const scoreLabel = (s: number) => (s >= 84 ? '오늘은 최고의 날' : s >= 73 ? '아주 좋은 날' : s >= 62 ? '좋은 흐름' : s >= 52 ? '무난한 하루' : s >= 41 ? '차분하게 가는 날' : '쉬어 가는 날')
 const md = (iso: string) => { const [, m, d] = iso.split('-').map(Number); return `${m}/${d}` }
 const mdKo = (iso: string) => { const [, m, d] = iso.split('-').map(Number); return `${m}월 ${d}일` }
 const DNAME = ['그제', '어제', '오늘', '내일', '모레']
@@ -131,7 +131,7 @@ export function composeTodayKo(t: TodayData): TodayViewKo {
   const ev = t.base.event ? pick(ko.event[t.base.event], seed, 1) : ''
   const topN = AXIS_NAME[t.top]; const lowN = AXIS_NAME[t.low]
   const spread = t.axes[t.top] - t.axes[t.low]
-  const axisLine = spread < 4 ? '영역별로 큰 차이 없이 고르게 흘러가는 날이에요.' : `오늘은 ${eun(topN)} 가장 힘이 실리고, ${eun(lowN)} 조금 조심해서 다루면 좋아요.`
+  const axisLine = spread < 8 ? '영역별로 큰 차이 없이 고르게 흘러가는 날이에요.' : `오늘은 ${eun(topN)} 가장 힘이 실리고, ${eun(lowN)} 조금 조심해서 다루면 좋아요.`
   const total = [pick(th.body, seed, 0), ev, pick(TOTAL_ADVICE[tt], seed, 3), axisLine].filter(Boolean).join(' ')
   const sections = (['money', 'love', 'work', 'health', 'study'] as const).map((k, i) => {
     const s = t.axes[k]
@@ -140,13 +140,13 @@ export function composeTodayKo(t: TodayData): TodayViewKo {
   })
   const slots = t.slots.map((s, i) => ({ key: s.key, ...SLOT_NAME[s.key], score: s.score, text: `${pick(SLOT2[s.key][tierOf(s.score)], seed, 30 + i)} ${slotTail(t.who.dayStem, s.ganzi[0], seed, 60 + i, tierOf(s.score) === 'lo')}` }))
   const mx = Math.max(...t.slots.map((s) => s.score)); const mn = Math.min(...t.slots.map((s) => s.score))
-  const bestLine = mx - mn < 4 ? '하루 내내 큰 기복 없이 비슷하게 흘러가요.' : pick([`하루 중 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})에 가장 힘이 실려요. 중요한 일은 이때 해 보세요.`, `오늘은 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})이 가장 좋아요. 약속과 연락은 이 시간으로 잡아 보세요.`, `${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})에 기운이 올라와요. 미뤄 둔 일은 이때 시작하면 수월해요.`, `힘을 쓸 때는 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})이에요. 나머지 시간은 무리하지 말고 아껴 두세요.`], seed, 77)
+  const bestLine = mx - mn < 7 ? '하루 내내 큰 기복 없이 비슷하게 흘러가요.' : pick([`하루 중 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})에 가장 힘이 실려요. 중요한 일은 이때 해 보세요.`, `오늘은 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})이 가장 좋아요. 약속과 연락은 이 시간으로 잡아 보세요.`, `${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})에 기운이 올라와요. 미뤄 둔 일은 이때 시작하면 수월해요.`, `힘을 쓸 때는 ${SLOT_NAME[t.bestSlot].name}(${SLOT_NAME[t.bestSlot].sub})이에요. 나머지 시간은 무리하지 말고 아껴 두세요.`], seed, 77)
   const flow = t.flow.map((f, i) => ({ label: DNAME[i], date: md(f.date), score: f.score, today: f.offset === 0 }))
   const today = t.flow[2].score; const tom = t.flow[3].score
   const peak = [...t.flow].sort((p, q) => q.score - p.score)[0]
-  const trend = tom - today >= 4 ? '내일은 오늘보다 올라가는 흐름이에요. 오늘은 힘을 아끼고 내일을 준비해 보세요.' : today - tom >= 4 ? '내일은 오늘보다 내려가는 흐름이에요. 중요한 일은 오늘 마무리해 두세요.' : '내일도 오늘과 비슷한 흐름이에요.'
+  const trend = tom - today >= 8 ? '내일은 오늘보다 올라가는 흐름이에요. 오늘은 힘을 아끼고 내일을 준비해 보세요.' : today - tom >= 8 ? '내일은 오늘보다 내려가는 흐름이에요. 중요한 일은 오늘 마무리해 두세요.' : '내일도 오늘과 비슷한 흐름이에요.'
   const flowLine = `${trend} 그제부터 모레까지 중 가장 좋은 날은 ${mdKo(peak.date)}이에요.`
-  const delta = t.deltaYesterday >= 2 ? `어제보다 ${t.deltaYesterday}점 올랐어요` : t.deltaYesterday <= -2 ? `어제보다 ${-t.deltaYesterday}점 내려갔어요` : '어제와 비슷해요'
+  const delta = t.deltaYesterday > 3 ? `어제보다 ${t.deltaYesterday}점 올랐어요` : t.deltaYesterday < -3 ? `어제보다 ${-t.deltaYesterday}점 내려갔어요` : '어제와 비슷해요'
   const e1 = t.base.lucky.element
   const E1 = EL[e1]; const X1 = EL_EXT[e1]
   const lucky = [
