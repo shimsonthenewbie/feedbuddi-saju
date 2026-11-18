@@ -710,3 +710,5 @@ details.learn .mrow{margin-top:8px}
 .t2lucky div{position:relative}
 .t2pic.lk{position:absolute;right:8px;top:8px;width:30px;height:30px;object-fit:contain}
 .t2lucky div{padding-right:44px}
+
+.t2basis{margin:6px 4px 14px;font-size:.78rem;line-height:1.55;color:var(--muted,#8a7a5a);text-align:center}

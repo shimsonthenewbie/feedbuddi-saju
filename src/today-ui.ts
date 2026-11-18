@@ -94,6 +94,7 @@ export function todayHtml(r: SajuResult, a: Analysis, date: Date, dayLabel: stri
       ${ring(v.score)}
       <div class="t2hl"><span class="t2lab">${esc(v.label)}</span><h2>${esc(v.headline)}</h2><span class="t2dl">${esc(v.delta)}</span></div>
     </div>
+    <p class="t2basis">내 사주의 앞뒤 한 달 흐름 안에서 오늘이 어느 정도인지 나타낸 점수예요. 다른 앱과는 점수 기준이 달라서 숫자보다 좋은 영역과 시간대를 봐 주세요.</p>
     ${(() => { const S = storyOf(t); return `<div class="t2story"><h3 class="t2h0">오늘 나에게 온 기운</h3><div class="t2vs"><div>${ico('stem-' + S.meKey, t.who.dayStem, 'stem')}<span>나</span><b>${esc(S.meName)}</b><small>${esc(S.meImage)}</small></div><i>×</i><div>${ico('stem-' + S.skyKey, t.dayGanzi[0], 'stem')}<span>오늘 하늘 기운</span><b>${esc(S.skyName)}</b><small>${esc(S.skyImage)}</small></div></div>${S.sky === S.earth ? `<p><b>하늘·땅</b> ${esc(S.sky)} 하늘과 땅이 같은 기운이라 오늘은 이 흐름이 더 뚜렷해요.</p>` : `<p><b>하늘</b> ${esc(S.sky)}</p><p><b>땅(${esc(S.earthName)})</b> ${esc(S.earth)}</p>`}${S.extra ? `<p class="t2ex">${esc(S.extra)}</p>` : ''}</div>` })()}
     <div class="t2acts"><div class="t2act ok"><span>체크</span><b>${esc(v.check.title)}</b><p>${esc(v.check.text)}</p></div><div class="t2act warn"><span>주의</span><b>${esc(v.caution.title)}</b><p>${esc(v.caution.text)}</p></div></div>
     <div class="t2tabs" role="tablist">${tabs.map((x, i) => `<button type="button" role="tab" data-t="${x.id}" aria-selected="${i === 0}" class="${i === 0 ? 'on' : ''} ${band(x.score)}">${mini(x.score)}<b>${esc(x.name)}</b><span>${esc(x.range)}</span></button>`).join('')}</div>
