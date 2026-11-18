@@ -6,10 +6,11 @@
   "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "node scripts/gen-fonts.mjs && node scripts/copy-mediapipe.mjs && vite",
-    "build": "node scripts/gen-fonts.mjs && node scripts/gen-seo.mjs && node scripts/copy-mediapipe.mjs && tsc --noEmit && vite build",
+    "build": "node scripts/gen-fonts.mjs && node scripts/gen-seo.mjs && node scripts/copy-mediapipe.mjs && tsc --noEmit && tsx scripts/verify-dream.ts && vite build",
     "preview": "vite preview",
     "verify:engine": "tsx scripts/verify-engine.ts 3000",
     "verify:analysis": "tsx scripts/verify-analysis.ts",
+    "verify:dream": "tsx scripts/verify-dream.ts",
     "smoke": "node scripts/smoke.cjs"
   },
   "dependencies": {
