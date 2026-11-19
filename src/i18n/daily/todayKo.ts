@@ -122,6 +122,20 @@ export interface TodayViewKo {
   disclaimer: string
 }
 
+/** 점수가 낮은 날(lo)에는 테마 기본 문장이 "좋은 날"로 읽히지 않도록 쓰는 도입 문장 */
+const LO_BODY: Record<string, string[]> = {
+  bijeon: ['나와 닮은 기운이 겹쳐 들어오는 날이에요. 남과 비교하기보다 내 속도로 천천히 가세요.', '내 고집이 세지기 쉬운 날이에요. 한 발 물러서서 듣는 쪽이 훨씬 편해요.'],
+  geopjae: ['사람들 사이에서 에너지를 뺏기기 쉬운 날이에요. 나눠 쓰는 일엔 욕심을 줄이고 내 몫부터 지키세요.', '주변 의견이 많아 마음이 흔들리기 쉬운 날이에요. 내 기준을 한 번 더 확인하세요.'],
+  siksin: ['여유를 부리다 일정이 늘어지기 쉬운 날이에요. 먹고 노는 것도 정해 둔 만큼만 즐기세요.', '표현하고 싶은 마음은 큰데 타이밍이 어긋나기 쉬워요. 말하기 전에 한 번 더 생각해 보세요.'],
+  sanggwan: ['말이 앞서 오해가 생기기 쉬운 날이에요. 센스를 발휘하더라도 말은 짧고 부드럽게 하세요.', '표현력이 넘쳐 선을 넘기 쉬운 날이에요. 중요한 말은 한 템포 쉬고 꺼내세요.'],
+  pyeonjae: ['움직임은 많은데 얻는 것이 적게 느껴지기 쉬운 날이에요. 무리한 약속과 지출은 줄이세요.', '기회가 보여도 서두르면 놓치기 쉬운 날이에요. 확인하고 움직이세요.'],
+  jeongjae: ['차근차근 챙겨야 새는 곳이 없는 날이에요. 큰 결정보다 점검에 집중하세요.', '꾸준함이 오히려 답답하게 느껴질 수 있어요. 오늘은 지키는 것만으로 충분해요.'],
+  pyeongwan: ['압박이나 책임이 평소보다 무겁게 느껴지기 쉬운 날이에요. 혼자 끌어안지 말고 나눠 맡기세요.', '긴장이 높아 실수가 나기 쉬운 날이에요. 중요한 일은 순서를 정해 하나씩 하세요.'],
+  jeonggwan: ['규칙과 약속이 부담으로 다가오기 쉬운 날이에요. 지킬 수 있는 약속만 하세요.', '체면과 평판이 신경 쓰이기 쉬운 날이에요. 무리하지 말고 기본부터 챙기세요.'],
+  pyeonin: ['생각이 많아져 결론이 늦어지기 쉬운 날이에요. 새로운 일보다 하던 일을 마무리하세요.', '직감이 흔들리기 쉬운 날이에요. 느낌만으로 정하지 말고 근거를 한 번 확인하세요.'],
+  jeongin: ['도움을 기다리다 시간만 흘러가기 쉬운 날이에요. 필요하면 먼저 부탁하세요.', '배우고 쉬어야 할 기운이 부담으로 느껴질 수 있어요. 무리하지 말고 쉬면서 채우세요.'],
+}
+
 export function composeTodayKo(t: TodayData): TodayViewKo {
   const seed = t.base.seed
   const tt = tierOf(t.score)
@@ -132,7 +146,8 @@ export function composeTodayKo(t: TodayData): TodayViewKo {
   const topN = AXIS_NAME[t.top]; const lowN = AXIS_NAME[t.low]
   const spread = t.axes[t.top] - t.axes[t.low]
   const axisLine = spread < 8 ? '영역별로 큰 차이 없이 고르게 흘러가는 날이에요.' : `오늘은 ${eun(topN)} 가장 힘이 실리고, ${eun(lowN)} 조금 조심해서 다루면 좋아요.`
-  const total = [pick(th.body, seed, 0), ev, pick(TOTAL_ADVICE[tt], seed, 3), axisLine].filter(Boolean).join(' ')
+  const intro = tt === 'lo' && LO_BODY[t.base.theme] ? pick(LO_BODY[t.base.theme], seed, 0) : pick(th.body, seed, 0)
+  const total = [intro, ev, pick(TOTAL_ADVICE[tt], seed, 3), axisLine].filter(Boolean).join(' ')
   const sections = (['money', 'love', 'work', 'health', 'study'] as const).map((k, i) => {
     const s = t.axes[k]
     const a = AXT[k][tierOf(s)]
