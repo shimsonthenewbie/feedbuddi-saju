@@ -11,6 +11,7 @@ export const DM: Record<string, string> = {
   戊: '든든한 큰 산', 己: '곡식을 길러 내는 논밭', 庚: '단단한 바위와 쇠', 辛: '잘 다듬어진 보석',
   壬: '크게 흐르는 바다와 강', 癸: '조용히 스며드는 비와 이슬',
 }
+const HK: Record<string, string> = { 甲: '갑', 乙: '을', 丙: '병', 丁: '정', 戊: '무', 己: '기', 庚: '경', 辛: '신', 壬: '임', 癸: '계', 子: '자', 丑: '축', 寅: '인', 卯: '묘', 辰: '진', 巳: '사', 午: '오', 未: '미', 申: '신', 酉: '유', 戌: '술', 亥: '해' }
 const HELP: Record<string, string> = {
   tree: '새로 시작하고 키우는 일, 배우는 일', fire: '사람 앞에 나서고 알리는 일', earth: '꾸준히 쌓고 안정시키는 일',
   metal: '결정하고 정리하고, 가진 것을 결과물로 꺼내 놓는 일', water: '생각하고 모으고, 사람과 정보 사이를 오가는 일',
@@ -54,7 +55,7 @@ export function plainRead(r: SajuResult, a: Analysis = analyze(r)): PlainCard {
   const dm = a.dayStem
   const y = a.yongsin
   const rows: [string, string][] = []
-  rows.push(['나는 어떤 사람', `나를 뜻하는 글자는 ${dm}이고, ${DM[dm] ?? ''} 같은 기운이에요.`])
+  rows.push(['나는 어떤 사람', `나를 뜻하는 글자는 ${dm}(${HK[dm] ?? ''})이고, ${DM[dm] ?? ''} 같은 기운이에요.`])
   const st = a.strength
   const why = [st.deukryeong && '태어난 달', st.deukji && '앉은 자리', st.deukse && '주변 기운'].filter(Boolean).join('·') + (st.deukryeong || st.deukji || st.deukse ? '이 모두 나를 받쳐 줘요' : '의 도움이 적어요')
   rows.push(['내 기운의 세기', `${a.strength.label}. ${STR[a.strength.label] ?? ''} (근거: ${why})`])
@@ -66,7 +67,7 @@ export function plainRead(r: SajuResult, a: Analysis = analyze(r)): PlainCard {
   if (now) {
     const E: Record<string, string> = { 甲: 'tree', 乙: 'tree', 丙: 'fire', 丁: 'fire', 戊: 'earth', 己: 'earth', 庚: 'metal', 辛: 'metal', 壬: 'water', 癸: 'water', 子: 'water', 亥: 'water', 寅: 'tree', 卯: 'tree', 巳: 'fire', 午: 'fire', 辰: 'earth', 戌: 'earth', 丑: 'earth', 未: 'earth', 申: 'metal', 酉: 'metal' }
     const has = E[now.ganzi[0]] === y.primary || E[now.ganzi[1]] === y.primary
-    rows.push(['지금 10년 흐름', `${now.age}세부터 ${now.ganzi} 흐름이에요. ${has ? `필요한 ${ELS[y.primary]} 기운이 들어 있어서, 가진 것을 밖으로 꺼내 쓰기 좋은 때예요.` : `필요한 ${ELS[y.primary]} 기운은 이 흐름에 직접 들어 있지 않아요. 해마다·달마다 들어오는 때를 노려 보세요.`}`])
+    rows.push(['지금 10년 흐름', `${now.age}세부터 ${now.ganzi}(${[...now.ganzi].map((c) => HK[c] ?? c).join('')}) 흐름이에요. ${has ? `필요한 ${ELS[y.primary]} 기운이 들어 있어서, 가진 것을 밖으로 꺼내 쓰기 좋은 때예요.` : `필요한 ${ELS[y.primary]} 기운은 이 흐름에 직접 들어 있지 않아요. 해마다·달마다 들어오는 때를 노려 보세요.`}`])
   }
   void yearLuck
   rows.splice(4, 0, ['용신을 찾은 방식', `${y.basis}용신 방식으로 찾았어요. ${y.basis === '억부' ? '내 기운이 센지 약한지를 먼저 보고 정했어요.' : '태어난 계절의 날씨를 맞추는 쪽으로 정했어요.'}`])

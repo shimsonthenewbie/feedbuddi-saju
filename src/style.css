@@ -739,3 +739,14 @@ details.learn .mrow{margin-top:8px}
 .bs.none{background:#f3dcd6;color:#8a2f1d}.bs.low{background:#f6ead0;color:#7a5a12}.bs.ok{background:#dfeedd;color:#2f6a2b}.bs.high{background:#e0e6f3;color:#2f4a86}
 .lk.now{outline:2px solid var(--gold);outline-offset:-2px}
 .lk.now b{color:var(--ink);font-weight:700}
+
+/* 풀이 글 가독성: 소제목은 윗줄에, 본문은 아랫줄에 크고 느슨하게 (줄바꿈은 단어 단위) */
+.rcard:not(.mom) .mrow{display:block;padding:14px 0;border-top:1px solid var(--line)}
+.rcard:not(.mom) .mrow:first-of-type{border-top:0;padding-top:6px}
+.rcard:not(.mom) .mrow b{display:block;margin:0 0 4px;font-size:14px;font-weight:700;color:var(--seal,#6a2623);letter-spacing:.01em}
+.rcard:not(.mom) .mrow span{display:block;font-size:16px;line-height:1.8;color:var(--ink);word-break:keep-all;overflow-wrap:break-word}
+.rcard p{font-size:16px;line-height:1.8;word-break:keep-all;overflow-wrap:break-word}
+.rcard p+p{margin-top:12px}
+.rcard .fhead{font-weight:700;font-size:17px;line-height:1.6}
+.rcard h3{margin-bottom:8px}
+details.learn .mrow{padding:10px 0}
