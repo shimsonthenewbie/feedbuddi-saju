@@ -712,3 +712,30 @@ details.learn .mrow{margin-top:8px}
 .t2lucky div{padding-right:44px}
 
 .t2basis{margin:6px 4px 14px;font-size:.78rem;line-height:1.55;color:var(--muted,#8a7a5a);text-align:center}
+
+/* 내 사주 가독성: 요약 → 여덟 글자 → 오행 순서, 한글 읽기와 상태 표시 */
+.chart{padding-bottom:18px}
+.chart h3{margin:22px 0 8px;font-size:16px;color:var(--ink)}
+.brief{background:var(--inset);border-radius:14px;padding:14px 14px 6px;margin:4px 0 6px}
+.bhead{display:flex;align-items:center;gap:12px}
+.bhead .ch.inline{width:48px;height:48px;font-size:28px;margin:0;flex:none}
+.bhead b{display:block;font-size:17px;line-height:1.4}
+.bhead small{display:block;color:var(--mute);font-size:13px;margin-top:2px}
+.bl3{list-style:none;margin:12px 0 0;padding:0}
+.bl3 li{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:15px;line-height:1.45}
+.bl3 em{font-style:normal;color:var(--mute);flex:none}
+.bl3 span{text-align:right;font-weight:600}
+.rd{display:block;font-size:13px;color:var(--ink);margin:-1px 0 2px}
+.pillar .ss{font-size:13px;color:var(--mute)}
+.hint{margin:10px 2px 0;font-size:13px;line-height:1.55;color:var(--mute)}
+.us-d{margin-top:10px}
+.uso{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center;padding:8px 0 2px}
+.uso em{display:block;font-style:normal;font-size:12px;color:var(--mute)}
+.uso b{font-size:15px}
+.bar{gap:8px;margin:9px 0;font-size:15px}
+.bl{width:58px}.bl small{color:var(--mute);font-size:12px}
+.bn{width:16px;font-weight:600}
+.bs{flex:none;min-width:58px;text-align:center;font-size:12.5px;border-radius:999px;padding:3px 8px;background:var(--inset);color:var(--ink)}
+.bs.none{background:#f3dcd6;color:#8a2f1d}.bs.low{background:#f6ead0;color:#7a5a12}.bs.ok{background:#dfeedd;color:#2f6a2b}.bs.high{background:#e0e6f3;color:#2f4a86}
+.lk.now{outline:2px solid var(--gold);outline-offset:-2px}
+.lk.now b{color:var(--ink);font-weight:700}

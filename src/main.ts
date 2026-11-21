@@ -4,6 +4,7 @@ import './style.css'
 import { calculateSaju } from './engine/saju'
 import { SEOUL, filterCities, formatCityName, type City } from './engine/cities'
 import { BRANCH_ELEMENT, STEM_INFO } from './engine/constants'
+import { DM } from './myeongri/plain'
 import type { SajuResult } from './engine/types'
 import tzlookup from '@photostructure/tz-lookup'
 import { buildPrompt, chartText, type Lang, type Person } from './prompt'
@@ -1759,8 +1760,17 @@ function plainHtml(r: SajuResult): string {
   if (lang !== 'ko') return ''
   try { const c = plainRead(r); return `<article class="rcard"><h3>${esc(c.title)}</h3>${c.rows.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}<details class="learn"><summary>용신이 뭐예요? (종류별 설명)</summary>${c.learn.map(([k, v]) => `<div class="mrow"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('')}</details><p class="meta">${esc(c.note)}</p></article>` } catch { return '' }
 }
+const STEM_KO: Record<string, string> = { 甲: '갑', 乙: '을', 丙: '병', 丁: '정', 戊: '무', 己: '기', 庚: '경', 辛: '신', 壬: '임', 癸: '계' }
+const BRANCH_KO: Record<string, string> = { 子: '자', 丑: '축', 寅: '인', 卯: '묘', 辰: '진', 巳: '사', 午: '오', 未: '미', 申: '신', 酉: '유', 戌: '술', 亥: '해' }
+const EL_NAME_KO: Record<El, string> = { tree: '나무', fire: '불', earth: '흙', metal: '쇠', water: '물' }
+const EL_HAN_KO: Record<El, string> = { tree: '목', fire: '화', earth: '토', metal: '금', water: '수' }
+const stemElKo = (s: string) => { const e = stemEl(s); return e ? EL_HAN_KO[e] : '' }
+const branchElKo = (b: string) => { const e = branchEl(b); return e ? EL_HAN_KO[e] : '' }
+const elState = (n: number): [string, string] => (n === 0 ? ['없어요', 'none'] : n === 1 ? ['적어요', 'low'] : n <= 3 ? ['알맞아요', 'ok'] : ['많아요', 'high'])
+
 function chartHtml(p: Person): string {
   const x = t()
+  const ko = lang === 'ko'
   const r: SajuResult = p.result
   const unkTime = !!r.input.unknownTime
   const counts: Record<El, number> = { tree: 0, fire: 0, earth: 0, metal: 0, water: 0 }
@@ -1770,26 +1780,54 @@ function chartHtml(p: Person): string {
     const be = hide ? null : branchEl(d.pillar.branch)
     if (se) counts[se]++
     if (be) counts[be]++
+    const sipS = hide ? '?' : esc(ko ? (SIP_KO[d.stemSipsin] ?? d.stemSipsin) : d.stemSipsin)
+    const sipB = hide ? '?' : esc(ko ? (SIP_KO[d.branchSipsin] ?? d.branchSipsin) : d.branchSipsin)
+    const rdS = ko && !hide ? `<span class="rd">${STEM_KO[d.pillar.stem] ?? ''}${stemElKo(d.pillar.stem)}</span>` : ''
+    const rdB = ko && !hide ? `<span class="rd">${BRANCH_KO[d.pillar.branch] ?? ''}${branchElKo(d.pillar.branch)}</span>` : ''
     return `<div class="pillar ${i === 1 ? 'me' : ''}">
-      <div class="plabel">${x.pillars[i]}</div>
-      <div class="ss">${hide ? '?' : esc(lang === 'ko' ? (SIP_KO[d.stemSipsin] ?? d.stemSipsin) : d.stemSipsin)}</div>
-      <div class="ch ${se ? EL_CLASS[se] : ''}">${hide ? '?' : d.pillar.stem}</div>
-      <div class="ch ${be ? EL_CLASS[be] : ''}">${hide ? '?' : d.pillar.branch}</div>
-      <div class="ss">${hide ? '?' : esc(lang === 'ko' ? (SIP_KO[d.branchSipsin] ?? d.branchSipsin) : d.branchSipsin)}</div>
-      <div class="us">${hide ? '' : esc(lang === 'ko' ? (UN_KO[d.unseong] ?? d.unseong) : d.unseong)}</div>
+      <div class="plabel">${ko ? (i === 1 ? '나(일)' : x.pillars[i] + '주') : x.pillars[i]}</div>
+      <div class="ss">${sipS}</div>
+      <div class="ch ${se ? EL_CLASS[se] : ''}">${hide ? '?' : d.pillar.stem}</div>${rdS}
+      <div class="ch ${be ? EL_CLASS[be] : ''}">${hide ? '?' : d.pillar.branch}</div>${rdB}
+      <div class="ss">${sipB}</div>
     </div>`
   })
   const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1
-  const bars = EL.map((k, i) => `<div class="bar"><span class="bl">${EL_EMOJI[k]} ${x.elements[i]}</span><span class="track"><span class="fill ${EL_CLASS[k]}" style="width:${(counts[k] / total) * 100}%"></span></span><span class="bn">${counts[k]}</span></div>`).join('')
+  const bars = EL.map((k, i) => {
+    const [st, cls] = elState(counts[k])
+    return `<div class="bar"><span class="bl">${ko ? `<b>${EL_NAME_KO[k]}</b> <small>${EL_HAN_KO[k]}</small>` : `${EL_EMOJI[k]} ${x.elements[i]}`}</span><span class="track"><span class="fill ${EL_CLASS[k]}" style="width:${(counts[k] / total) * 100}%"></span></span><span class="bn">${counts[k]}</span>${ko ? `<span class="bs ${cls}">${st}</span>` : ''}</div>`
+  }).join('')
   const dm = r.pillars[1].pillar.stem
   const dmEl = stemEl(dm)
-  const luck = r.daewoon.map((d) => `<div class="lk"><b>${d.age}${x.age}</b><span class="ch sm ${stemEl(d.ganzi[0]) ? EL_CLASS[stemEl(d.ganzi[0])!] : ''}">${d.ganzi[0]}</span><span class="ch sm ${branchEl(d.ganzi[1]) ? EL_CLASS[branchEl(d.ganzi[1])!] : ''}">${d.ganzi[1]}</span></div>`).join('')
-  const title = lang === 'ko' ? `${p.label}${x.who}` : p.label === x.me ? 'My chart' : `${p.label}'s chart`
+  const now = Date.now()
+  const curIdx = r.daewoon.reduce((acc, d, i) => (new Date(d.startDate).getTime() <= now ? i : acc), -1)
+  const luck = r.daewoon.map((d, i) => `<div class="lk${i === curIdx ? ' now' : ''}"><b>${d.age}${x.age}${ko && i === curIdx ? ' · 지금' : ''}</b><span class="ch sm ${stemEl(d.ganzi[0]) ? EL_CLASS[stemEl(d.ganzi[0])!] : ''}">${d.ganzi[0]}</span><span class="ch sm ${branchEl(d.ganzi[1]) ? EL_CLASS[branchEl(d.ganzi[1])!] : ''}">${d.ganzi[1]}</span></div>`).join('')
+  const title = ko ? `${p.label}${x.who}` : p.label === x.me ? 'My chart' : `${p.label}'s chart`
+  let brief = ''
+  if (ko) {
+    try {
+      const a = analyze(r)
+      const top = EL.reduce((m, k) => (counts[k] > counts[m] ? k : m), EL[0])
+      const lack = EL.filter((k) => counts[k] === 0).map((k) => EL_NAME_KO[k])
+      brief = `<div class="brief">
+        <div class="bhead"><span class="ch inline ${dmEl ? EL_CLASS[dmEl] : ''}">${dm}</span><div><b>${STEM_KO[dm] ?? ''}${dmEl ? EL_HAN_KO[dmEl] : ''} · ${esc(DM[dm] ?? '')}</b><small>나를 나타내는 글자(일간)예요</small></div></div>
+        <ul class="bl3">
+          <li><em>기운의 세기</em><span>${esc(a.strength.label)}</span></li>
+          <li><em>가장 많은 기운</em><span>${EL_NAME_KO[top]}(${EL_HAN_KO[top]}) ${counts[top]}개</span></li>
+          <li><em>없는 기운</em><span>${lack.length ? esc(lack.join('·')) : '없는 기운 없이 고루 있어요'}</span></li>
+          <li><em>내게 필요한 기운</em><span>${EL_NAME_KO[a.yongsin.primary as El]}(${EL_HAN_KO[a.yongsin.primary as El]})</span></li>
+        </ul></div>`
+    } catch { /* 요약 없이 진행 */ }
+  }
+  const unseong = ko && !unkTime ? `<details class="learn us-d"><summary>12운성 보기 (기운의 시기별 세기)</summary><div class="uso">${r.pillars.map((d, i) => `<div><em>${x.pillars[i]}주</em><b>${esc(UN_KO[d.unseong] ?? d.unseong)}</b></div>`).join('')}</div></details>` : ''
   return `<article class="card chart">
     <h2>${esc(title)}</h2>
     <p class="meta">${r.input.year}.${r.input.month}.${r.input.day}${unkTime ? '' : ` ${String(r.input.hour).padStart(2, '0')}:${String(r.input.minute).padStart(2, '0')}`} · ${esc(p.placeName)}</p>
+    ${brief}
+    <h3>${ko ? '내 사주 여덟 글자' : x.dayMaster}</h3>
     <div class="pillars">${cells.join('')}</div>
-    <p class="dm">${x.dayMaster}: <span class="ch inline ${dmEl ? EL_CLASS[dmEl] : ''}">${dm}</span></p>
+    ${ko ? '<p class="hint">위 칸은 십성(나와의 관계), 가운데는 천간·지지(하늘과 땅의 글자), 글자 색은 오행이에요.</p>' : `<p class="dm">${x.dayMaster}: <span class="ch inline ${dmEl ? EL_CLASS[dmEl] : ''}">${dm}</span></p>`}
+    ${unseong}
     <h3>${x.elTitle}</h3><div class="bars">${bars}</div>
     <h3>${x.luck}</h3><div class="luck">${luck}</div>
   </article>`
