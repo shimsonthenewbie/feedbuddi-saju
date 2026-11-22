@@ -4,6 +4,7 @@ import './style.css'
 import { calculateSaju } from './engine/saju'
 import { SEOUL, filterCities, formatCityName, type City } from './engine/cities'
 import { BRANCH_ELEMENT, STEM_INFO } from './engine/constants'
+import { Lunar } from 'lunar-javascript'
 import { DM } from './myeongri/plain'
 import type { SajuResult } from './engine/types'
 import tzlookup from '@photostructure/tz-lookup'
@@ -1104,16 +1105,30 @@ function showFree() {
 }
 
 /** 연·월·일 따로 고르는 칸. 값은 숨은 input(name)에 YYYY-MM-DD로 모은다. */
+/** 음력 생일(윤달 포함)을 양력 YYYY-MM-DD로 바꾼다. 그 달에 없는 날짜면 null. */
+function lunarToSolar(y: number, m: number, d: number, leap: boolean): string | null {
+  try {
+    const s = Lunar.fromYmd(y, leap ? -m : m, d).getSolar()
+    const b = s.getLunar()
+    if (b.getYear() !== y || b.getMonth() !== (leap ? -m : m) || b.getDay() !== d) return null
+    return `${s.getYear()}-${String(s.getMonth()).padStart(2, '0')}-${String(s.getDay()).padStart(2, '0')}`
+  } catch { return null }
+}
 function dateField(name: string): string {
   const x = t()
+  const ko = lang === 'ko'
   const yNow = new Date().getFullYear()
   const ys = Array.from({ length: yNow - 1919 }, (_, i) => yNow - i).map((v) => `<option value="${v}">${v}</option>`).join('')
   const ms = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')
   const ds = Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')
-  return `<div class="dsel" data-dt="date"><span class="lbl">${x.date}</span><div class="sels">
+  const cal = ko ? ['양력', '음력', '음력(윤달)'] : ['Solar', 'Lunar', 'Lunar (leap)']
+  return `<div class="dsel" data-dt="date" data-cal="solar"><span class="lbl">${x.date}</span>
+    <div class="calseg" role="group" aria-label="${ko ? '양력 음력 선택' : 'Calendar type'}">${(['solar', 'lunar', 'leap'] as const).map((k, i) => `<button type="button" data-c="${k}" aria-pressed="${i === 0}">${cal[i]}</button>`).join('')}</div>
+    <div class="sels">
     <select aria-label="${x.selY}" data-k="y"><option value="">${x.selY}</option>${ys}</select>
     <select aria-label="${x.selM}" data-k="m"><option value="">${x.selM}</option>${ms}</select>
     <select aria-label="${x.selD}" data-k="d"><option value="">${x.selD}</option>${ds}</select></div>
+    <p class="note calhint" hidden></p>
     <input type="hidden" name="${name}"></div>`
 }
 /** 시·분 따로 고르는 칸(00~23시). 값은 숨은 input(name)에 HH:MM. */
@@ -1135,16 +1150,35 @@ function bindDT(root: ParentNode) {
     const sync = () => {
       if (box.dataset.dt === 'date') {
         const dsel = sel('d'), y = +sel('y').value, m = +sel('m').value
-        const max = y && m ? new Date(y, m, 0).getDate() : 31
+        const calk = box.dataset.cal || 'solar'
+        const hint = box.querySelector<HTMLElement>('.calhint')!
+        const max = calk !== 'solar' ? 30 : y && m ? new Date(y, m, 0).getDate() : 31
         Array.from(dsel.options).forEach((o) => { if (o.value) o.hidden = o.disabled = +o.value > max })
         if (+dsel.value > max) dsel.value = String(max)
-        hid.value = y && m && dsel.value ? `${y}-${pad(m)}-${pad(dsel.value)}` : ''
+        if (calk === 'solar') {
+          hid.value = y && m && dsel.value ? `${y}-${pad(m)}-${pad(dsel.value)}` : ''
+          hint.hidden = true
+        } else if (y && m && dsel.value) {
+          const sol = lunarToSolar(y, m, +dsel.value, calk === 'leap')
+          hid.value = sol ?? ''
+          hint.hidden = false
+          hint.classList.toggle('bad', !sol)
+          const ko = lang === 'ko'
+          hint.textContent = sol
+            ? (ko ? `양력 ${sol.slice(0, 4)}년 ${+sol.slice(5, 7)}월 ${+sol.slice(8, 10)}일로 계산해요.` : `Calculated as the solar date ${sol}.`)
+            : (ko ? '그 해·달에는 없는 음력 날짜예요. 날짜나 윤달 선택을 확인해 주세요.' : 'That lunar date does not exist. Check the day or leap-month choice.')
+        } else { hid.value = ''; hint.hidden = true }
       } else {
         hid.value = sel('h').value ? `${pad(sel('h').value)}:${pad(sel('mi').value || 0)}` : ''
       }
       hid.dispatchEvent(new Event('input', { bubbles: true }))
     }
     box.querySelectorAll('select').forEach((e) => e.addEventListener('change', sync))
+    box.querySelectorAll<HTMLButtonElement>('.calseg button').forEach((bt) => bt.addEventListener('click', () => {
+      box.dataset.cal = bt.dataset.c!
+      box.querySelectorAll('.calseg button').forEach((o) => o.setAttribute('aria-pressed', String(o === bt)))
+      sync()
+    }))
   })
 }
 const setDT = (root: ParentNode, dis: boolean) => root.querySelectorAll<HTMLSelectElement>('.dsel[data-dt=time] select').forEach((e) => (e.disabled = dis))

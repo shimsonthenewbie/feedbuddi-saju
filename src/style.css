@@ -750,3 +750,10 @@ details.learn .mrow{margin-top:8px}
 .rcard .fhead{font-weight:700;font-size:17px;line-height:1.6}
 .rcard h3{margin-bottom:8px}
 details.learn .mrow{padding:10px 0}
+
+/* 양력·음력·윤달 선택 */
+.calseg{display:flex;gap:6px;margin:6px 0 2px}
+.calseg button{flex:1;padding:9px 6px;border:1.5px solid var(--line);border-radius:999px;background:var(--card,var(--inset));color:var(--ink);font:inherit;font-size:14.5px;cursor:pointer}
+.calseg button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:700}
+.calhint{margin:6px 2px 0;font-size:13.5px;color:var(--mute)}
+.calhint.bad{color:#b3261e}
