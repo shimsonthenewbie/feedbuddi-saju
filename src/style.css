@@ -757,3 +757,19 @@ details.learn .mrow{padding:10px 0}
 .calseg button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:700}
 .calhint{margin:6px 2px 0;font-size:13.5px;color:var(--mute)}
 .calhint.bad{color:#b3261e}
+
+/* 저장된 사람 고르기 */
+.whobar2{margin:8px 0 12px}
+.pplrow{display:flex;flex-wrap:wrap;gap:8px}
+.pchip{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:999px;background:var(--card,var(--inset));overflow:hidden}
+.pchip .pname{border:0;background:transparent;padding:9px 14px;font:inherit;font-size:15px;color:var(--ink);cursor:pointer}
+.pchip .pdel{border:0;background:transparent;padding:9px 11px 9px 0;font:inherit;font-size:17px;line-height:1;color:var(--mute);cursor:pointer}
+.pchip.on{background:var(--ink);border-color:var(--ink)}
+.pchip.on .pname{color:#fff;font-weight:700}
+.pchip.on .pdel{color:#fff}
+.pchip.add{padding:9px 14px;font:inherit;font-size:15px;color:var(--ink);cursor:pointer;border-style:dashed}
+.whobar2 .note{margin:8px 2px 0;font-size:13px}
+
+.gloss dl{margin:10px 0 2px}
+.gloss dt{margin-top:12px;font-weight:700;font-size:15px;color:var(--seal,#6a2623)}
+.gloss dd{margin:3px 0 0;font-size:15px;line-height:1.75;word-break:keep-all}

@@ -280,10 +280,29 @@ const T = {
 /* ───────── 저장된 프로필 (이 기기에만) ───────── */
 interface Profile { y: number; m: number; d: number; hh: number; mm: number; gender: 'M' | 'F'; unk: boolean; lat: number; lon: number; place: string }
 const PKEY = 'fb-saju-profile'
+interface Friend { id: string; name: string; p: Profile }
+const FKEY = 'fb-saju-friends'
+let memFriends: Friend[] | null = null
+function loadFriends(): Friend[] {
+  if (memFriends) return memFriends
+  try { const raw = localStorage.getItem(FKEY); memFriends = raw ? (JSON.parse(raw) as Friend[]) : [] } catch { memFriends = [] }
+  return memFriends
+}
+function storeFriends(f: Friend[]) { memFriends = f; try { localStorage.setItem(FKEY, JSON.stringify(f)) } catch { /* 저장 불가 환경 */ } }
+const sameProfile = (a: Profile, b: Profile) => a.y === b.y && a.m === b.m && a.d === b.d && a.hh === b.hh && a.mm === b.mm && a.gender === b.gender && a.unk === b.unk
+/** 친구로 본 사람은 이 기기에만 저장해 두었다가 다음에 한 번에 고르게 한다(최대 8명). */
+function rememberFriend(label: string, v: Profile) {
+  const list = loadFriends().slice()
+  const typed = !!label && label !== t().me
+  const i = list.findIndex((f) => sameProfile(f.p, v))
+  if (i >= 0) { if (typed) list[i] = { ...list[i], name: label }; storeFriends(list); return }
+  list.push({ id: Date.now().toString(36), name: typed ? label : (lang === 'ko' ? `친구 ${list.length + 1}` : `Friend ${list.length + 1}`), p: v })
+  storeFriends(list.slice(-8))
+}
 function saveProfile(p: Person) {
   const i = p.result.input
   const v: Profile = { y: i.year, m: i.month, d: i.day, hh: i.hour, mm: i.minute, gender: i.gender, unk: !!i.unknownTime, lat: i.latitude ?? SEOUL.lat, lon: i.longitude ?? SEOUL.lon, place: p.placeName }
-  if (guestAsk) { guestProfile = v; guestAsk = false; return } // 친구 정보는 저장하지 않고 이번에만 쓴다
+  if (guestAsk) { guestProfile = v; guestAsk = false; rememberFriend(p.label, v); return } // 친구는 이 기기에만 저장한다(rememberFriend)
   try { localStorage.setItem(PKEY, JSON.stringify(v)) } catch { /* 저장 불가 환경 */ }
   memProfile = v
 }
@@ -1139,6 +1158,7 @@ function timeField(name: string): string {
   return `<div class="dsel grow" data-dt="time"><span class="lbl">${x.time}</span><div class="sels">
     <select aria-label="${x.selH}" data-k="h"><option value="">${x.selH}</option>${hs}</select>
     <select aria-label="${x.selMi}" data-k="mi">${mi}</select></div>
+    <p class="note calhint" hidden></p>
     <input type="hidden" name="${name}"></div>`
 }
 /** 위 두 칸을 동작시킨다. 값이 바뀌면 숨은 input에 input 이벤트를 보낸다. */
@@ -1170,6 +1190,16 @@ function bindDT(root: ParentNode) {
         } else { hid.value = ''; hint.hidden = true }
       } else {
         hid.value = sel('h').value ? `${pad(sel('h').value)}:${pad(sel('mi').value || 0)}` : ''
+        const th = box.querySelector<HTMLElement>('.calhint')
+        if (th) {
+          if (lang === 'ko' && hid.value) {
+            const mins = +sel('h').value * 60 + +(sel('mi').value || 0)
+            const idx = Math.floor(((mins + 30) % 1440) / 120)
+            const NM = ['자(子)', '축(丑)', '인(寅)', '묘(卯)', '진(辰)', '사(巳)', '오(午)', '미(未)', '신(申)', '유(酉)', '술(戌)', '해(亥)']
+            const RG = ['23:30~01:29', '01:30~03:29', '03:30~05:29', '05:30~07:29', '07:30~09:29', '09:30~11:29', '11:30~13:29', '13:30~15:29', '15:30~17:29', '17:30~19:29', '19:30~21:29', '21:30~23:29']
+            th.hidden = false; th.textContent = `${NM[idx]}시(${RG[idx]})에 태어났어요. 한국 표준시를 서울 기준으로 맞춘 시간대예요.`
+          } else th.hidden = true
+        }
       }
       hid.dispatchEvent(new Event('input', { bubbles: true }))
     }
@@ -1641,7 +1671,7 @@ function render() {
   </header>
   ${mode === 'home' ? homeHtml() : koOnly() ? koOnlyHtml() : mode === 'face' ? faceHtml() : mode === 'hand' ? handHtml() : mode === 'legal' ? legalHtml() : mode === 'star' ? starHtml() : mode === 'free' ? '<section id="out"></section>' : mode === 'taegil' ? taegilHtml() : mode === 'name' ? nameHtml() : mode === 'tarot' ? tarotHtml() : mode === 'dream' ? dreamHtml() : mode === 'koname' ? konameHtml() : mode === 'shop' ? shopHtml() : (mode === 'today' || mode === 'ask' || mode === 'year' || mode === 'report' || mode === 'pick' || mode === 'exam' || mode === 'tojeong' || mode === 'gusung' || mode === 'mbti' || mode === 'astro' || mode === 'iching') && loadProfile() ? '<section id="out"></section>' : `<form id="form" novalidate>
     ${mode === 'invite' && invite ? `<section class="card promo"><img class="pimg" src="${art('dragon-hello')}" alt="" width="84" height="84"><div><h2>${esc(x.invT(invite.n))}</h2><p>${esc(x.invD)}</p></div></section>` : ''}
-    ${guestAsk ? `<p class="whobar">${lang === 'ko' ? '친구 정보를 넣어 주세요. 저장되지 않고 이번에만 써요.' : 'Enter your friend’s birth info. It is not saved.'} <button type="button" class="linkbtn" id="guestcancel">${lang === 'ko' ? '취소' : 'Cancel'}</button></p>` : ''}
+    ${guestAsk ? `<p class="whobar">${lang === 'ko' ? '친구 정보를 넣어 주세요. 이름을 적으면 이 기기에 저장해 두고 다음에 바로 고를 수 있어요.' : 'Enter your friend’s birth info. It is saved on this device so you can pick it next time.'} <button type="button" class="linkbtn" id="guestcancel">${lang === 'ko' ? '취소' : 'Cancel'}</button></p>` : ''}
     ${personForm('a', guestAsk ? (lang === 'ko' ? '친구' : 'Friend') : x.me)}
     ${mode === 'match' ? personForm('b', x.fav) : ''}
     <p class="err" id="err" role="alert"></p>
@@ -1721,11 +1751,25 @@ function whoBar() {
   document.getElementById('guestcancel')?.addEventListener('click', () => { guestAsk = false; render() })
   const out = document.getElementById('out'); const pr = loadProfile()
   if (!out || !pr || !PROFILE_MODES.includes(mode)) return
-  const ko = lang === 'ko'; const d = `${pr.y}.${pr.m}.${pr.d}`
-  out.insertAdjacentHTML('beforebegin', guestProfile
-    ? `<p class="whobar guest">${ko ? `친구 정보(${d})로 보는 중이에요.` : `Viewing with a friend’s info (${d}).`} <button type="button" class="linkbtn" id="whomine">${ko ? '내 것으로 돌아가기' : 'Back to mine'}</button> · <button type="button" class="linkbtn" id="whofriend">${ko ? '다른 친구 보기' : 'Another friend'}</button></p>`
-    : `<p class="whobar">${ko ? `내 정보(${d})로 보는 중이에요.` : `Viewing with your info (${d}).`} <button type="button" class="linkbtn" id="whofriend">${ko ? '친구 것 보기' : 'View a friend’s'}</button></p>`)
-  document.getElementById('whomine')?.addEventListener('click', () => { guestProfile = null; dayOffset = 0; render() })
+  const ko = lang === 'ko'
+  const friends = loadFriends()
+  const cur = guestProfile
+  const chip = (id: string, name: string, on: boolean, del: boolean) => `<span class="pchip${on ? ' on' : ''}"><button type="button" class="pname" data-who="${id}" aria-pressed="${on}">${esc(name)}</button>${del ? `<button type="button" class="pdel" data-del="${id}" aria-label="${esc(name)} ${ko ? '삭제' : 'remove'}">×</button>` : ''}</span>`
+  const d = `${pr.y}.${pr.m}.${pr.d}`
+  out.insertAdjacentHTML('beforebegin', `<div class="whobar2">
+    <div class="pplrow" role="group" aria-label="${ko ? '누구의 운세를 볼까요' : 'Whose reading?'}">${chip('me', ko ? '나' : 'Me', !cur, false)}${friends.map((f) => chip(f.id, f.name, !!cur && sameProfile(cur, f.p), true)).join('')}<button type="button" class="pchip add" id="whofriend">+ ${ko ? '새 사람' : 'Add'}</button></div>
+    <p class="note">${ko ? `${d}생 정보로 보는 중이에요. 본 사람은 이 기기에만 저장돼요.` : `Using the ${d} birth info. People you view are saved on this device only.`}</p></div>`)
+  document.querySelectorAll<HTMLButtonElement>('.pname').forEach((b) => b.addEventListener('click', () => {
+    const id = b.dataset.who!
+    guestProfile = id === 'me' ? null : (loadFriends().find((f) => f.id === id)?.p ?? null)
+    dayOffset = 0; window.scrollTo(0, 0); render()
+  }))
+  document.querySelectorAll<HTMLButtonElement>('.pdel').forEach((b) => b.addEventListener('click', () => {
+    const f = loadFriends().find((q) => q.id === b.dataset.del)
+    storeFriends(loadFriends().filter((q) => q.id !== b.dataset.del))
+    if (f && guestProfile && sameProfile(guestProfile, f.p)) guestProfile = null
+    render()
+  }))
   document.getElementById('whofriend')?.addEventListener('click', () => { guestProfile = null; guestAsk = true; window.scrollTo(0, 0); render() })
 }
 
@@ -1802,6 +1846,15 @@ const stemElKo = (s: string) => { const e = stemEl(s); return e ? EL_HAN_KO[e] :
 const branchElKo = (b: string) => { const e = branchEl(b); return e ? EL_HAN_KO[e] : '' }
 const elState = (n: number): [string, string] => (n === 0 ? ['없어요', 'none'] : n === 1 ? ['적어요', 'low'] : n <= 3 ? ['알맞아요', 'ok'] : ['많아요', 'high'])
 
+const GLOSSARY = `<details class="learn gloss"><summary>용어가 어려워요? 쉬운 설명 보기</summary><dl>
+  <dt>일간</dt><dd>여덟 글자 중 태어난 날의 위 글자예요. 사주에서 "나 자신"을 뜻해요.</dd>
+  <dt>천간·지지</dt><dd>위 글자(하늘의 기운) 10개를 천간, 아래 글자(땅의 기운) 12개를 지지라고 해요.</dd>
+  <dt>오행</dt><dd>나무·불·흙·쇠·물, 다섯 가지 기운이에요. 글자마다 하나씩 속해 있고, 개수를 세면 어떤 기운이 많고 적은지 보여요.</dd>
+  <dt>십성</dt><dd>나(일간)와 다른 글자가 어떤 관계인지 붙인 이름이에요. 비견·겁재는 나와 같은 힘, 식신·상관은 표현하는 힘, 편재·정재는 돈, 편관·정관은 규칙과 책임, 편인·정인은 도움과 배움이에요.</dd>
+  <dt>신강·신약</dt><dd>내 기운이 센지(신강) 약한지(신약)를 말해요. 좋고 나쁨이 아니라 필요한 기운을 찾는 기준이에요.</dd>
+  <dt>용신</dt><dd>내 사주의 균형을 맞춰 주는 기운이에요. 이 기운이 들어오는 해와 날에 힘이 나요.</dd>
+  <dt>대운</dt><dd>10년마다 바뀌는 큰 운의 흐름이에요. "지금" 표시가 붙은 칸이 지금 시기예요.</dd>
+  <dt>12운성</dt><dd>기운이 태어나고 자라고 약해지고 쉬는 과정을 12단계로 나눈 거예요. 참고용으로 보세요.</dd></dl></details>`
 function chartHtml(p: Person): string {
   const x = t()
   const ko = lang === 'ko'
@@ -1864,6 +1917,7 @@ function chartHtml(p: Person): string {
     ${unseong}
     <h3>${x.elTitle}</h3><div class="bars">${bars}</div>
     <h3>${x.luck}</h3><div class="luck">${luck}</div>
+    ${ko ? GLOSSARY : ''}
   </article>`
 }
 
