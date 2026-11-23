@@ -773,3 +773,21 @@ details.learn .mrow{padding:10px 0}
 .gloss dl{margin:10px 0 2px}
 .gloss dt{margin-top:12px;font-weight:700;font-size:15px;color:var(--seal,#6a2623)}
 .gloss dd{margin:3px 0 0;font-size:15px;line-height:1.75;word-break:keep-all}
+
+/* 홈: 카테고리 칩 + 카드 피드 */
+.catrow{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin:0 -2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.catrow::-webkit-scrollbar{display:none}
+.cat{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font:600 14px var(--sans,inherit);cursor:pointer;white-space:nowrap}
+.cat.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.feed .fc{width:100%;display:flex;align-items:center;gap:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:16px;padding:12px 14px;font:inherit;text-align:left;cursor:pointer}
+.fth{width:56px;height:56px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;font:700 26px var(--serif);color:var(--gold);background:rgba(160,125,50,.1);border:1px solid var(--gold2)}
+.fbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.ft{font-weight:700;font-size:16px;line-height:1.35;word-break:keep-all}
+.ftag{font-style:normal;font-size:11px;font-weight:700;margin-left:6px;padding:1px 6px;border-radius:6px;background:var(--gold);color:#fff;vertical-align:1px}
+.fd{font-size:13.5px;line-height:1.5;opacity:.72;word-break:keep-all}
+.fpr{flex:none;font-size:13px;font-weight:700;opacity:.8}
+.fpr.free{color:var(--gold)}
+.chk.yj{display:block;margin-top:8px;line-height:1.6}
+.chk.yj .note{display:block;margin-top:4px}
+.chk.yj[hidden]{display:none}

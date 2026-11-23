@@ -96,13 +96,15 @@ export function hourStem(dayStemIdx: number, branchIdx: number): number {
   return mod((dayStemIdx % 5) * 2 + branchIdx, 10) // 오서둔
 }
 
-export function fourPillarsAt(c: Clock, unknownTime = false): [string, string, string, string] {
+/** yajasi: 야자시 — 평균태양시 23:00~24:00 출생은 일주를 당일로 두고, 시주만 자시(익일 일간 기준 천간)로 본다. 기본(통자시)은 23:00부터 다음 날. */
+export function fourPillarsAt(c: Clock, unknownTime = false, yajasi = false): [string, string, string, string] {
   const ym = yearMonthPillars(c.utc)
   const di = dayIndex(unknownTime ? Math.floor(c.adj / DAY) * DAY + 12 * 60 * MIN : c.adj)
-  const day = ganzi60(di)
-  if (unknownTime) return [ym.year, ym.month, day, '??']
+  if (unknownTime) return [ym.year, ym.month, ganzi60(di), '??']
   const hb = hourBranch(c.adj)
-  return [ym.year, ym.month, day, SKY[hourStem(mod(di, 10), hb)] + EARTH[hb]]
+  const lateZa = yajasi && mod(Math.floor(c.adj / MIN), 1440) >= 23 * 60
+  const hStem = SKY[hourStem(mod(di, 10), hb)] + EARTH[hb]
+  return [ym.year, ym.month, ganzi60(lateZa ? mod(di - 1, 60) : di), hStem]
 }
 
 /** 한국 시계(KST) 기준 날짜·시각으로 사주 네 기둥 [년, 월, 일, 시] */

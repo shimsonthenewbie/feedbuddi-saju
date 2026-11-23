@@ -106,7 +106,7 @@ const emptyDetail = (): PillarDetail => ({ pillar: { ganzi: '??', stem: '?', bra
 export function calculateSaju(input: BirthInput): SajuResult {
   const unk = !!input.unknownTime
   const c = clockOf(input)
-  const [yg, mg, dg, hg] = fourPillarsAt(c, unk)
+  const [yg, mg, dg, hg] = fourPillarsAt(c, unk, input.jasiMethod === 'yajasi')
   const dayStem = dg[0]
   const yearBranch = yg[1]
 

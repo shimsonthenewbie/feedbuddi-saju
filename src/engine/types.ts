@@ -2,7 +2,7 @@
 export type Element = 'tree' | 'fire' | 'earth' | 'metal' | 'water'
 export type YinYang = '+' | '-'
 export type Gender = 'M' | 'F'
-export type JasiMethod = 'unified'
+export type JasiMethod = 'unified' | 'yajasi'
 
 export interface BirthInput {
   year: number

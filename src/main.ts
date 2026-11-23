@@ -278,7 +278,7 @@ const T = {
 
 
 /* ───────── 저장된 프로필 (이 기기에만) ───────── */
-interface Profile { y: number; m: number; d: number; hh: number; mm: number; gender: 'M' | 'F'; unk: boolean; lat: number; lon: number; place: string }
+interface Profile { y: number; m: number; d: number; hh: number; mm: number; gender: 'M' | 'F'; unk: boolean; lat: number; lon: number; place: string; yj?: boolean }
 const PKEY = 'fb-saju-profile'
 interface Friend { id: string; name: string; p: Profile }
 const FKEY = 'fb-saju-friends'
@@ -301,7 +301,7 @@ function rememberFriend(label: string, v: Profile) {
 }
 function saveProfile(p: Person) {
   const i = p.result.input
-  const v: Profile = { y: i.year, m: i.month, d: i.day, hh: i.hour, mm: i.minute, gender: i.gender, unk: !!i.unknownTime, lat: i.latitude ?? SEOUL.lat, lon: i.longitude ?? SEOUL.lon, place: p.placeName }
+  const v: Profile = { y: i.year, m: i.month, d: i.day, hh: i.hour, mm: i.minute, gender: i.gender, unk: !!i.unknownTime, lat: i.latitude ?? SEOUL.lat, lon: i.longitude ?? SEOUL.lon, place: p.placeName, yj: i.jasiMethod === 'yajasi' }
   if (guestAsk) { guestProfile = v; guestAsk = false; rememberFriend(p.label, v); return } // 친구는 이 기기에만 저장한다(rememberFriend)
   try { localStorage.setItem(PKEY, JSON.stringify(v)) } catch { /* 저장 불가 환경 */ }
   memProfile = v
@@ -324,7 +324,7 @@ function clearProfile() {
 }
 
 function resultOf(pr: Profile): SajuResult {
-  return calculateSaju({ year: pr.y, month: pr.m, day: pr.d, hour: pr.hh, minute: pr.mm, gender: pr.gender, unknownTime: pr.unk, latitude: pr.lat, longitude: pr.lon, timezone: tzlookup(pr.lat, pr.lon) })
+  return calculateSaju({ year: pr.y, month: pr.m, day: pr.d, hour: pr.hh, minute: pr.mm, gender: pr.gender, unknownTime: pr.unk, jasiMethod: pr.yj ? 'yajasi' : 'unified', latitude: pr.lat, longitude: pr.lon, timezone: tzlookup(pr.lat, pr.lon) })
 }
 
 /* ───────── 오늘의 운세 화면 ───────── */
@@ -1044,6 +1044,39 @@ function navHtml(): string {
   return `<nav class="bnav" aria-label="menu">${items.map(([m, hj, label]) => `<button type="button" data-mode="${m}" class="${mode === m ? 'on' : ''}" ${mode === m ? 'aria-current="page"' : ''}><span class="hj">${hj}</span>${esc(label)}</button>`).join('')}</nav>`
 }
 
+
+type Svc = { go: Mode; hj: string; name: string; desc: string; price: string; cats: string[]; tag?: string }
+const KO_CATS = ['전체', '무료', '오늘·올해', '사주', '궁합·연애', '재물·직업', '재미·점', '좋은 날']
+const KO_SVC: Svc[] = [
+  { go: 'today', hj: '運', name: '오늘의 운세', desc: '애정·재물·직장·건강 점수와 시간대별 흐름', price: '무료', cats: ['무료', '오늘·올해'], tag: 'HOT' },
+  { go: 'solo', hj: '命', name: '내 사주 (무료 풀이)', desc: '사주 여덟 글자와 성향, 쉬운 풀이', price: '무료', cats: ['무료', '사주'] },
+  { go: 'ask', hj: '問', name: '고민 상담', desc: '고민을 적으면 좋은 시기까지 짚어 드려요', price: '베타 무료', cats: ['사주', '오늘·올해'] },
+  { go: 'exam', hj: '試', name: '시험 날 사주', desc: '수능·자격시험 날의 컨디션과 마음가짐', price: '베타 무료', cats: ['오늘·올해', '좋은 날'] },
+  { go: 'year', hj: '歲', name: '올해 흐름 (월별)', desc: '월별 기회와 쉬어 갈 때', price: '베타 무료', cats: ['오늘·올해'] },
+  { go: 'newyear', hj: '歲', name: '2027 신년운세', desc: '정미년 한 해 흐름을 월별로', price: '베타 무료', cats: ['오늘·올해'], tag: 'NEW' },
+  { go: 'tojeong', hj: '卦', name: '토정비결', desc: '원전 방식으로 올해 총운과 12개월', price: '베타 무료', cats: ['오늘·올해', '재미·점'], tag: 'NEW' },
+  { go: 'match', hj: '緣', name: '두 사람의 궁합', desc: '서로 끌리는 이유와 부딪히는 점', price: '베타 무료', cats: ['궁합·연애'], tag: 'NEW' },
+  { go: 'pick', hj: '合', name: '나와 잘 맞는 사주', desc: '내 사주와 잘 맞는 사람의 특징', price: '베타 무료', cats: ['궁합·연애', '사주'] },
+  { go: 'mbti', hj: '性', name: '내 사주와 잘 맞는 MBTI', desc: '사주로 본 어울리는 성향', price: '무료', cats: ['무료', '궁합·연애', '재미·점'] },
+  { go: 'shop', hj: '財', name: '재물·직업 풀이', desc: '어울리는 일의 형태와 돈의 흐름', price: '990원', cats: ['재물·직업'] },
+  { go: 'report', hj: '書', name: '종합 풀이 리포트', desc: '12단계로 풀어 쓰는 평생 사주', price: '9,900원', cats: ['사주', '재물·직업'] },
+  { go: 'dream', hj: '夢', name: '꿈해몽 (AI 자세히)', desc: '꿈 내용을 적으면 풀어 드려요', price: '무료', cats: ['무료', '재미·점'] },
+  { go: 'tarot', hj: '🂠', name: '타로', desc: '오늘의 카드, 3장 뽑기', price: '무료', cats: ['무료', '재미·점'] },
+  { go: 'astro', hj: '☉', name: '별자리 출생차트', desc: '서양 점성술로 보는 나', price: '무료', cats: ['무료', '재미·점'] },
+  { go: 'face', hj: '相', name: '관상 (사진으로 보기)', desc: '정면 사진 한 장, 기기 안에서만 분석', price: '베타 무료', cats: ['재미·점'], tag: 'NEW' },
+  { go: 'hand', hj: '手', name: '손 모양 관상', desc: '손 모양으로 보는 성향', price: '무료', cats: ['무료', '재미·점'] },
+  { go: 'iching', hj: '易', name: '주역 오늘의 한 괘', desc: '64괘 중 오늘의 한 괘', price: '무료', cats: ['무료', '재미·점', '오늘·올해'] },
+  { go: 'gusung', hj: '星', name: '구성기학', desc: '본명성과 좋은 방위', price: '무료', cats: ['무료', '재미·점'] },
+  { go: 'name', hj: '名', name: '이름 풀이·작명 비교', desc: '이름 글자의 기운 풀이', price: '무료', cats: ['무료', '재미·점'] },
+  { go: 'koname', hj: '韓', name: '내 한국 이름 만들기', desc: '외국인 친구에게도 좋아요', price: '무료', cats: ['무료', '재미·점'] },
+  { go: 'taegil', hj: '擇', name: '택일 (좋은 날 고르기)', desc: '이사·결혼·개업 좋은 날', price: '무료', cats: ['무료', '좋은 날'] },
+]
+let homeCat = '전체'
+function feedHtml(): string {
+  const list = KO_SVC.filter((s) => homeCat === '전체' || s.cats.includes(homeCat))
+  return list.map((s) => `<li><button type="button" class="fc" data-mode="${s.go}"><span class="fth" aria-hidden="true">${s.hj}</span><span class="fbody"><span class="ft">${esc(s.name)}${s.tag ? `<i class="ftag">${s.tag}</i>` : ''}</span><span class="fd">${esc(s.desc)}</span></span><span class="fpr ${/무료/.test(s.price) ? 'free' : ''}">${esc(s.price)}</span></button></li>`).join('')
+}
+
 function homeHtml(): string {
   const x = t()
   const news = x.newItems.map(([badge, title, desc, when, go]) => `<button type="button" class="newc" data-mode="${go}"><span class="badge">${badge}</span><b>${esc(title)}</b><span>${esc(desc)}</span><em>${esc(when)}</em></button>`).join('')
@@ -1075,6 +1108,7 @@ function homeHtml(): string {
       ${cityField('f')}
       <p class="err" id="ferr" role="alert"></p>
       <button class="go" type="submit">${esc(x.freeGo)}</button>
+      <p class="note">🔒 ${esc(x.privacy)} <button type="button" class="linkbtn" data-legal="privacy">${esc(x.legalPrivacy)}</button></p>
     </form>
   </section>
   ${lang === 'ko' ? `<section class="card classics"><h2>옛 책을 연구해서 더 자세하게</h2><p class="meta">용용사주는 사주 고전의 방식을 하나씩 공부해 풀이에 넣고 있어요.</p><ul><li><b>『궁통보감』</b> — 태어난 계절에 맞춰 내게 필요한 기운을 짚어요. (무료 사주 풀이에 적용)</li><li><b>택일</b> — 옛 책력과 내 띠로 이사·결혼·개업 같은 좋은 날을 골라요. <button type="button" class="linkbtn" data-mode="taegil">좋은 날 찾기</button></li><li><b>『주역』</b> — 64괘 중 오늘의 한 괘를 뽑아요. <button type="button" class="linkbtn" data-mode="iching">오늘의 괘 보기</button></li><li><b>『토정비결』</b> — 원전 방식으로 괘를 계산해 올해 12개월을 봐요. <button type="button" class="linkbtn" data-mode="tojeong">올해의 운세 보기</button></li></ul><p class="note">풀이 글은 오늘 말로 새로 쓴 거예요. 재미와 참고용이에요.</p></section>` : ''}
@@ -1088,12 +1122,14 @@ function homeHtml(): string {
     <div class="brow"><span class="beta">${esc(x.homeBeta)}</span><button type="button" class="bgo" data-mode="ask">${esc(x.homeBannerB)}</button></div>
   </section>
   ${lang === 'ko' ? promo : ''}
-  <h3 class="sec">${esc(x.hotTitle)}</h3>
+  ${lang === 'ko' ? `<h3 class="sec">서비스 전체</h3>
+  <div class="catrow" role="tablist" aria-label="분류">${KO_CATS.map((c) => `<button type="button" role="tab" class="cat ${c === homeCat ? 'on' : ''}" data-cat="${c}" aria-selected="${c === homeCat}">${c}</button>`).join('')}</div>
+  <ul class="feed" id="feed">${feedHtml()}</ul>` : `<h3 class="sec">${esc(x.hotTitle)}</h3>
   <ol class="hot">${hot}</ol>
   <h3 class="sec">${esc(x.newTitle)}</h3>
   <div class="news">${news}</div>
   <h3 class="sec">${esc(x.svcTitle)}</h3>
-  <ul class="svc">${svc}</ul>
+  <ul class="svc">${svc}</ul>`}
   <h3 class="sec">${esc(x.pieceTitle)}</h3>
   <ul class="pieces">${pieces}</ul>`
 }
@@ -1159,6 +1195,7 @@ function timeField(name: string): string {
     <select aria-label="${x.selH}" data-k="h"><option value="">${x.selH}</option>${hs}</select>
     <select aria-label="${x.selMi}" data-k="mi">${mi}</select></div>
     <p class="note calhint" hidden></p>
+    ${lang === 'ko' ? `<label class="chk yj" hidden><input type="checkbox" data-yj> 야자시로 계산할게요 <span class="note">(밤 11시 반~12시 사이 출생일 때만 선택해요. 켜면 태어난 날 그대로 일주를 보고, 끄면 다음 날로 봐요. 잘 모르면 그대로 두세요.)</span></label>` : ''}
     <input type="hidden" name="${name}"></div>`
 }
 /** 위 두 칸을 동작시킨다. 값이 바뀌면 숨은 input에 input 이벤트를 보낸다. */
@@ -1200,6 +1237,8 @@ function bindDT(root: ParentNode) {
             th.hidden = false; th.textContent = `${NM[idx]}시(${RG[idx]})에 태어났어요. 한국 표준시를 서울 기준으로 맞춘 시간대예요.`
           } else th.hidden = true
         }
+        const yj = box.querySelector<HTMLElement>('.yj')
+        if (yj) { const late = !!hid.value && +sel('h').value === 23 && +(sel('mi').value || 0) >= 30; yj.hidden = !late; if (!late) (yj.querySelector('input') as HTMLInputElement).checked = false }
       }
       hid.dispatchEvent(new Event('input', { bubbles: true }))
     }
@@ -1576,6 +1615,7 @@ function onFreeSubmit(e: Event) {
   const date = (f.elements.namedItem('fdate') as HTMLInputElement).value
   const timeV = (f.elements.namedItem('ftime') as HTMLInputElement).value
   const unk = (f.elements.namedItem('funk') as HTMLInputElement).checked
+  const yjBox = f.querySelector<HTMLInputElement>('[data-yj]'); const yj = !!yjBox && yjBox.checked && !unk
   const gender = (f.querySelector('input[name=fg]:checked') as HTMLInputElement).value as 'M' | 'F'
   if (!date) { err.textContent = x.errDate; return }
   if (!unk && !timeV) { err.textContent = x.errTime; return }
@@ -1584,7 +1624,7 @@ function onFreeSubmit(e: Event) {
   const [y, m, d] = date.split('-').map(Number)
   const [hh, mm] = unk ? [12, 0] : timeV.split(':').map(Number)
   try {
-    const result = calculateSaju({ year: y, month: m, day: d, hour: hh, minute: mm, gender, unknownTime: unk, latitude: city.lat, longitude: city.lon, timezone: city.tz })
+    const result = calculateSaju({ year: y, month: m, day: d, hour: hh, minute: mm, gender, unknownTime: unk, jasiMethod: yj ? 'yajasi' : 'unified', latitude: city.lat, longitude: city.lon, timezone: city.tz })
     freePerson = { label: x.me, placeName: city.name, result }
     saveProfile(freePerson)
     mode = 'free'
@@ -1691,6 +1731,12 @@ function bind() {
   const hb = document.getElementById('homebtn'); if (hb) hb.onclick = () => { mode = 'home'; if (location.hash) history.replaceState(null, '', location.pathname + location.search); window.scrollTo(0, 0); render() }
   document.getElementById('lang')!.onclick = () => { lang = lang === 'ko' ? 'en' : 'ko'; readLang = lang; render() }
   app.querySelectorAll<HTMLElement>('[data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
+  const bindFeed = () => document.querySelectorAll<HTMLElement>('#feed [data-mode]').forEach((b) => (b.onclick = () => { mode = b.dataset.mode as Mode; window.scrollTo(0, 0); render() }))
+  document.querySelectorAll<HTMLElement>('.catrow .cat').forEach((c) => (c.onclick = () => {
+    homeCat = c.dataset.cat || '전체'
+    document.querySelectorAll('.catrow .cat').forEach((e) => { const on = e === c; e.classList.toggle('on', on); e.setAttribute('aria-selected', String(on)) })
+    const f = document.getElementById('feed'); if (f) { f.innerHTML = feedHtml(); bindFeed() }
+  }))
   app.querySelectorAll<HTMLFieldSetElement>('fieldset.person').forEach((fs) => {
     const id = fs.dataset.p as 'a' | 'b'
     const input = fs.querySelector<HTMLInputElement>('input[name=city]')!
@@ -1779,6 +1825,7 @@ function readPerson(id: 'a' | 'b', label: string): Person | string {
   const date = fs.querySelector<HTMLInputElement>('input[name=date]')!.value
   const timeV = fs.querySelector<HTMLInputElement>('input[name=time]')!.value
   const unk = fs.querySelector<HTMLInputElement>('input[name=unk]')!.checked
+  const yjBox = fs.querySelector<HTMLInputElement>('[data-yj]'); const yj = !!yjBox && yjBox.checked && !unk
   const gender = (fs.querySelector<HTMLInputElement>(`input[name=g-${id}]:checked`)!.value) as 'M' | 'F'
   if (!date) return x.errDate
   if (!unk && !timeV) return x.errTime
@@ -1790,7 +1837,7 @@ function readPerson(id: 'a' | 'b', label: string): Person | string {
   const city = hit ?? cityState[id]
   try {
     const tz = tzlookup(city.lat, city.lon)
-    const result = calculateSaju({ year: y, month: m, day: d, hour: hh, minute: mm, gender, unknownTime: unk, latitude: city.lat, longitude: city.lon, timezone: tz })
+    const result = calculateSaju({ year: y, month: m, day: d, hour: hh, minute: mm, gender, unknownTime: unk, jasiMethod: yj ? 'yajasi' : 'unified', latitude: city.lat, longitude: city.lon, timezone: tz })
     const nm = fs.querySelector<HTMLInputElement>('input[name=nm]')!.value.trim().slice(0, 12)
     return { label: nm || label, placeName: formatCityName(city), result }
   } catch {
