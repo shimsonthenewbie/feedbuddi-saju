@@ -19,3 +19,25 @@ CREATE TABLE IF NOT EXISTS grants (
   kind TEXT NOT NULL,            -- compensation | event | test
   reason TEXT NOT NULL
 );
+
+-- 로그인 계정(카카오·구글). 이름·이메일은 받지 않고 제공자가 주는 고유 번호만 저장한다.
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,           -- 우리가 만든 무작위 id(질문권 owner로도 쓴다)
+  provider TEXT NOT NULL,        -- kakao | google
+  provider_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  UNIQUE(provider, provider_id)
+);
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY,   -- 쿠키 값의 SHA-256. 원본은 저장하지 않는다
+  user_id TEXT NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS sessions_user ON sessions(user_id);
+-- 내 사주와 저장한 사람들(이용자가 동의하고 저장한 경우만)
+CREATE TABLE IF NOT EXISTS user_data (
+  user_id TEXT PRIMARY KEY,
+  profile TEXT,                  -- JSON(내 생년월일시·성별·태어난 곳)
+  friends TEXT,                  -- JSON(저장한 사람들)
+  updated_at INTEGER NOT NULL
+);

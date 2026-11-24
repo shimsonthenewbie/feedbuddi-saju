@@ -5,11 +5,12 @@
  * 어떤 오류든 초안 카드로 되돌아가므로 화면은 항상 결과를 보여 줄 수 있다.
  */
 import { D1Store, MemoryStore, DAILY_CAP, SOON_MS, effective, isTicketId, type D1, type Store, type View, type Sort } from './tickets'
+import { handleAuth, type AuthEnv } from './auth'
 import { buildReportRequest, type Part, type Tone } from '../src/report-prompt'
 import { buildDreamRequest, type DreamInput } from '../src/dream-prompt'
 import { buildTaegilRequest, type TaegilCand } from '../src/taegil-prompt'
 
-interface Env {
+interface Env extends AuthEnv {
   DB?: D1
   /** 테스트 전용. 운영에서는 설정하지 않는다. */
   DEV_TICKET_SECRET?: string
@@ -176,12 +177,15 @@ export default {
   async fetch(req: Request, env: Env, ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<Response> {
     const url = new URL(req.url)
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(req)
+    // 로그인 시작·완료(GET 이동)는 출처 검사 전에, 나머지 로그인 API는 아래 출처 검사 뒤에 처리한다.
+    if (req.method === 'GET') { const r = await handleAuth(req, env, Date.now()); return r ?? json({ error: 'method' }, 405) }
     if (req.method !== 'POST') return json({ error: 'method' }, 405)
     // 같은 사이트에서 온 요청만 받는다(다른 사이트가 우리 서버를 끌어 쓰는 것 방지).
     const origin = req.headers.get('origin')
     if (origin && origin !== url.origin) return json({ error: 'origin' }, 403)
     const store = storeOf(env)
     const now = Date.now()
+    { const r = await handleAuth(req, env, now); if (r) return r }
 
     // 결제 확인 없이 질문권 발급 금지. 이 경로는 테스트 비밀값이 설정된 환경에서만 열린다.
     // (실제 결제 연동 후에는 결제 웹훅이 store.issue()를 호출하고, 이 경로는 쓰지 않는다.)

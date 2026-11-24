@@ -791,3 +791,12 @@ details.learn .mrow{padding:10px 0}
 .chk.yj{display:block;margin-top:8px;line-height:1.6}
 .chk.yj .note{display:block;margin-top:4px}
 .chk.yj[hidden]{display:none}
+
+/* 로그인 */
+.acct{margin-bottom:14px}
+.acct .arow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.acct .aconsent{margin:10px 0;padding:12px;border:1px solid var(--line);border-radius:12px}
+.lbtns{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.lbtn{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:12px;font-weight:700;font-size:16px;text-decoration:none}
+.lbtn.kakao{background:#fee500;color:#191919}
+.lbtn.google{background:#fff;color:#1f1f1f;border:1px solid #dadce0}

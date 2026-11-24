@@ -1,5 +1,6 @@
 import { aiConsentHtml, aiConsentOk, looksSensitive, showSensitive } from './ai-consent'
 import { ticketBanner } from './ticket-banner'
+import { acct, acctHtml, initAccount, pushData, consentSave, logout as acctLogout, deleteAccount } from './account'
 import './style.css'
 import { calculateSaju } from './engine/saju'
 import { SEOUL, filterCities, formatCityName, type City } from './engine/cities'
@@ -288,7 +289,7 @@ function loadFriends(): Friend[] {
   try { const raw = localStorage.getItem(FKEY); memFriends = raw ? (JSON.parse(raw) as Friend[]) : [] } catch { memFriends = [] }
   return memFriends
 }
-function storeFriends(f: Friend[]) { memFriends = f; try { localStorage.setItem(FKEY, JSON.stringify(f)) } catch { /* 저장 불가 환경 */ } }
+function storeFriends(f: Friend[]) { memFriends = f; try { localStorage.setItem(FKEY, JSON.stringify(f)) } catch { /* 저장 불가 환경 */ }; void pushData({ friends: f }) }
 const sameProfile = (a: Profile, b: Profile) => a.y === b.y && a.m === b.m && a.d === b.d && a.hh === b.hh && a.mm === b.mm && a.gender === b.gender && a.unk === b.unk
 /** 친구로 본 사람은 이 기기에만 저장해 두었다가 다음에 한 번에 고르게 한다(최대 8명). */
 function rememberFriend(label: string, v: Profile) {
@@ -305,6 +306,7 @@ function saveProfile(p: Person) {
   if (guestAsk) { guestProfile = v; guestAsk = false; rememberFriend(p.label, v); return } // 친구는 이 기기에만 저장한다(rememberFriend)
   try { localStorage.setItem(PKEY, JSON.stringify(v)) } catch { /* 저장 불가 환경 */ }
   memProfile = v
+  void pushData({ profile: v })
 }
 // 친구 것 봐주기: 내 저장 정보는 그대로 두고 잠깐 다른 사람 정보로 본다
 let guestProfile: Profile | null = null
@@ -1089,6 +1091,7 @@ function homeHtml(): string {
     ? `<section class="card promo"><img class="pimg" src="${art('dragon-orb')}" alt="" width="84" height="84"><div><span class="badge">${esc(x.starTag)}</span><h2>${esc(x.starT)}</h2><p>${esc(x.starD)}</p><button type="button" class="bgo" data-mode="star">${esc(x.starCta)}</button></div></section>`
     : `<section class="card promo intro"><img class="pimg" src="${art('ui-teach')}" alt="" width="96" height="96"><div><h2>${esc(x.introT)}</h2><p>${esc(x.introD)}</p><ul>${x.introL.map((l) => `<li>${esc(l)}</li>`).join('')}</ul></div></section>`
   return `
+  ${lang === 'ko' ? acctHtml() : ''}
   ${lang === 'ko' ? '' : promo}
   <section class="card freebox" aria-label="${esc(x.freeTitle)}">
     <div class="freehead"><div><h2>${esc(x.freeTitle)}</h2><p class="meta">${esc(x.freeSub)}</p></div><img class="fmascot" src="${art('dragon-cheer')}" alt="" width="92" height="92"></div>
@@ -1737,6 +1740,9 @@ function bind() {
     document.querySelectorAll('.catrow .cat').forEach((e) => { const on = e === c; e.classList.toggle('on', on); e.setAttribute('aria-selected', String(on)) })
     const f = document.getElementById('feed'); if (f) { f.innerHTML = feedHtml(); bindFeed() }
   }))
+  acctBind()
+  // 아래 메뉴로 이동하면 항상 "나"로 돌아온다(친구 것을 보다가 오늘 화면에 남는 문제 방지)
+  document.querySelectorAll<HTMLElement>('.bnav [data-mode]').forEach((b) => b.addEventListener('click', () => { guestProfile = null; guestAsk = false }, true))
   app.querySelectorAll<HTMLFieldSetElement>('fieldset.person').forEach((fs) => {
     const id = fs.dataset.p as 'a' | 'b'
     const input = fs.querySelector<HTMLInputElement>('input[name=city]')!
@@ -2106,4 +2112,43 @@ try {
     history.replaceState(null, '', location.pathname + (q.toString() ? `?${q}` : '') + location.hash)
   }
 } catch { /* 저장소를 쓸 수 없으면 건너뜀 */ }
+function acctBind() {
+  document.getElementById('aout')?.addEventListener('click', async () => {
+    await acctLogout()
+    acct.in = false; acct.synced = false; acct.askConsent = false; acct.msg = '로그아웃했어요. 이 기기의 내 사주도 지웠어요.'
+    clearProfile(); storeFriendsLocalOnly([])
+    render()
+  })
+  document.getElementById('adel')?.addEventListener('click', async () => {
+    if (!window.confirm('계정과 서버에 저장된 내 사주를 모두 지워요. 되돌릴 수 없어요. 계속할까요?')) return
+    await deleteAccount()
+    acct.in = false; acct.synced = false; acct.askConsent = false; acct.msg = '탈퇴했어요. 서버에 저장된 정보를 모두 지웠어요.'
+    clearProfile(); storeFriendsLocalOnly([])
+    render()
+  })
+  document.getElementById('asave')?.addEventListener('click', async () => {
+    const ok = (document.getElementById('aok') as HTMLInputElement | null)?.checked
+    if (!ok) { acct.msg = '저장하려면 동의 칸을 체크해 주세요. 못 저장했어요.'; render(); return }
+    const done = await consentSave(loadProfile(), loadFriends())
+    acct.msg = done ? '내 사주를 계정에 저장했어요.' : '저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.'
+    render()
+  })
+}
+function storeFriendsLocalOnly(f: Friend[]) { memFriends = f; try { localStorage.setItem(FKEY, JSON.stringify(f)) } catch { /* 무시 */ } }
+// 로그인 상태 확인 → 서버에 저장된 내 사주가 있으면 이 기기에 적용
+{
+  const q = new URLSearchParams(location.search)
+  const lg = q.get('login')
+  if (lg) {
+    acct.msg = lg === 'ok' ? '로그인했어요.' : lg === 'unavailable' ? '이 로그인은 아직 준비 중이에요.' : '로그인하지 못했어요. 다시 시도해 주세요.'
+    q.delete('login'); history.replaceState(null, '', location.pathname + (q.toString() ? `?${q}` : '') + location.hash)
+  }
+  void initAccount().then((d) => {
+    if (d) {
+      if (d.profile) { memProfile = d.profile; try { localStorage.setItem(PKEY, JSON.stringify(d.profile)) } catch { /* 무시 */ } }
+      if (Array.isArray(d.friends)) storeFriendsLocalOnly(d.friends)
+    }
+    if (acct.in || acct.msg || acct.avail.kakao || acct.avail.google) render()
+  })
+}
 void ticketBanner(navigator.language.startsWith('ko') ? 'ko' : 'en')

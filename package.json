@@ -11,7 +11,8 @@
     "verify:engine": "tsx scripts/verify-engine.ts 3000",
     "verify:analysis": "tsx scripts/verify-analysis.ts",
     "verify:dream": "tsx scripts/verify-dream.ts",
-    "smoke": "node scripts/smoke.cjs"
+    "smoke": "node scripts/smoke.cjs",
+    "verify:auth": "tsx scripts/verify-auth.ts"
   },
   "dependencies": {
     "@mediapipe/hands": "^0.4.1675469240",
