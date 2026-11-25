@@ -2148,7 +2148,7 @@ function storeFriendsLocalOnly(f: Friend[]) { memFriends = f; try { localStorage
       if (d.profile) { memProfile = d.profile; try { localStorage.setItem(PKEY, JSON.stringify(d.profile)) } catch { /* 무시 */ } }
       if (Array.isArray(d.friends)) storeFriendsLocalOnly(d.friends)
     }
-    if (acct.in || acct.msg || acct.avail.kakao || acct.avail.google) render()
+    if (acct.in || acct.msg || acct.avail.kakao || acct.avail.google || acct.avail.naver) render()
   })
 }
 void ticketBanner(navigator.language.startsWith('ko') ? 'ko' : 'en')

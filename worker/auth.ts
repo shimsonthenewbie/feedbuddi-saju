@@ -12,8 +12,10 @@ export interface AuthEnv {
   KAKAO_CLIENT_SECRET?: string
   GOOGLE_CLIENT_ID?: string
   GOOGLE_CLIENT_SECRET?: string
+  NAVER_CLIENT_ID?: string
+  NAVER_CLIENT_SECRET?: string
 }
-type Provider = 'kakao' | 'google'
+type Provider = 'kakao' | 'google' | 'naver'
 const SESSION_MS = 30 * 86400_000
 const COOKIE = 'fb_sess'
 const OAUTH_COOKIE = 'fb_oauth'
@@ -34,20 +36,22 @@ const setCookie = (name: string, v: string, maxAge: number) => `${name}=${encode
 
 function conf(env: AuthEnv, p: Provider) {
   if (p === 'kakao') return env.KAKAO_REST_KEY ? { id: env.KAKAO_REST_KEY, secret: env.KAKAO_CLIENT_SECRET ?? '', auth: 'https://kauth.kakao.com/oauth/authorize', token: 'https://kauth.kakao.com/oauth/token', me: 'https://kapi.kakao.com/v2/user/me', scope: '' } : null
+  if (p === 'naver') return env.NAVER_CLIENT_ID && env.NAVER_CLIENT_SECRET ? { id: env.NAVER_CLIENT_ID, secret: env.NAVER_CLIENT_SECRET, auth: 'https://nid.naver.com/oauth2.0/authorize', token: 'https://nid.naver.com/oauth2.0/token', me: 'https://openapi.naver.com/v1/nid/me', scope: '' } : null
   return env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? { id: env.GOOGLE_CLIENT_ID, secret: env.GOOGLE_CLIENT_SECRET, auth: 'https://accounts.google.com/o/oauth2/v2/auth', token: 'https://oauth2.googleapis.com/token', me: 'https://openidconnect.googleapis.com/v1/userinfo', scope: 'openid' } : null
 }
 
-async function providerId(c: NonNullable<ReturnType<typeof conf>>, p: Provider, code: string, redirect: string): Promise<string | null> {
+async function providerId(c: NonNullable<ReturnType<typeof conf>>, p: Provider, code: string, redirect: string, state: string): Promise<string | null> {
   const body = new URLSearchParams({ grant_type: 'authorization_code', client_id: c.id, redirect_uri: redirect, code })
   if (c.secret) body.set('client_secret', c.secret)
+  if (p === 'naver') body.set('state', state)
   const tr = await fetch(c.token, { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body })
   if (!tr.ok) return null
   const tok = (await tr.json().catch(() => null)) as { access_token?: string } | null
   if (!tok?.access_token) return null
   const mr = await fetch(c.me, { headers: { authorization: `Bearer ${tok.access_token}` } })
   if (!mr.ok) return null
-  const me = (await mr.json().catch(() => null)) as { id?: number | string; sub?: string } | null
-  const id = p === 'kakao' ? me?.id : me?.sub
+  const me = (await mr.json().catch(() => null)) as { id?: number | string; sub?: string; resultcode?: string; response?: { id?: string } } | null
+  const id = p === 'kakao' ? me?.id : p === 'naver' ? (me?.resultcode === '00' ? me.response?.id : undefined) : me?.sub
   return id != null && String(id) ? String(id) : null
 }
 
@@ -66,7 +70,7 @@ export async function handleAuth(req: Request, env: AuthEnv, now: number): Promi
   const back = (q: string) => new Response(null, { status: 302, headers: { location: `/?${q}`, 'cache-control': 'no-store' } })
 
   // 로그인 시작/완료(브라우저 이동이라 GET)
-  const m = path.match(/^\/api\/auth\/(kakao|google)\/(start|callback)$/)
+  const m = path.match(/^\/api\/auth\/(kakao|google|naver)\/(start|callback)$/)
   if (m && req.method === 'GET') {
     const p = m[1] as Provider
     const c = conf(env, p)
@@ -83,7 +87,7 @@ export async function handleAuth(req: Request, env: AuthEnv, now: number): Promi
     const saved = cookieOf(req, OAUTH_COOKIE)
     const clear = setCookie(OAUTH_COOKIE, '', 0)
     if (!code || !state || !saved || state !== saved) return new Response(null, { status: 302, headers: { location: '/?login=failed', 'set-cookie': clear } })
-    const pid = await providerId(c, p, code, redirect).catch(() => null)
+    const pid = await providerId(c, p, code, redirect, state).catch(() => null)
     if (!pid) return new Response(null, { status: 302, headers: { location: '/?login=failed', 'set-cookie': clear } })
     let u = await env.DB.prepare('SELECT id FROM users WHERE provider=? AND provider_id=?').bind(p, pid).first<{ id: string }>()
     if (!u) {
@@ -104,7 +108,7 @@ export async function handleAuth(req: Request, env: AuthEnv, now: number): Promi
   if (req.method !== 'POST') return jsonRes({ error: 'method' }, 405)
   if (!env.DB) return jsonRes({ error: 'no_db' }, 503)
 
-  if (path === '/api/auth/status') return jsonRes({ kakao: !!conf(env, 'kakao'), google: !!conf(env, 'google') })
+  if (path === '/api/auth/status') return jsonRes({ kakao: !!conf(env, 'kakao'), google: !!conf(env, 'google'), naver: !!conf(env, 'naver') })
   const uid = await userOf(req, env, now)
 
   if (path === '/api/auth/me') {

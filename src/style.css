@@ -800,3 +800,4 @@ details.learn .mrow{padding:10px 0}
 .lbtn{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:12px;font-weight:700;font-size:16px;text-decoration:none}
 .lbtn.kakao{background:#fee500;color:#191919}
 .lbtn.google{background:#fff;color:#1f1f1f;border:1px solid #dadce0}
+.lbtn.naver{background:#03c75a;color:#fff}

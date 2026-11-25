@@ -3,7 +3,7 @@ export interface AcctState {
   ready: boolean
   in: boolean
   provider: string
-  avail: { kakao: boolean; google: boolean }
+  avail: { kakao: boolean; google: boolean; naver: boolean }
   /** 서버에 내 사주를 저장하는 데 동의했고 연결된 상태 */
   synced: boolean
   /** 로그인했고 이 기기에 내 사주가 있는데 서버에는 아직 없음 → 저장 동의를 물어야 한다 */
@@ -11,7 +11,7 @@ export interface AcctState {
   /** 로그인 직후 안내 문구(성공/실패) */
   msg: string
 }
-export const acct: AcctState = { ready: false, in: false, provider: '', avail: { kakao: false, google: false }, synced: false, askConsent: false, msg: '' }
+export const acct: AcctState = { ready: false, in: false, provider: '', avail: { kakao: false, google: false, naver: false }, synced: false, askConsent: false, msg: '' }
 
 async function post<T = any>(path: string, body: unknown = {}): Promise<T | null> {
   try {
@@ -23,7 +23,7 @@ async function post<T = any>(path: string, body: unknown = {}): Promise<T | null
 
 /** 앱을 열 때 한 번: 로그인 상태와 서버에 저장된 내 사주를 가져온다. */
 export async function initAccount(): Promise<{ profile: any; friends: any[] } | null> {
-  const st = await post<{ kakao: boolean; google: boolean }>('/api/auth/status')
+  const st = await post<{ kakao: boolean; google: boolean; naver: boolean }>('/api/auth/status')
   if (st) acct.avail = st
   const me = await post<{ in: boolean; provider: string }>('/api/auth/me')
   acct.ready = true
@@ -44,7 +44,7 @@ export async function consentSave(profile: unknown, friends: unknown): Promise<b
 export const logout = () => post('/api/auth/logout')
 export const deleteAccount = () => post('/api/auth/delete')
 
-const PROV: Record<string, string> = { kakao: '카카오', google: '구글' }
+const PROV: Record<string, string> = { kakao: '카카오', google: '구글', naver: '네이버' }
 export function acctHtml(): string {
   if (!acct.ready) return ''
   const msg = acct.msg ? `<p class="${/못|않/.test(acct.msg) ? 'err' : 'note'}" role="status">${acct.msg}</p>` : ''
@@ -58,7 +58,7 @@ export function acctHtml(): string {
       <p class="note">로그아웃하면 이 기기에 남은 내 사주도 지워져요. <button type="button" class="linkbtn" id="adel">탈퇴하고 모두 지우기</button></p>
     </section>`
   }
-  const btns = [acct.avail.kakao ? '<a class="lbtn kakao" href="/api/auth/kakao/start">카카오로 시작하기</a>' : '', acct.avail.google ? '<a class="lbtn google" href="/api/auth/google/start">구글로 시작하기</a>' : ''].join('')
+  const btns = [acct.avail.kakao ? '<a class="lbtn kakao" href="/api/auth/kakao/start">카카오로 시작하기</a>' : '', acct.avail.naver ? '<a class="lbtn naver" href="/api/auth/naver/start">네이버로 시작하기</a>' : '', acct.avail.google ? '<a class="lbtn google" href="/api/auth/google/start">구글로 시작하기</a>' : ''].join('')
   if (!btns && !msg) return ''
   return `<section class="card acct" aria-label="로그인">${msg}${btns ? '<b>로그인하면 내 사주가 어디서든 따라와요</b>' : ''}
     <p class="note">휴대폰을 바꾸거나 컴퓨터에서 열어도 한 번만 정해 두면 돼요. 이름·이메일은 받지 않아요. 로그인 없이도 무료 맛보기는 그대로 쓸 수 있어요.</p>

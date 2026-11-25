@@ -19,10 +19,12 @@ globalThis.fetch = (async (u: any, init?: any) => {
   const s = String(u)
   if (s.startsWith('https://kauth.kakao.com/oauth/token')) return new Response(JSON.stringify({ access_token: 'AT' }))
   if (s.startsWith('https://kapi.kakao.com/v2/user/me')) return new Response(JSON.stringify({ id: 12345 }))
+  if (s.startsWith('https://nid.naver.com/oauth2.0/token')) return new Response(JSON.stringify(String(init?.body).includes('state=') ? { access_token: 'NT' } : {}))
+  if (s.startsWith('https://openapi.naver.com/v1/nid/me')) return new Response(JSON.stringify({ resultcode: '00', response: { id: 'nv_777' } }))
   return realFetch(u, init)
 }) as any
 
-const env: any = { DB: D1, KAKAO_REST_KEY: 'k', ASSETS: { fetch: async () => new Response('x') } }
+const env: any = { DB: D1, KAKAO_REST_KEY: 'k', NAVER_CLIENT_ID: 'n', NAVER_CLIENT_SECRET: 'ns', ASSETS: { fetch: async () => new Response('x') } }
 const O = 'https://saju.feedbuddi.com'
 let ok = 0, bad = 0
 const t = (n: string, c: boolean) => { c ? ok++ : (bad++, console.log('실패:', n)) }
@@ -60,6 +62,12 @@ t('로그아웃 후 me', ((await (await post('/api/auth/me', {}, ck)).json()) as
 const ck2 = cb2.headers.getSetCookie().find((c) => c.startsWith('fb_sess='))!.split(';')[0]
 await post('/api/auth/delete', {}, ck2)
 t('탈퇴 후 데이터 삭제', (db.prepare('SELECT COUNT(*) n FROM users').get() as any).n === 0 && (db.prepare('SELECT COUNT(*) n FROM user_data').get() as any).n === 0)
+const ns = await call('/api/auth/naver/start')
+const nst = new URL(ns.headers.get('location')!).searchParams.get('state')!
+t('start→네이버', ns.headers.get('location')!.startsWith('https://nid.naver.com/oauth2.0/authorize'))
+const ncb = await call(`/api/auth/naver/callback?code=c&state=${nst}`, {}, ns.headers.get('set-cookie')!.split(';')[0])
+t('네이버 로그인 성공', ncb.headers.get('location') === '/?login=ok')
+t('네이버 계정 생성', (db.prepare("SELECT COUNT(*) n FROM users WHERE provider='naver' AND provider_id='nv_777'").get() as any).n === 1)
 const noKey = await worker.fetch(new Request(O + '/api/auth/google/start'), { ...env, ASSETS: env.ASSETS })
 t('구글 키 없으면 준비 중', noKey.headers.get('location') === '/?login=unavailable')
 console.log(bad ? `로그인 검사 ${ok}/${ok + bad} (실패 ${bad})` : `로그인 검사 ${ok}/${ok} 통과`)
