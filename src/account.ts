@@ -58,9 +58,10 @@ export function acctHtml(): string {
       <p class="note">로그아웃하면 이 기기에 남은 내 사주도 지워져요. <button type="button" class="linkbtn" id="adel">탈퇴하고 모두 지우기</button></p>
     </section>`
   }
+  const live = acct.avail.kakao || acct.avail.google || acct.avail.naver
+  const soon = '<button type="button" class="lbtn soon" disabled>카카오 · 네이버 · 구글 로그인 준비 중이에요</button>'
   const btns = [acct.avail.kakao ? '<a class="lbtn kakao" href="/api/auth/kakao/start">카카오로 시작하기</a>' : '', acct.avail.naver ? '<a class="lbtn naver" href="/api/auth/naver/start">네이버로 시작하기</a>' : '', acct.avail.google ? '<a class="lbtn google" href="/api/auth/google/start">구글로 시작하기</a>' : ''].join('')
-  if (!btns && !msg) return ''
-  return `<section class="card acct" aria-label="로그인">${msg}${btns ? '<b>로그인하면 내 사주가 어디서든 따라와요</b>' : ''}
+  return `<section class="card acct" aria-label="로그인">${msg}<b>로그인하면 내 사주가 어디서든 따라와요</b>
     <p class="note">휴대폰을 바꾸거나 컴퓨터에서 열어도 한 번만 정해 두면 돼요. 이름·이메일은 받지 않아요. 로그인 없이도 무료 맛보기는 그대로 쓸 수 있어요.</p>
-    ${btns ? `<div class="lbtns">${btns}</div>` : ''}</section>`
+    <div class="lbtns">${live ? btns : soon}</div></section>`
 }

@@ -801,3 +801,4 @@ details.learn .mrow{padding:10px 0}
 .lbtn.kakao{background:#fee500;color:#191919}
 .lbtn.google{background:#fff;color:#1f1f1f;border:1px solid #dadce0}
 .lbtn.naver{background:#03c75a;color:#fff}
+.lbtn.soon{background:var(--line);color:inherit;opacity:.7;border:0;font:inherit;font-weight:600;font-size:14px}
